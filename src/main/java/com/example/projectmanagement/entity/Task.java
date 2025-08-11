@@ -7,6 +7,8 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "tasks")
@@ -42,9 +44,9 @@ public class Task {
     @JoinColumn(name = "project_id", nullable = false)
     private Project project;
     
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "story_id")
-    private Story story;
+    // @ManyToOne(fetch = FetchType.LAZY)
+    // @JoinColumn(name = "story_id")
+    // private Story story;
     
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "sprint_id")
@@ -73,7 +75,12 @@ public class Task {
     public enum Priority {
         LOW, MEDIUM, HIGH, CRITICAL
     }
-    
+    // AK changes
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "story_id", nullable = false)
+    private Story story;
+
+
     // Constructors
     public Task() {}
     

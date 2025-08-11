@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 @Data
 @Entity
 @NoArgsConstructor
@@ -34,7 +36,12 @@ public class Epic {
     @JoinColumn(name = "project_id", nullable = false)
     private Project project;
 
-    
+    @OneToMany(mappedBy = "epic", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Story> stories = new ArrayList<>();
+
+    @OneToMany(mappedBy = "epic", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Comment> comments = new ArrayList<>();
+
     // Enums
     public enum EpicStatus {
         OPEN,

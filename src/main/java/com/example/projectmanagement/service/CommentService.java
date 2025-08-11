@@ -20,31 +20,40 @@ public class CommentService {
     private final EpicRepository epicRepository;
     private final UserRepository userRepository;
 
-    public CommentDto addCommentToTask(Long taskId, Long userId, String content) {
+    // ------------- Add Comment to TASK -------------
+    public CommentDto addCommentToTask(Long taskId, CommentDto dto) {
         Task task = getTaskById(taskId);
-        User user = getUserById(userId);
-        Comment comment = buildComment(user, content);
+        User user = getUserById(dto.getUserId());
+
+        Comment comment = buildComment(user, dto.getContent(), dto.getParentId());
         comment.setTask(task);
+
         return mapToDto(commentRepository.save(comment));
     }
 
-    public CommentDto addCommentToStory(Long storyId, Long userId, CommentDto commentDto) {
+    // ------------- Add Comment to STORY -------------
+    public CommentDto addCommentToStory(Long storyId, CommentDto dto) {
         Story story = getStoryById(storyId);
-        User user = getUserById(userId);
-        Comment comment = buildComment(user, commentDto.getText());
+        User user = getUserById(dto.getUserId());
 
+        Comment comment = buildComment(user, dto.getContent(), dto.getParentId());
         comment.setStory(story);
+
         return mapToDto(commentRepository.save(comment));
     }
 
-    public CommentDto addCommentToEpic(Long epicId, Long userId, String content) {
+    // ------------- Add Comment to EPIC -------------
+    public CommentDto addCommentToEpic(Long epicId, CommentDto dto) {
         Epic epic = getEpicById(epicId);
-        User user = getUserById(userId);
-        Comment comment = buildComment(user, content);
+        User user = getUserById(dto.getUserId());
+
+        Comment comment = buildComment(user, dto.getContent(), dto.getParentId());
         comment.setEpic(epic);
+
         return mapToDto(commentRepository.save(comment));
     }
 
+    // ------------- Fetch Comments by Entities -------------
     public List<CommentDto> getCommentsByTaskId(Long taskId) {
         return commentRepository.findByTaskId(taskId).stream()
                 .map(this::mapToDto)
@@ -63,6 +72,14 @@ public class CommentService {
                 .collect(Collectors.toList());
     }
 
+    // ------------- Fetch Replies to a Comment -------------
+    public List<CommentDto> getRepliesByParentId(Long parentId) {
+        return commentRepository.findByParentId(parentId).stream()
+                .map(this::mapToDto)
+                .collect(Collectors.toList());
+    }
+
+    // ------------- Delete Comment -------------
     public void deleteComment(Long commentId, Long userId) {
         Comment comment = commentRepository.findById(commentId)
                 .orElseThrow(() -> new RuntimeException("Comment not found"));
@@ -74,11 +91,19 @@ public class CommentService {
         commentRepository.delete(comment);
     }
 
-    private Comment buildComment(User user, String content) {
+    // ------------- Helpers -------------
+    private Comment buildComment(User user, String content, Long parentId) {
         Comment comment = new Comment();
         comment.setUser(user);
         comment.setContent(content);
         comment.setCreatedAt(LocalDateTime.now());
+
+        if (parentId != null) {
+            Comment parent = commentRepository.findById(parentId)
+                    .orElseThrow(() -> new RuntimeException("Parent comment not found with ID: " + parentId));
+            comment.setParent(parent);
+        }
+
         return comment;
     }
 
@@ -109,6 +134,9 @@ public class CommentService {
         dto.setUserName(comment.getUser().getName());
         dto.setContent(comment.getContent());
         dto.setCreatedAt(comment.getCreatedAt());
+        if (comment.getParent() != null) {
+            dto.setParentId(comment.getParent().getId());
+        }
         return dto;
     }
 }

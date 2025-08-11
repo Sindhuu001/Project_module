@@ -135,7 +135,7 @@ public ResponseEntity<ProjectDto> unarchiveProject(@PathVariable Long projectId)
     }
 
     // ✅ Add member to a project
-    @PostMapping("/{projectId}/members/{userId}")
+    @PutMapping("/{projectId}/members/{userId}")
     public ResponseEntity<ProjectDto> addMemberToProject(@PathVariable Long projectId,
             @PathVariable Long userId) {
         ProjectDto updatedProject = projectService.addMemberToProject(projectId, userId);

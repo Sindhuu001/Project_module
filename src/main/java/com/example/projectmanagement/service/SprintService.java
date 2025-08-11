@@ -53,30 +53,30 @@ public class SprintService {
         return convertToDto(savedSprint);
     }
 
-    public SprintDto startSprint(Long id, User currentUser) {
-        if (!RolePermissionChecker.canStartSprint(currentUser.getRole())) {
-            throw new RuntimeException("Access denied: You are not allowed to start a sprint.");
-        }
+     public SprintDto startSprint(Long id) {
+    // 1. Find the sprint
+    Sprint sprint = sprintRepository.findById(id)
+            .orElseThrow(() -> new RuntimeException("Sprint not found with id: " + id));
 
-        Sprint sprint = sprintRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Sprint not found with id: " + id));
-
-        if (sprint.getStatus() != Sprint.SprintStatus.PLANNING) {
-            throw new RuntimeException("Only planning sprints can be started");
-        }
-
-        boolean hasActiveSprint = sprintRepository.existsActiveSprintInProject(sprint.getProject().getId());
-        if (hasActiveSprint) {
-            throw new RuntimeException("Another active sprint already exists in this project.");
-        }
-
-        sprint.setStatus(Sprint.SprintStatus.ACTIVE);
-        sprint.setStartedBy(currentUser);
-        sprint.setStartedAt(LocalDateTime.now());
-
-        Sprint updatedSprint = sprintRepository.save(sprint);
-        return convertToDto(updatedSprint);
+    // 2. Ensure it's in PLANNED state (not PLANNING, assuming typo)
+    if (sprint.getStatus() != Sprint.SprintStatus.PLANNING) {
+        throw new RuntimeException("Only planned sprints can be started");
     }
+
+    // 3. Ensure no other ACTIVE sprint exists in this project
+    boolean hasActiveSprint = sprintRepository.existsActiveSprintInProject(sprint.getProject().getId());
+    if (hasActiveSprint) {
+        throw new RuntimeException("Another active sprint already exists in this project.");
+    }
+
+    // 4. Update sprint status and time (remove startedBy since no user)
+    sprint.setStatus(Sprint.SprintStatus.ACTIVE);
+    sprint.setStartedAt(LocalDateTime.now());
+
+    // 5. Save and return
+    Sprint updatedSprint = sprintRepository.save(sprint);
+    return convertToDto(updatedSprint);
+}
 
     public SprintDto completeSprint(Long id) {
         Sprint sprint = sprintRepository.findById(id)

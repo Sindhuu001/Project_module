@@ -18,7 +18,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/sprints")
-@CrossOrigin(origins = "http://localhost:5173") 
+@CrossOrigin(origins = "*") 
 public class SprintController {
 
     @Autowired
@@ -104,7 +104,7 @@ public class SprintController {
     }
 
     // Complete sprint (no User context needed)
-    @PostMapping("/{id}/complete")
+    @PutMapping("/{id}/complete")
     public ResponseEntity<SprintDto> completeSprint(@PathVariable Long id) {
         SprintDto updatedSprint = sprintService.completeSprint(id);
         return ResponseEntity.ok(updatedSprint);
@@ -116,7 +116,12 @@ public ResponseEntity<SprintDto> updateSprint(@PathVariable Long id, @Valid @Req
     SprintDto updatedSprint = sprintService.updateSprint(id, sprintDto); // ✅ Only 2 parameters
     return ResponseEntity.ok(updatedSprint);
 }
-
+    @PutMapping("/{id}/start")
+    public ResponseEntity<SprintDto> startSprint(@PathVariable Long id) {
+        System.out.println("Hit /api/sprints/" + id + "/start endpoint");
+        SprintDto updatedSprint = sprintService.startSprint(id);
+        return ResponseEntity.ok(updatedSprint);
+    }
 
     // Delete sprint with User context
     @DeleteMapping("/{id}")

@@ -22,7 +22,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/projects")
-@CrossOrigin(origins = "http://localhost:5173") 
+@CrossOrigin(origins = "*")
 public class ProjectController {
 
     @Autowired
@@ -36,17 +36,21 @@ public class ProjectController {
 
     @Autowired
     private TaskService taskService;
-private final StoryService storyService;
-
+    
     @Autowired
-    public ProjectController(StoryService storyService) {
-        this.storyService = storyService;
-    }
+    private StoryService storyService;
+
     // ✅ CREATE a new project
     @PostMapping
     public ResponseEntity<ProjectDto> createProject(@Valid @RequestBody ProjectDto projectDto) {
         ProjectDto createdProject = projectService.createProject(projectDto);
         return ResponseEntity.status(HttpStatus.CREATED).body(createdProject);
+    }
+
+    @GetMapping
+    public ResponseEntity<List<ProjectDto>> getAllProjects() {
+        List<ProjectDto> projects = projectService.getAllProjects();
+        return ResponseEntity.ok(projects);
     }
 
     // ✅ GET project by ID
@@ -79,21 +83,21 @@ public ResponseEntity<ProjectDto> unarchiveProject(@PathVariable Long projectId)
     }
 
     // ✅ GET all projects with pagination, filters
-    @GetMapping
-    public ResponseEntity<Page<ProjectDto>> getAllProjects(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "id") String sortBy,
-            @RequestParam(defaultValue = "asc") String sortDir,
-            @RequestParam(required = false) String name,
-            @RequestParam(required = false) Project.ProjectStatus status) {
+    // @GetMapping
+    // public ResponseEntity<Page<ProjectDto>> getAllProjects(
+    //         @RequestParam(defaultValue = "0") int page,
+    //         @RequestParam(defaultValue = "10") int size,
+    //         @RequestParam(defaultValue = "id") String sortBy,
+    //         @RequestParam(defaultValue = "asc") String sortDir,
+    //         @RequestParam(required = false) String name,
+    //         @RequestParam(required = false) Project.ProjectStatus status) {
 
-        Sort sort = sortDir.equalsIgnoreCase("desc") ? Sort.by(sortBy).descending() : Sort.by(sortBy).ascending();
-        Pageable pageable = PageRequest.of(page, size, sort);
+    //     Sort sort = sortDir.equalsIgnoreCase("desc") ? Sort.by(sortBy).descending() : Sort.by(sortBy).ascending();
+    //     Pageable pageable = PageRequest.of(page, size, sort);
 
-        Page<ProjectDto> projects = projectService.searchProjects(name, status, pageable);
-        return ResponseEntity.ok(projects);
-    }
+    //     Page<ProjectDto> projects = projectService.searchProjects(name, status, pageable);
+    //     return ResponseEntity.ok(projects);
+    // }
 
     // ✅ GET Epics by project ID
     @GetMapping("/{id}/epics")
@@ -137,12 +141,6 @@ public ResponseEntity<ProjectDto> unarchiveProject(@PathVariable Long projectId)
         ProjectDto updatedProject = projectService.addMemberToProject(projectId, userId);
         return ResponseEntity.ok(updatedProject);
     }
-// ✅ GET Stories by project ID
-@GetMapping("/{id}/stories")
-public ResponseEntity<List<StoryDto>> getProjectStories(@PathVariable Long id) {
-    List<StoryDto> stories = storyService.getStoriesByProjectId(id);
-    return ResponseEntity.ok(stories);
-}
 
     // ✅ Remove member from project
     @DeleteMapping("/{projectId}/members/{userId}")
@@ -151,4 +149,9 @@ public ResponseEntity<List<StoryDto>> getProjectStories(@PathVariable Long id) {
         ProjectDto updatedProject = projectService.removeMemberFromProject(projectId, userId);
         return ResponseEntity.ok(updatedProject);
     }
+    @GetMapping("/{projectId}/stories")
+public ResponseEntity<List<StoryDto>> getStoriesByProject(@PathVariable Long projectId) {
+    List<StoryDto> stories = storyService.getStoriesByProjectId(projectId);
+    return ResponseEntity.ok(stories);
+}
 }

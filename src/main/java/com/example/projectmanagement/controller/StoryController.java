@@ -11,12 +11,13 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
+import java.util.Map;
  
 @RestController
 
 @RequestMapping("/api/stories")
 
-@CrossOrigin(origins = "http://localhost:5173") 
+@CrossOrigin(origins = "*") 
 
 public class StoryController {
  
@@ -34,18 +35,20 @@ public class StoryController {
         return new ResponseEntity<>(createdStory, HttpStatus.CREATED);
     }
 
+    @GetMapping("/no-epic")
+public ResponseEntity<List<StoryDto>> getStoriesWithoutEpic() {
+    List<StoryDto> stories = storyService.getStoriesWithoutEpic();
+    return ResponseEntity.ok(stories);
+}
+
  
     // ✅ Get story by ID
 
-    @GetMapping("/{id}")
-
-    public ResponseEntity<StoryDto> getStoryById(@PathVariable Long id) {
-
-        StoryDto story = storyService.getStoryById(id);
-
-        return ResponseEntity.ok(story);
-
-    }
+    @GetMapping("/{id:\\d+}")
+public ResponseEntity<StoryDto> getStoryById(@PathVariable Long id) {
+    StoryDto story = storyService.getStoryById(id);
+    return ResponseEntity.ok(story);
+}
  
     // ✅ Get all stories with optional filters and pagination
 
@@ -156,6 +159,16 @@ public class StoryController {
     @GetMapping("/sprint/{sprintId}")
     public ResponseEntity<List<StoryDto>> getStoriesBySprint(@PathVariable Long sprintId) {
         return ResponseEntity.ok(storyService.getStoriesBySprint(sprintId));
+    }
+    @PutMapping("/{storyId}/assign-sprint")
+    public ResponseEntity<String> assignStoryToSprint(
+            @PathVariable Long storyId,
+            @RequestBody(required = false) Map<String, Long> request) {
+
+        Long sprintId = request != null ? request.get("sprintId") : null;
+
+        storyService.assignStoryToSprint(storyId, sprintId);
+        return ResponseEntity.ok("Sprint assignment updated successfully.");
     }
 
 

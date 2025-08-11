@@ -18,7 +18,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/tasks")
-@CrossOrigin(origins = "http://localhost:5173") 
+@CrossOrigin(origins = "*") 
 public class TaskController {
     
     @Autowired
@@ -84,5 +84,10 @@ public class TaskController {
     public ResponseEntity<?> getTaskCountByStory(@PathVariable Long storyId) {
         long count = taskService.countTasksByStoryId(storyId);
         return ResponseEntity.ok(Map.of("storyId", storyId, "taskCount", count));
+    }
+    @GetMapping("/assignee/{assigneeId}")
+    public ResponseEntity<List<TaskDto>> getTasksByAssignee(@PathVariable Long assigneeId) {
+        List<TaskDto> tasks = taskService.getTasksByAssignee(assigneeId);
+        return ResponseEntity.ok(tasks);
     }
 }

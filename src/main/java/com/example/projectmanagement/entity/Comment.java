@@ -26,8 +26,11 @@ public class Comment {
     @JoinColumn(name = "task_id")
     private Task task;
 
+    // @ManyToOne(fetch = FetchType.LAZY)
+    // @JoinColumn(name = "story_id")
+    // private Story story;
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "story_id")
+    @JoinColumn(name = "story_id", nullable = false)
     private Story story;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -40,6 +43,9 @@ public class Comment {
 
     @OneToMany(mappedBy = "parent", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<Comment> replies = new ArrayList<>();
+
+    
+
 
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

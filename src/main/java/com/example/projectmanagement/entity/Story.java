@@ -7,6 +7,7 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -39,9 +40,16 @@ public class Story {
     @Column(name = "acceptance_criteria", length = 2000)
     private String acceptanceCriteria;
     
+    // @ManyToOne(fetch = FetchType.LAZY)
+    // @JoinColumn(name = "epic_id", nullable = false)
+    // private Epic epic;
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "epic_id", nullable = false)
     private Epic epic;
+
+    @OneToMany(mappedBy = "story", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Task> tasks = new ArrayList<>();
+
     
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "assignee_id")
@@ -59,8 +67,12 @@ public class Story {
     @JoinColumn(name = "sprint_id", nullable = false)
     private Sprint sprint;
 
-    @OneToMany(mappedBy = "story", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<Task> tasks;
+    @OneToMany(mappedBy = "story", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Comment> comments = new ArrayList<>();
+
+
+    // @OneToMany(mappedBy = "story", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    // private List<Task> tasks;
     
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)

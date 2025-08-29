@@ -51,7 +51,7 @@ public class User {
 
     // Enum inside the class
     public enum UserRole {
-        ADMIN, DEVELOPER, TESTER, PRODUCT_OWNER, SCRUM_MASTER
+        Admin, DEVELOPER, TESTER, PRODUCT_OWNER, SCRUM_MASTER,Employee,Manager
     }
 
     // Constructors

@@ -1,10 +1,15 @@
 package com.example.projectmanagement.security;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.web.SecurityFilterChain;
 
 @Configuration
@@ -33,5 +38,25 @@ public class Securityconfig {
             );
 
         return http.build();
+    }
+    private JwtAuthenticationConverter jwtAuthenticationConverter() {
+        JwtAuthenticationConverter converter = new JwtAuthenticationConverter();
+        converter.setJwtGrantedAuthoritiesConverter(jwt -> {
+            List<GrantedAuthority> authorities = new ArrayList<>();
+            List<String> roles = jwt.getClaimAsStringList("roles");
+            if (roles != null) {
+                for (String role : roles) {
+                    authorities.add(new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_" + role.replace(" ", "_").toUpperCase()));
+                }
+            }
+//            List<String> permissions = jwt.getClaimAsStringList("permissions");
+//            if (permissions != null) {
+//                for (String perm : permissions) {
+//                    authorities.add(new org.springframework.security.core.authority.SimpleGrantedAuthority(perm));
+//                }
+//            }
+            return authorities;
+        });
+        return converter;
     }
 }

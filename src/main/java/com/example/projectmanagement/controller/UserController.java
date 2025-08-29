@@ -14,6 +14,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -30,18 +31,21 @@ public class UserController {
     private TaskService taskService;
     
     @PostMapping
+    @PreAuthorize("hasRole('Manager')")
     public ResponseEntity<UserDto> createUser(@Valid @RequestBody UserDto userDto) {
         UserDto createdUser = userService.createUser(userDto);
         return new ResponseEntity<>(createdUser, HttpStatus.CREATED);
     }
     
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('Manager','Admin','Employee')")
     public ResponseEntity<UserDto> getUserById(@PathVariable Long id) {
         UserDto user = userService.getUserById(id);
         return ResponseEntity.ok(user);
     }
     
     @GetMapping
+    @PreAuthorize("hasAnyRole('Manager','Admin','Employee')")
     public ResponseEntity<Page<UserDto>> getAllUsers(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
@@ -59,24 +63,28 @@ public class UserController {
     }
     
     @GetMapping("/role/{role}")
+    @PreAuthorize("hasAnyRole('Manager','Admin','Employee')")
     public ResponseEntity<List<UserDto>> getUsersByRole(@PathVariable User.UserRole role) {
         List<UserDto> users = userService.getUsersByRole(role);
         return ResponseEntity.ok(users);
     }
     
     @GetMapping("/project/{projectId}")
+    @PreAuthorize("hasAnyRole('Manager','Admin','Employee')")
     public ResponseEntity<List<UserDto>> getUsersByProject(@PathVariable Long projectId) {
         List<UserDto> users = userService.getUsersByProject(projectId);
         return ResponseEntity.ok(users);
     }
     
     @GetMapping("/{userId}/tasks")
+    @PreAuthorize("hasAnyRole('Manager','Admin','Employee')")
     public ResponseEntity<List<TaskDto>> getUserTasks(@PathVariable Long userId) {
         List<TaskDto> tasks = taskService.getTasksByAssignee(userId);
         return ResponseEntity.ok(tasks);
     }
     
     @PutMapping("/{id}")
+    @PreAuthorize("hasRole('Manager')")
 public ResponseEntity<UserDto> updateUser(@PathVariable Long id, @RequestBody UserDto userDto) {
     UserDto updated = userService.updateUser(id, userDto);
     return ResponseEntity.ok(updated);
@@ -84,6 +92,7 @@ public ResponseEntity<UserDto> updateUser(@PathVariable Long id, @RequestBody Us
 
     
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('Manager')")
     public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
         userService.deleteUser(id);
         return ResponseEntity.noContent().build();

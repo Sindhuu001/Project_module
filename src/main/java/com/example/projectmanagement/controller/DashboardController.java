@@ -9,11 +9,12 @@ import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/dashboard")
-@CrossOrigin(origins = "http://localhost:5173") 
+@CrossOrigin(origins = "*") 
 public class DashboardController {
 @Autowired
 private ReminderService reminderService;
@@ -25,14 +26,16 @@ private ReminderService reminderService;
     }
 
     @GetMapping("/summary")
+    @PreAuthorize("hasAnyRole('Manager','Admin','Employee')")
     public ResponseEntity<DashboardSummaryDto> getDashboardSummary() {
         return ResponseEntity.ok(dashboardService.getSummary());
     }
 
     @GetMapping("/reminders")
-public ResponseEntity<Map<String, Long>> getReminders() {
-    return ResponseEntity.ok(dashboardService.getReminders());
-}
+    @PreAuthorize("hasAnyRole('Manager','Employee')")
+    public ResponseEntity<Map<String, Long>> getReminders() {
+        return ResponseEntity.ok(dashboardService.getReminders());
+    }
 
 
 }

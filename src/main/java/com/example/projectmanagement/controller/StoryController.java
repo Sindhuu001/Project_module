@@ -9,6 +9,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.method.P;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Map;
@@ -30,12 +32,14 @@ public class StoryController {
     // ✅ Create a story
 
     @PostMapping
+    @PreAuthorize("hasRole('Manager')")
     public ResponseEntity<StoryDto> createStory(@Valid @RequestBody StoryDto storyDto) {
         StoryDto createdStory = storyService.createStory(storyDto);
         return new ResponseEntity<>(createdStory, HttpStatus.CREATED);
     }
 
     @GetMapping("/no-epic")
+    @PreAuthorize("hasAnyRole('Manager','Admin','Employee')")
 public ResponseEntity<List<StoryDto>> getStoriesWithoutEpic() {
     List<StoryDto> stories = storyService.getStoriesWithoutEpic();
     return ResponseEntity.ok(stories);
@@ -45,6 +49,7 @@ public ResponseEntity<List<StoryDto>> getStoriesWithoutEpic() {
     // ✅ Get story by ID
 
     @GetMapping("/{id:\\d+}")
+    @PreAuthorize("hasAnyRole('Manager','Admin','Employee')")
 public ResponseEntity<StoryDto> getStoryById(@PathVariable Long id) {
     StoryDto story = storyService.getStoryById(id);
     return ResponseEntity.ok(story);
@@ -53,7 +58,7 @@ public ResponseEntity<StoryDto> getStoryById(@PathVariable Long id) {
     // ✅ Get all stories with optional filters and pagination
 
     @GetMapping
-
+    @PreAuthorize("hasAnyRole('Manager','Admin','Employee')")
     public ResponseEntity<Page<StoryDto>> getAllStories(
 
             @RequestParam(defaultValue = "0") int page,
@@ -95,7 +100,7 @@ public ResponseEntity<StoryDto> getStoryById(@PathVariable Long id) {
     // ✅ Get all tasks under a story
 
     @GetMapping("/{id}/tasks")
-
+    @PreAuthorize("hasAnyRole('Manager','Admin','Employee')")
     public ResponseEntity<List<TaskDto>> getStoryTasks(@PathVariable Long id) {
 
         List<TaskDto> tasks = taskService.getTasksByStory(id);
@@ -107,7 +112,7 @@ public ResponseEntity<StoryDto> getStoryById(@PathVariable Long id) {
     // ✅ Get stories by status
 
     @GetMapping("/status/{status}")
-
+    @PreAuthorize("hasAnyRole('Manager','Admin','Employee')")
     public ResponseEntity<List<StoryDto>> getStoriesByStatus(@PathVariable Story.StoryStatus status) {
 
         List<StoryDto> stories = storyService.getStoriesByStatus(status);
@@ -119,7 +124,7 @@ public ResponseEntity<StoryDto> getStoryById(@PathVariable Long id) {
     // ✅ Get stories by assignee ID
 
     @GetMapping("/assignee/{assigneeId}")
-
+    @PreAuthorize("hasAnyRole('Manager','Admin','Employee')")
     public ResponseEntity<List<StoryDto>> getStoriesByAssignee(@PathVariable Long assigneeId) {
 
         List<StoryDto> stories = storyService.getStoriesByAssignee(assigneeId);
@@ -128,6 +133,7 @@ public ResponseEntity<StoryDto> getStoryById(@PathVariable Long id) {
 
     }
     @GetMapping("/epic/{epicId}")
+    @PreAuthorize("hasAnyRole('Manager','Admin','Employee')")
     public ResponseEntity<List<StoryDto>> getStoriesByEpic(@PathVariable Long epicId) {
         List<StoryDto> stories = storyService.getStoriesByEpic(epicId);
         return ResponseEntity.ok(stories);
@@ -136,7 +142,7 @@ public ResponseEntity<StoryDto> getStoryById(@PathVariable Long id) {
     // ✅ Update a story
 
     @PutMapping("/{id}")
-
+    @PreAuthorize("hasRole('Manager')")
     public ResponseEntity<StoryDto> updateStory(@PathVariable Long id, @Valid @RequestBody StoryDto storyDto) {
 
         StoryDto updatedStory = storyService.updateStory(id, storyDto);
@@ -148,7 +154,7 @@ public ResponseEntity<StoryDto> getStoryById(@PathVariable Long id) {
     // ✅ Delete a story
 
     @DeleteMapping("/{id}")
-
+    @PreAuthorize("hasRole('Manager')")
     public ResponseEntity<Void> deleteStory(@PathVariable Long id) {
 
         storyService.deleteStory(id);

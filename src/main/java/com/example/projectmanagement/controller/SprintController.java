@@ -11,6 +11,7 @@ import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.*;
 import org.springframework.http.*;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
@@ -32,6 +33,7 @@ public class SprintController {
 
     // Create Sprint with User context
     @PostMapping
+    @PreAuthorize("hasRole('Manager')")
     public ResponseEntity<SprintDto> createSprint(@Valid @RequestBody SprintDto sprintDto) {
         User currentUser = userRepository.findById(1L)
                 .orElseThrow(() -> new RuntimeException("User not found"));
@@ -40,12 +42,14 @@ public class SprintController {
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('Manager','Admin','Employee')")
     public ResponseEntity<SprintDto> getSprintById(@PathVariable Long id) {
         SprintDto sprint = sprintService.getSprintById(id);
         return ResponseEntity.ok(sprint);
     }
 
     @GetMapping
+    @PreAuthorize("hasAnyRole('Manager','Admin','Employee')")
     public ResponseEntity<Page<SprintDto>> getAllSprints(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
@@ -61,12 +65,14 @@ public class SprintController {
     }
 
     @GetMapping("/{sprintId}/tasks")
+    @PreAuthorize("hasAnyRole('Manager','Admin','Employee')")
     public ResponseEntity<List<TaskDto>> getSprintTasks(@PathVariable Long sprintId) {
         List<TaskDto> tasks = taskService.getTasksBySprint(sprintId);
         return ResponseEntity.ok(tasks);
     }
 
     @PostMapping("/{sprintId}/tasks")
+    @PreAuthorize("hasRole('Manager')")
     public ResponseEntity<TaskDto> addTaskToSprint(@PathVariable Long sprintId, @Valid @RequestBody TaskDto taskDto) {
         taskDto.setSprintId(sprintId);
         TaskDto createdTask = taskService.createTask(taskDto);
@@ -74,30 +80,35 @@ public class SprintController {
     }
 
     @PostMapping("/{sprintId}/tasks/{taskId}")
+    @PreAuthorize("hasRole('Manager')")
     public ResponseEntity<TaskDto> assignTaskToSprint(@PathVariable Long sprintId, @PathVariable Long taskId) {
         TaskDto updatedTask = taskService.assignTaskToSprint(taskId, sprintId);
         return ResponseEntity.ok(updatedTask);
     }
 
     @DeleteMapping("/{sprintId}/tasks/{taskId}")
+    @PreAuthorize("hasRole('Manager')")
     public ResponseEntity<TaskDto> removeTaskFromSprint(@PathVariable Long sprintId, @PathVariable Long taskId) {
         TaskDto updatedTask = taskService.removeTaskFromSprint(taskId);
         return ResponseEntity.ok(updatedTask);
     }
 
     @GetMapping("/status/{status}")
+    @PreAuthorize("hasAnyRole('Manager','Admin','Employee')")
     public ResponseEntity<List<SprintDto>> getSprintsByStatus(@PathVariable Sprint.SprintStatus status) {
         List<SprintDto> sprints = sprintService.getSprintsByStatus(status);
         return ResponseEntity.ok(sprints);
     }
 
     @GetMapping("/active")
+    @PreAuthorize("hasAnyRole('Manager','Admin','Employee')")
     public ResponseEntity<List<SprintDto>> getActiveSprints() {
         List<SprintDto> sprints = sprintService.getActiveSprintsOnDate(LocalDateTime.now());
         return ResponseEntity.ok(sprints);
     }
 
     @GetMapping("/overdue")
+    @PreAuthorize("hasAnyRole('Manager','Admin','Employee')")
     public ResponseEntity<List<SprintDto>> getOverdueSprints() {
         List<SprintDto> sprints = sprintService.getOverdueSprints();
         return ResponseEntity.ok(sprints);
@@ -105,6 +116,7 @@ public class SprintController {
 
     // Complete sprint (no User context needed)
     @PutMapping("/{id}/complete")
+    @PreAuthorize("hasRole('Manager')")
     public ResponseEntity<SprintDto> completeSprint(@PathVariable Long id) {
         SprintDto updatedSprint = sprintService.completeSprint(id);
         return ResponseEntity.ok(updatedSprint);
@@ -112,11 +124,13 @@ public class SprintController {
 
     // Update sprint with User context
     @PutMapping("/{id}")
+    @PreAuthorize("hasRole('Manager')")
 public ResponseEntity<SprintDto> updateSprint(@PathVariable Long id, @Valid @RequestBody SprintDto sprintDto) {
     SprintDto updatedSprint = sprintService.updateSprint(id, sprintDto); // ✅ Only 2 parameters
     return ResponseEntity.ok(updatedSprint);
 }
     @PutMapping("/{id}/start")
+    @PreAuthorize("hasRole('Manager')")
     public ResponseEntity<SprintDto> startSprint(@PathVariable Long id) {
         System.out.println("Hit /api/sprints/" + id + "/start endpoint");
         SprintDto updatedSprint = sprintService.startSprint(id);
@@ -125,6 +139,7 @@ public ResponseEntity<SprintDto> updateSprint(@PathVariable Long id, @Valid @Req
 
     // Delete sprint with User context
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('Manager')")
     public ResponseEntity<Void> deleteSprint(@PathVariable Long id) {
         User currentUser = userRepository.findById(1L)
                 .orElseThrow(() -> new RuntimeException("User not found"));

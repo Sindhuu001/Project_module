@@ -42,13 +42,16 @@ public class ProjectController {
     private StoryService storyService;
 
     // ✅ CREATE a new project
+    
     @PostMapping
+    @PreAuthorize("hasRole('Manager')")
     public ResponseEntity<ProjectDto> createProject(@Valid @RequestBody ProjectDto projectDto) {
         ProjectDto createdProject = projectService.createProject(projectDto);
         return ResponseEntity.status(HttpStatus.CREATED).body(createdProject);
     }
 
     @GetMapping
+    @PreAuthorize("hasAnyRole('Manager','Admin','Employee')")
     public ResponseEntity<List<ProjectDto>> getAllProjects() {
         List<ProjectDto> projects = projectService.getAllProjects();
         return ResponseEntity.ok(projects);
@@ -56,6 +59,7 @@ public class ProjectController {
 
     // ✅ GET project by ID
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('Manager','Admin','Employee')")
     public ResponseEntity<ProjectDto> getProjectById(@PathVariable Long id) {
         ProjectDto project = projectService.getProjectById(id);
         return ResponseEntity.ok(project);
@@ -63,6 +67,7 @@ public class ProjectController {
 
     // ✅ UPDATE project
   @PutMapping("/{id}")
+  @PreAuthorize("hasRole('Manager')")
 public ResponseEntity<ProjectDto> updateProject(@PathVariable Long id,
                                                 @RequestBody ProjectDto updatedProjectDto) {
     ProjectDto updated = projectService.updateProject(id, updatedProjectDto);
@@ -78,6 +83,7 @@ public ResponseEntity<ProjectDto> unarchiveProject(@PathVariable Long projectId)
 
     // ✅ DELETE project
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('Manager')")
     public ResponseEntity<Void> deleteProject(@PathVariable Long id) {
         projectService.deleteProject(id);
         return ResponseEntity.noContent().build();
@@ -102,6 +108,7 @@ public ResponseEntity<ProjectDto> unarchiveProject(@PathVariable Long projectId)
 
     // ✅ GET Epics by project ID
     @GetMapping("/{id}/epics")
+    @PreAuthorize("hasAnyRole('Manager','Admin','Employee')")
     public ResponseEntity<List<EpicDto>> getProjectEpics(@PathVariable Long id) {
         List<EpicDto> epics = epicService.getEpicsByProjectId(id);
         return ResponseEntity.ok(epics);
@@ -109,6 +116,7 @@ public ResponseEntity<ProjectDto> unarchiveProject(@PathVariable Long projectId)
 
     // ✅ GET Sprints by project ID
     @GetMapping("/{id}/sprints")
+    @PreAuthorize("hasAnyRole('Manager','Admin','Employee')")
     public ResponseEntity<List<SprintDto>> getProjectSprints(@PathVariable Long id) {
         List<SprintDto> sprints = sprintService.getSprintsByProject(id);
         return ResponseEntity.ok(sprints);
@@ -116,6 +124,7 @@ public ResponseEntity<ProjectDto> unarchiveProject(@PathVariable Long projectId)
 
     // ✅ GET Tasks by project ID
     @GetMapping("/{id}/tasks")
+    @PreAuthorize("hasAnyRole('Manager','Admin','Employee')")
     public ResponseEntity<List<TaskDto>> getProjectTasks(@PathVariable Long id) {
         List<TaskDto> tasks = taskService.getTasksByProject(id);
         return ResponseEntity.ok(tasks);
@@ -123,6 +132,7 @@ public ResponseEntity<ProjectDto> unarchiveProject(@PathVariable Long projectId)
 
     // ✅ GET Projects by Owner
     @GetMapping("/owner/{ownerId}")
+    @PreAuthorize("hasAnyRole('Manager','Admin','Employee')")
     public ResponseEntity<List<ProjectDto>> getProjectsByOwner(@PathVariable Long ownerId) {
         List<ProjectDto> projects = projectService.getProjectsByOwner(ownerId);
         return ResponseEntity.ok(projects);
@@ -130,6 +140,7 @@ public ResponseEntity<ProjectDto> unarchiveProject(@PathVariable Long projectId)
 
     // ✅ GET Projects by Member
     @GetMapping("/member/{userId}")
+    @PreAuthorize("hasAnyRole('Manager','Admin','Employee')")
     public ResponseEntity<List<ProjectDto>> getProjectsByMember(@PathVariable Long userId) {
         List<ProjectDto> projects = projectService.getProjectsByMember(userId);
         return ResponseEntity.ok(projects);
@@ -137,6 +148,7 @@ public ResponseEntity<ProjectDto> unarchiveProject(@PathVariable Long projectId)
 
     // ✅ Add member to a project
     @PutMapping("/{projectId}/members/{userId}")
+    @PreAuthorize("hasRole('Manager')")
     public ResponseEntity<ProjectDto> addMemberToProject(@PathVariable Long projectId,
             @PathVariable Long userId) {
         ProjectDto updatedProject = projectService.addMemberToProject(projectId, userId);
@@ -144,14 +156,14 @@ public ResponseEntity<ProjectDto> unarchiveProject(@PathVariable Long projectId)
     }
 
     // ✅ Remove member from project
-    @PreAuthorize("hasRole('Manager') or @projectSecurity.hasProjectPermission(#projectId, 'MANAGE_MEMBERS')")
+    @PreAuthorize("hasRole('Manager')")
     @DeleteMapping("/{projectId}/members/{userId}")
     public ResponseEntity<ProjectDto> removeMemberFromProject(@PathVariable Long projectId,
             @PathVariable Long userId) {
         ProjectDto updatedProject = projectService.removeMemberFromProject(projectId, userId);
         return ResponseEntity.ok(updatedProject);
     }
-    @PreAuthorize("hasAnyRole('Manager', 'Developer','Admin')")
+    @PreAuthorize("hasAnyRole('Manager', 'Employee','Admin')")
     @GetMapping("/{projectId}/stories")
 public ResponseEntity<List<StoryDto>> getStoriesByProject(@PathVariable Long projectId) {
     List<StoryDto> stories = storyService.getStoriesByProjectId(projectId);

@@ -1,6 +1,8 @@
 package com.example.projectmanagement.entity;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 import lombok.*;
 
 import java.time.LocalDate;
@@ -17,6 +19,11 @@ public class Epic {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Size(min = 2, max = 100, message = "Name must be between 2 and 100 characters")
+@Pattern(
+    regexp = "^(?!.* {3,})[A-Za-z0-9 ]+$",
+    message = "Name must contain only letters, digits, spaces, and not more than 2 consecutive spaces"
+)
     private String name;
 
     @Column(length = 1000)

@@ -4,6 +4,7 @@ import com.example.projectmanagement.entity.User.UserRole;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
+import java.util.List;
 
 public class UserDto {
 
@@ -19,6 +20,8 @@ public class UserDto {
 
     private UserRole role;
 
+    private List<String> roles;
+
     // Constructors
     public UserDto() {}
 
@@ -32,6 +35,18 @@ public class UserDto {
         this.name = name;
         this.email = email;
         this.role = role;
+    }
+
+    public UserDto(Long id, String name, List<String> roles) {
+        this.id = id;
+        this.name = name;
+        this.roles = roles;
+    }
+    public List<String> getRoles() {
+        return roles;
+    }
+    public void setRoles(List<String> roles) {
+        this.roles = roles;
     }
 
     // Getters and Setters

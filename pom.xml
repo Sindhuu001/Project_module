@@ -61,28 +61,28 @@
             <version>2.5.0</version>
         </dependency>
         <!-- Spring Security -->
-        <!-- <dependency>
+        <dependency>
        
 
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-security</artifactId>
-        </dependency> -->
+        </dependency>
 
         
             <!-- OAuth2 Resource Server for JWT decoding -->
-        <!-- <dependency>
+        <dependency>
 
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-oauth2-resource-server</artifactId>
         </dependency>
-         -->
+        
         
         
             <!-- Needed for JOSE/JWT key decoding with RS256 -->
-        <!-- <dependency>
+        <dependency>
         <groupId>org.springframework.security</groupId>
         <artifactId>spring-security-oauth2-jose</artifactId>
-        </dependency> -->
+        </dependency>
  
 <!-- Springdoc OpenAPI UI -->
 

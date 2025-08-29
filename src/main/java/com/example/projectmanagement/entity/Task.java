@@ -2,6 +2,7 @@ package com.example.projectmanagement.entity;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
@@ -20,6 +21,10 @@ public class Task {
     
     @NotBlank(message = "Task title is required")
     @Size(min = 2, max = 200, message = "Task title must be between 2 and 200 characters")
+    @Pattern(
+        regexp = "^(?!.* {3,})[A-Za-z0-9 ]+$",
+        message = "Name must contain only letters, digits, spaces, and not more than 2 consecutive spaces"
+    )
     @Column(nullable = false)
     private String title;
     

@@ -16,6 +16,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -135,6 +136,7 @@ public ResponseEntity<ProjectDto> unarchiveProject(@PathVariable Long projectId)
     }
 
     // ✅ Add member to a project
+    @PreAuthorize("hasRole('Manager') or @projectSecurity.hasProjectPermission(#projectId, 'MANAGE_MEMBERS')")
     @PostMapping("/{projectId}/members/{userId}")
     public ResponseEntity<ProjectDto> addMemberToProject(@PathVariable Long projectId,
             @PathVariable Long userId) {
@@ -143,12 +145,14 @@ public ResponseEntity<ProjectDto> unarchiveProject(@PathVariable Long projectId)
     }
 
     // ✅ Remove member from project
+    @PreAuthorize("hasRole('Manager') or @projectSecurity.hasProjectPermission(#projectId, 'MANAGE_MEMBERS')")
     @DeleteMapping("/{projectId}/members/{userId}")
     public ResponseEntity<ProjectDto> removeMemberFromProject(@PathVariable Long projectId,
             @PathVariable Long userId) {
         ProjectDto updatedProject = projectService.removeMemberFromProject(projectId, userId);
         return ResponseEntity.ok(updatedProject);
     }
+    @PreAuthorize("hasAnyRole('Manager', 'Developer','Admin')")
     @GetMapping("/{projectId}/stories")
 public ResponseEntity<List<StoryDto>> getStoriesByProject(@PathVariable Long projectId) {
     List<StoryDto> stories = storyService.getStoriesByProjectId(projectId);

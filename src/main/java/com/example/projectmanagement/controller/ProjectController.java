@@ -136,8 +136,7 @@ public ResponseEntity<ProjectDto> unarchiveProject(@PathVariable Long projectId)
     }
 
     // ✅ Add member to a project
-    @PreAuthorize("hasRole('Manager') or @projectSecurity.hasProjectPermission(#projectId, 'MANAGE_MEMBERS')")
-    @PostMapping("/{projectId}/members/{userId}")
+    @PutMapping("/{projectId}/members/{userId}")
     public ResponseEntity<ProjectDto> addMemberToProject(@PathVariable Long projectId,
             @PathVariable Long userId) {
         ProjectDto updatedProject = projectService.addMemberToProject(projectId, userId);

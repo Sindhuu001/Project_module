@@ -1,5 +1,5 @@
 package com.example.projectmanagement.service;
-
+ 
 import com.example.projectmanagement.dto.ProjectDto;
 import com.example.projectmanagement.dto.UserDto;
 import com.example.projectmanagement.entity.Project;
@@ -16,17 +16,17 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 import java.util.stream.Collectors;
-
+ 
 @Service
 @Transactional
 public class ProjectService {
-
+ 
     @Autowired
     private ProjectRepository projectRepository;
-
+ 
     @Autowired
     private UserRepository userRepository;
-
+ 
     @Autowired
     private ModelMapper modelMapper;
 
@@ -81,48 +81,48 @@ public class ProjectService {
                 .orElseThrow(() -> new RuntimeException("Project not found with id: " + id));
         return convertToDto(project);
     }
-
+ 
     @Transactional(readOnly = true)
     public ProjectDto getProjectByKey(String projectKey) {
         Project project = projectRepository.findByProjectKey(projectKey)
                 .orElseThrow(() -> new RuntimeException("Project not found with key: " + projectKey));
         return convertToDto(project);
     }
-
+ 
     @Transactional(readOnly = true)
     public List<ProjectDto> getAllProjects() {
         return projectRepository.findAll().stream()
                 .map(this::convertToDto)
                 .collect(Collectors.toList());
     }
-
+ 
     @Transactional(readOnly = true)
     public Page<ProjectDto> getAllProjects(Pageable pageable) {
         return projectRepository.findAll(pageable)
                 .map(this::convertToDto);
     }
-
+ 
     @Transactional(readOnly = true)
     public List<ProjectDto> getProjectsByOwner(Long ownerId) {
         return projectRepository.findByOwnerId(ownerId).stream()
                 .map(this::convertToDto)
                 .collect(Collectors.toList());
     }
-
+ 
     @Transactional(readOnly = true)
     public List<ProjectDto> getProjectsByMember(Long userId) {
         return projectRepository.findByMemberId(userId).stream()
                 .map(this::convertToDto)
                 .collect(Collectors.toList());
     }
-
+ 
     @Transactional(readOnly = true)
     public List<ProjectDto> getProjectsByStatus(Project.ProjectStatus status) {
         return projectRepository.findByStatus(status).stream()
                 .map(this::convertToDto)
                 .collect(Collectors.toList());
     }
-
+ 
     public ProjectDto updateProject(Long id, ProjectDto updatedDto) {
         List<String> errors = new ArrayList<>();
 
@@ -181,35 +181,35 @@ public class ProjectService {
         }
         projectRepository.deleteById(id);
     }
-
+ 
     public ProjectDto addMemberToProject(Long projectId, Long userId) {
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new RuntimeException("Project not found with id: " + projectId));
-
+ 
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
-
+ 
         if (!project.getMembers().contains(user)) {
             project.getMembers().add(user);
             projectRepository.save(project);
         }
-
+ 
         return convertToDto(project);
     }
-
+ 
     public ProjectDto removeMemberFromProject(Long projectId, Long userId) {
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new RuntimeException("Project not found with id: " + projectId));
-
+ 
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
-
+ 
         project.getMembers().remove(user);
         projectRepository.save(project);
-
+ 
         return convertToDto(project);
     }
-
+ 
     @Transactional(readOnly = true)
     public Page<ProjectDto> searchProjects(String name, Project.ProjectStatus status, Pageable pageable) {
         if (name != null && status != null) {
@@ -226,7 +226,7 @@ public class ProjectService {
                     .map(this::convertToDto);
         }
     }
-
+ 
     private ProjectDto convertToDto(Project project) {
         ProjectDto dto = modelMapper.map(project, ProjectDto.class);
 
@@ -265,3 +265,4 @@ public class ProjectService {
     }
 
 }
+ 

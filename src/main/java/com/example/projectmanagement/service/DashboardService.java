@@ -2,7 +2,7 @@ package com.example.projectmanagement.service;
 
 import com.example.projectmanagement.dto.DashboardSummaryDto;
 import com.example.projectmanagement.entity.Epic;
-import com.example.projectmanagement.entity.Sprint;
+
 import com.example.projectmanagement.entity.Story;
 import com.example.projectmanagement.entity.Task;
 import com.example.projectmanagement.repository.*;
@@ -20,20 +20,18 @@ public class DashboardService {
     private final TaskRepository taskRepository;
     private final EpicRepository epicRepository;
     private final SprintRepository sprintRepository;
-    private final UserRepository userRepository;
+    
     private final StoryRepository storyRepository;
 
     public DashboardService(ProjectRepository projectRepository,
                             TaskRepository taskRepository,
                             EpicRepository epicRepository,
                             SprintRepository sprintRepository,
-                            UserRepository userRepository,
                             StoryRepository storyRepository) {
         this.projectRepository = projectRepository;
         this.taskRepository = taskRepository;
         this.epicRepository = epicRepository;
         this.sprintRepository = sprintRepository;
-        this.userRepository = userRepository;
         this.storyRepository = storyRepository;
     }
 
@@ -42,7 +40,7 @@ public class DashboardService {
         long totalTasks = taskRepository.count();
         long totalEpics = epicRepository.count();
         long totalStories = storyRepository.count();
-        long totalUsers = userRepository.count();
+        
 
         // Task status counts
         Map<Task.TaskStatus, Long> taskStatusMap = new EnumMap<>(Task.TaskStatus.class);
@@ -80,7 +78,7 @@ public class DashboardService {
                 .epicStatusCount(epicStatusCount)
                 .totalStories(totalStories)
                 .storyStatusCount(storyStatusCount)
-                .totalUsers(totalUsers)
+                
                 .build();
     }
 
@@ -97,7 +95,7 @@ public class DashboardService {
         reminders.put("todoTaskCount", taskRepository.countByStatus(Task.TaskStatus.TODO));
 
         // 🚩 Projects with no owner
-        reminders.put("unassignedProjectCount", projectRepository.countByOwnerIsNull());
+        reminders.put("unassignedProjectCount", projectRepository.countByOwnerIdIsNull());
 
         // 🕒 Sprints ending within next 2 days
         reminders.put("sprintsEndingSoonCount", sprintRepository.countByEndDateBetween(now, twoDaysLater));

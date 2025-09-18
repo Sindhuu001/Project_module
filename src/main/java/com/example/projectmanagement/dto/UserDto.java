@@ -1,12 +1,18 @@
 package com.example.projectmanagement.dto;
 
-import com.example.projectmanagement.entity.User.UserRole;
+import java.util.List;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
+import lombok.Data;
 
+@Data
 public class UserDto {
 
+    @JsonProperty("user_id")
     private Long id;
 
     @NotBlank(message = "Name is required")
@@ -15,35 +21,25 @@ public class UserDto {
 
     @Email(message = "Email should be valid")
     @NotBlank(message = "Email is required")
+    @JsonProperty("mail")
     private String email;
 
-    private UserRole role;
+    private List<String> roles;
 
     // Constructors
     public UserDto() {}
 
-    public UserDto(Long id, String name, UserRole role) {
+    public UserDto(Long id, String name, List<String> roles) {
         this.id = id;
         this.name = name;
-        this.role = role;
+        this.roles = roles;
     }
 
-    public UserDto(String name, String email, UserRole role) {
+    public UserDto(String name, String email, List<String> roles) {
         this.name = name;
         this.email = email;
-        this.role = role;
+        this.roles = roles;
     }
 
-    // Getters and Setters
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
-
-    public String getName() { return name; }
-    public void setName(String name) { this.name = name; }
-
-    public String getEmail() { return email; }
-    public void setEmail(String email) { this.email = email; }
-
-    public UserRole getRole() { return role; }
-    public void setRole(UserRole role) { this.role = role; }
+    
 }

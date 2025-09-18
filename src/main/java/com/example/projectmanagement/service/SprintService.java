@@ -1,10 +1,12 @@
 // 📁 SprintService.java - Updated with 'updateSprint' method accepting only 2 parameters
 package com.example.projectmanagement.service;
 
+import com.example.projectmanagement.client.UserClient;
 import com.example.projectmanagement.dto.SprintDto;
+import com.example.projectmanagement.dto.UserDto;
 import com.example.projectmanagement.entity.Project;
 import com.example.projectmanagement.entity.Sprint;
-import com.example.projectmanagement.entity.User;
+
 import com.example.projectmanagement.repository.ProjectRepository;
 import com.example.projectmanagement.repository.SprintRepository;
 import com.example.projectmanagement.entity.RolePermissionChecker;
@@ -12,6 +14,7 @@ import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,8 +35,11 @@ public class SprintService {
     @Autowired
     private ModelMapper modelMapper;
 
-    public SprintDto createSprint(SprintDto sprintDto, User currentUser) {
-        if (!RolePermissionChecker.canCreateSprint(currentUser.getRole())) {
+    private UserClient userClient;
+
+    public SprintDto createSprint(SprintDto sprintDto, Long currentUserId) {
+        UserDto currentUserDto = userClient.findById(currentUserId);
+        if (!RolePermissionChecker.canCreateSprint(currentUserDto.getRoles())) {
             throw new RuntimeException("Access denied: You are not allowed to create a sprint.");
         }
 
@@ -114,8 +120,9 @@ public class SprintService {
         return convertToDto(updatedSprint);
     }
 
-    public void deleteSprint(Long id, User currentUser) {
-        if (!RolePermissionChecker.canDeleteSprint(currentUser.getRole())) {
+    public void deleteSprint(Long id, Long currentUserId) {
+        UserDto currentUser = userClient.findById(currentUserId);
+        if (!RolePermissionChecker.canDeleteSprint(currentUser.getRoles())) {
             throw new RuntimeException("Access denied: You are not allowed to delete sprints.");
         }
 

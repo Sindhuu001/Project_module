@@ -1,6 +1,8 @@
 package com.example.projectmanagement.service;
 
+import com.example.projectmanagement.client.UserClient;
 import com.example.projectmanagement.dto.StoryDto;
+import com.example.projectmanagement.dto.UserDto;
 import com.example.projectmanagement.entity.*;
 import com.example.projectmanagement.repository.*;
 
@@ -30,11 +32,12 @@ public class StoryService {
     @Autowired
     private ProjectRepository projectRepository;
 
-    @Autowired
-    private UserRepository userRepository;
+    
 
     @Autowired
     private ModelMapper modelMapper;
+
+    private UserClient userClient;
 
     // ✅ Create Story
     public StoryDto createStory(StoryDto storyDto) {
@@ -58,19 +61,19 @@ public class StoryService {
         Project project = projectRepository.findById(storyDto.getProjectId())
                 .orElseThrow(() -> new RuntimeException("Project not found with id: " + storyDto.getProjectId()));
 
-        User reporter = userRepository.findById(storyDto.getReporterId())
-                .orElseThrow(() -> new RuntimeException("Reporter not found with id: " + storyDto.getReporterId()));
+        UserDto reporter = userClient.findById(storyDto.getReporterId());
+                
 
         Story story = modelMapper.map(storyDto, Story.class);
         story.setEpic(epic);
         story.setSprint(sprint);
         story.setProject(project);
-        story.setReporter(reporter);
+        story.setReporterId(reporter.getId());
 
         if (storyDto.getAssigneeId() != null) {
-            User assignee = userRepository.findById(storyDto.getAssigneeId())
-                    .orElseThrow(() -> new RuntimeException("Assignee not found with id: " + storyDto.getAssigneeId()));
-            story.setAssignee(assignee);
+            UserDto assignee = userClient.findById(storyDto.getAssigneeId());
+                
+            story.setAssigneeId(assignee.getId());
         }
 
         Story savedStory = storyRepository.save(story);
@@ -173,11 +176,11 @@ public class StoryService {
         }
 
         if (storyDto.getAssigneeId() != null) {
-            User assignee = userRepository.findById(storyDto.getAssigneeId())
-                    .orElseThrow(() -> new RuntimeException("Assignee not found with id: " + storyDto.getAssigneeId()));
-            existingStory.setAssignee(assignee);
+            UserDto assignee = userClient.findById(storyDto.getAssigneeId());
+            existingStory.setAssigneeId(assignee.getId());
+            
         } else {
-            existingStory.setAssignee(null);
+            existingStory.setAssigneeId(null);
         }
 
         Story updatedStory = storyRepository.save(existingStory);
@@ -204,10 +207,10 @@ public class StoryService {
         StoryDto dto = modelMapper.map(story, StoryDto.class);
 
         dto.setEpicId(story.getEpic() != null ? story.getEpic().getId() : null);
-        dto.setReporterId(story.getReporter() != null ? story.getReporter().getId() : null);
+        dto.setReporterId(story.getReporterId() != null ? story.getReporterId() : null);
         dto.setSprintId(story.getSprint() != null ? story.getSprint().getId() : null);
         dto.setProjectId(story.getProject() != null ? story.getProject().getId() : null);
-        dto.setAssigneeId(story.getAssignee() != null ? story.getAssignee().getId() : null);
+        dto.setAssigneeId(story.getAssigneeId() != null ? story.getAssigneeId() : null);
 
         return dto;
     }

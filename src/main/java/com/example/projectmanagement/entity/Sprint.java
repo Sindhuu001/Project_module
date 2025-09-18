@@ -4,15 +4,19 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+import lombok.Data;
+
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
+import com.example.projectmanagement.dto.UserDto;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
 @Entity
 @Table(name = "sprints")
+@Data
 public class Sprint {
     
     @Id
@@ -60,9 +64,8 @@ public class Sprint {
 
     
 
-    @ManyToOne
-    @JoinColumn(name = "started_by_id")
-    private User startedBy;
+    
+    private Long startedBy;
 
     private LocalDateTime startedAt;
 
@@ -81,47 +84,5 @@ public class Sprint {
     }
     
     // Getters and Setters
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
     
-    public String getName() { return name; }
-    public void setName(String name) { this.name = name; }
-    
-    public String getGoal() { return goal; }
-    public void setGoal(String goal) { this.goal = goal; }
-    
-    public LocalDateTime getStartDate() { return startDate; }
-    public void setStartDate(LocalDateTime startDate) { this.startDate = startDate; }
-    
-    public LocalDateTime getEndDate() { return endDate; }
-    public void setEndDate(LocalDateTime endDate) { this.endDate = endDate; }
-    
-    public SprintStatus getStatus() { return status; }
-    public void setStatus(SprintStatus status) { this.status = status; }
-    
-    public Project getProject() { return project; }
-    public void setProject(Project project) { this.project = project; }
-    
-    public List<Task> getTasks() { return tasks; }
-    public void setTasks(List<Task> tasks) { this.tasks = tasks; }
-    
-    public LocalDateTime getCreatedAt() { return createdAt; }
-    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
-    
-    public LocalDateTime getUpdatedAt() { return updatedAt; }
-    public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
-
-    public User getStartedBy() {
-        return startedBy;
-    }
-    public void setStartedBy(User startedBy) {
-        this.startedBy = startedBy;
-    }
-
-    public LocalDateTime getStartedAt() {
-        return startedAt;
-    }
-    public void setStartedAt(LocalDateTime startedAt) {
-        this.startedAt = startedAt;
-    }
 }

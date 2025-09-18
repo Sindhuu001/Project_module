@@ -1,12 +1,13 @@
 package com.example.projectmanagement.service;
 
+import com.example.projectmanagement.client.UserClient;
 import com.example.projectmanagement.dto.ProjectDto;
 import com.example.projectmanagement.dto.UserDto;
 import com.example.projectmanagement.entity.Project;
-import com.example.projectmanagement.entity.User;
+
 import com.example.projectmanagement.exception.ValidationException;
 import com.example.projectmanagement.repository.ProjectRepository;
-import com.example.projectmanagement.repository.UserRepository;
+
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -24,56 +25,64 @@ public class ProjectService {
     @Autowired
     private ProjectRepository projectRepository;
 
-    @Autowired
-    private UserRepository userRepository;
+    // @Autowired
+    // private UserRepository userRepository;
 
     @Autowired
     private ModelMapper modelMapper;
+    
+    @Autowired
+    private UserClient userClient;
 
     public ProjectDto createProject(ProjectDto projectDto) {
-        List<String> errors = new ArrayList<>();
+    List<String> errors = new ArrayList<>();
 
-        if (projectDto.getName() == null || projectDto.getName().trim().isEmpty()) {
-            errors.add("Project name must not be empty.");
-        }
-
-        if (projectDto.getProjectKey() == null || projectDto.getProjectKey().trim().isEmpty()) {
-            errors.add("Project key must be provided.");
-        } else if (projectRepository.existsByProjectKey(projectDto.getProjectKey())) {
-            errors.add("Project with key " + projectDto.getProjectKey() + " already exists.");
-        }
-
-        if (projectDto.getStartDate() == null) {
-            errors.add("Start date is required.");
-        }
-
-        if (projectDto.getStartDate() != null && projectDto.getEndDate() != null &&
-                projectDto.getStartDate().isAfter(projectDto.getEndDate())) {
-            errors.add("Start date cannot be after end date.");
-        }
-
-        if (projectDto.getOwnerId() == null || !userRepository.existsById(projectDto.getOwnerId())) {
-            errors.add("Valid owner ID is required.");
-        }
-
-        if (!errors.isEmpty()) {
-            throw new ValidationException(errors);
-        }
-
-        User owner = userRepository.findById(projectDto.getOwnerId()).get();
-        Project project = modelMapper.map(projectDto, Project.class);
-        project.setOwner(owner);
-
-        // Handle members if provided
-        if (projectDto.getMemberIds() != null && !projectDto.getMemberIds().isEmpty()) {
-            List<User> members = userRepository.findAllById(projectDto.getMemberIds());
-            project.setMembers(members);
-        } else {
-            project.setMembers(new ArrayList<>());
-        }
-
-        return convertToDto(projectRepository.save(project));
+    if (projectDto.getName() == null || projectDto.getName().trim().isEmpty()) {
+        errors.add("Project name must not be empty.");
     }
+
+    if (projectDto.getProjectKey() == null || projectDto.getProjectKey().trim().isEmpty()) {
+        errors.add("Project key must be provided.");
+    } else if (projectRepository.existsByProjectKey(projectDto.getProjectKey())) {
+        errors.add("Project with key " + projectDto.getProjectKey() + " already exists.");
+    }
+
+    if (projectDto.getStartDate() == null) {
+        errors.add("Start date is required.");
+    }
+
+    if (projectDto.getStartDate() != null && projectDto.getEndDate() != null &&
+            projectDto.getStartDate().isAfter(projectDto.getEndDate())) {
+        errors.add("Start date cannot be after end date.");
+    }
+
+    // Validate owner via UMS
+    UserDto owner;
+    try {
+        owner = userClient.findById(projectDto.getOwnerId());
+    } catch (Exception e) {
+        errors.add("Valid owner ID is required.");
+        owner = null;
+    }
+
+    if (!errors.isEmpty()) {
+        throw new ValidationException(errors);
+    }
+
+    Project project = modelMapper.map(projectDto, Project.class);
+    project.setOwnerId(owner.getId()); // store UMS userId
+
+    // Handle members
+    List<Long> memberIds = projectDto.getMemberIds();
+    if (memberIds != null && !memberIds.isEmpty()) {        
+        // store member IDs in Project
+        project.setMemberIds(memberIds);
+    } else {
+        project.setMemberIds(new ArrayList<>());
+    }
+
+    return convertToDto(projectRepository.save(project));
+}
 
     @Transactional(readOnly = true)
     public ProjectDto getProjectById(Long id) {
@@ -141,7 +150,7 @@ public class ProjectService {
             errors.add("Start date cannot be after end date.");
         }
 
-        if (updatedDto.getOwnerId() != null && !userRepository.existsById(updatedDto.getOwnerId())) {
+        if (updatedDto.getOwnerId() != null && userClient.findById(updatedDto.getOwnerId()) != null) {
             errors.add("Owner not found with id: " + updatedDto.getOwnerId());
         }
 
@@ -161,15 +170,15 @@ public class ProjectService {
             existing.setStatus(updatedDto.getStatus());
 
             if (updatedDto.getOwnerId() != null) {
-                User owner = userRepository.findById(updatedDto.getOwnerId()).get();
-                existing.setOwner(owner);
+                UserDto owner = userClient.findById(updatedDto.getOwnerId());
+                existing.setOwnerId(owner.getId());
             }
         }
 
         // Update members if provided
         if (updatedDto.getMemberIds() != null) {
-            List<User> members = userRepository.findAllById(updatedDto.getMemberIds());
-            existing.setMembers(members);
+            List<Long> memberIds = updatedDto.getMemberIds();
+            existing.setMemberIds(memberIds);
         }
 
         return convertToDto(projectRepository.save(existing));
@@ -186,11 +195,10 @@ public class ProjectService {
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new RuntimeException("Project not found with id: " + projectId));
 
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
+        
 
-        if (!project.getMembers().contains(user)) {
-            project.getMembers().add(user);
+        if (!project.getMemberIds().contains(userId)) {
+            project.getMemberIds().add(userId);
             projectRepository.save(project);
         }
 
@@ -201,10 +209,9 @@ public class ProjectService {
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new RuntimeException("Project not found with id: " + projectId));
 
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
+        
 
-        project.getMembers().remove(user);
+        project.getMemberIds().remove(userId);
         projectRepository.save(project);
 
         return convertToDto(project);
@@ -230,21 +237,15 @@ public class ProjectService {
     private ProjectDto convertToDto(Project project) {
         ProjectDto dto = modelMapper.map(project, ProjectDto.class);
 
-        dto.setOwnerId(project.getOwner().getId());
+        dto.setOwnerId(project.getOwnerId());
         dto.setStartDate(project.getStartDate());
         dto.setEndDate(project.getEndDate());
 
         // Set memberIds and member UserDtos
-        if (project.getMembers() != null) {
-            List<Long> memberIds = project.getMembers().stream()
-                    .map(User::getId)
-                    .collect(Collectors.toList());
+        if (project.getMemberIds() != null) {
+            List<Long> memberIds = project.getMemberIds();
             dto.setMemberIds(memberIds);
-
-            List<UserDto> memberDtos = project.getMembers().stream()
-                    .map(user -> modelMapper.map(user, UserDto.class))
-                    .collect(Collectors.toList());
-            dto.setMembers(memberDtos);
+  
         }
 
         return dto;

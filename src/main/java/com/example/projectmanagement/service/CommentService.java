@@ -1,6 +1,8 @@
 package com.example.projectmanagement.service;
 
+import com.example.projectmanagement.client.UserClient;
 import com.example.projectmanagement.dto.CommentDto;
+import com.example.projectmanagement.dto.UserDto;
 import com.example.projectmanagement.entity.*;
 import com.example.projectmanagement.repository.*;
 import lombok.RequiredArgsConstructor;
@@ -18,14 +20,14 @@ public class CommentService {
     private final TaskRepository taskRepository;
     private final StoryRepository storyRepository;
     private final EpicRepository epicRepository;
-    private final UserRepository userRepository;
+    
+    private final UserClient userClient;
 
     // ------------- Add Comment to TASK -------------
     public CommentDto addCommentToTask(Long taskId, CommentDto dto) {
         Task task = getTaskById(taskId);
-        User user = getUserById(dto.getUserId());
 
-        Comment comment = buildComment(user, dto.getContent(), dto.getParentId());
+        Comment comment = buildComment(dto.getUserId(), dto.getContent(), dto.getParentId());
         comment.setTask(task);
 
         return mapToDto(commentRepository.save(comment));
@@ -34,9 +36,9 @@ public class CommentService {
     // ------------- Add Comment to STORY -------------
     public CommentDto addCommentToStory(Long storyId, CommentDto dto) {
         Story story = getStoryById(storyId);
-        User user = getUserById(dto.getUserId());
+        
 
-        Comment comment = buildComment(user, dto.getContent(), dto.getParentId());
+        Comment comment = buildComment(dto.getUserId(), dto.getContent(), dto.getParentId());
         comment.setStory(story);
 
         return mapToDto(commentRepository.save(comment));
@@ -45,9 +47,9 @@ public class CommentService {
     // ------------- Add Comment to EPIC -------------
     public CommentDto addCommentToEpic(Long epicId, CommentDto dto) {
         Epic epic = getEpicById(epicId);
-        User user = getUserById(dto.getUserId());
+        
 
-        Comment comment = buildComment(user, dto.getContent(), dto.getParentId());
+        Comment comment = buildComment(dto.getUserId(), dto.getContent(), dto.getParentId());
         comment.setEpic(epic);
 
         return mapToDto(commentRepository.save(comment));
@@ -84,7 +86,7 @@ public class CommentService {
         Comment comment = commentRepository.findById(commentId)
                 .orElseThrow(() -> new RuntimeException("Comment not found"));
 
-        if (!comment.getUser().getId().equals(userId)) {
+        if (!comment.getUserId().equals(userId)) {
             throw new RuntimeException("Unauthorized: cannot delete comment by another user");
         }
 
@@ -92,9 +94,9 @@ public class CommentService {
     }
 
     // ------------- Helpers -------------
-    private Comment buildComment(User user, String content, Long parentId) {
+    private Comment buildComment(Long userId, String content, Long parentId) {
         Comment comment = new Comment();
-        comment.setUser(user);
+        comment.setUserId(userId);
         comment.setContent(content);
         comment.setCreatedAt(LocalDateTime.now());
 
@@ -122,16 +124,20 @@ public class CommentService {
                 .orElseThrow(() -> new RuntimeException("Epic not found with ID: " + epicId));
     }
 
-    private User getUserById(Long userId) {
-        return userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found with ID: " + userId));
-    }
+    // private UserDto getUserById(Long userId) {
+    //     return userClient.findById(userId);
+    // }
 
     private CommentDto mapToDto(Comment comment) {
         CommentDto dto = new CommentDto();
+        UserDto user = userClient.findById(comment.getUserId());
+        if (user != null) {
+            dto.setUserName(user.getName());
+        } else {
+            dto.setUserName("Unknown User");
+        }
         dto.setId(comment.getId());
-        dto.setUserId(comment.getUser().getId());
-        dto.setUserName(comment.getUser().getName());
+        dto.setUserId(comment.getUserId());
         dto.setContent(comment.getContent());
         dto.setCreatedAt(comment.getCreatedAt());
         if (comment.getParent() != null) {

@@ -1,15 +1,17 @@
 package com.example.projectmanagement.controller;
 
+import com.example.projectmanagement.client.UserClient;
 import com.example.projectmanagement.dto.SprintDto;
 import com.example.projectmanagement.dto.TaskDto;
+import com.example.projectmanagement.dto.UserDto;
 import com.example.projectmanagement.entity.Sprint;
-import com.example.projectmanagement.entity.User;
-import com.example.projectmanagement.repository.UserRepository;
+
 import com.example.projectmanagement.service.SprintService;
 import com.example.projectmanagement.service.TaskService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.*;
+
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
 
@@ -28,14 +30,15 @@ public class SprintController {
     private TaskService taskService;
 
     @Autowired
-    private UserRepository userRepository;
+    private UserClient userClient;
 
     // Create Sprint with User context
     @PostMapping
+    // @PreAuthorize("hasRole('Manager')")
     public ResponseEntity<SprintDto> createSprint(@Valid @RequestBody SprintDto sprintDto) {
-        User currentUser = userRepository.findById(1L)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-        SprintDto createdSprint = sprintService.createSprint(sprintDto, currentUser);
+        UserDto currentUser = userClient.findById(1L);
+                
+        SprintDto createdSprint = sprintService.createSprint(sprintDto, currentUser.getId());
         return new ResponseEntity<>(createdSprint, HttpStatus.CREATED);
     }
 
@@ -80,6 +83,7 @@ public class SprintController {
     }
 
     @DeleteMapping("/{sprintId}/tasks/{taskId}")
+    // @PreAuthorize("hasRole('Manager')")
     public ResponseEntity<TaskDto> removeTaskFromSprint(@PathVariable Long sprintId, @PathVariable Long taskId) {
         TaskDto updatedTask = taskService.removeTaskFromSprint(taskId);
         return ResponseEntity.ok(updatedTask);
@@ -126,9 +130,9 @@ public ResponseEntity<SprintDto> updateSprint(@PathVariable Long id, @Valid @Req
     // Delete sprint with User context
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteSprint(@PathVariable Long id) {
-        User currentUser = userRepository.findById(1L)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-        sprintService.deleteSprint(id, currentUser);
+        UserDto currentUserId = userClient.findById(1L);
+                
+        sprintService.deleteSprint(id, currentUserId.getId());
         return ResponseEntity.noContent().build();
     }
 }

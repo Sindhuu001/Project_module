@@ -21,7 +21,7 @@ public class CommentService {
     private final StoryRepository storyRepository;
     private final EpicRepository epicRepository;
     
-    private final UserClient userClient;
+    private UserService userService;
 
     // ------------- Add Comment to TASK -------------
     public CommentDto addCommentToTask(Long taskId, CommentDto dto) {
@@ -130,7 +130,7 @@ public class CommentService {
 
     private CommentDto mapToDto(Comment comment) {
         CommentDto dto = new CommentDto();
-        UserDto user = userClient.findById(comment.getUserId());
+        UserDto user = userService.getUserWithRoles(comment.getUserId());
         if (user != null) {
             dto.setUserName(user.getName());
         } else {

@@ -34,7 +34,7 @@ public class PerformanceService {
     private UserClient userClient;
 
     public List<EmployeePerformanceDto> getAllEmployeePerformance() {
-        List<UserDto> users = userClient.findAllById();
+        List<UserDto> users = userClient.findAll();
         List<EmployeePerformanceDto> performanceList = new ArrayList<>();
 
         for (UserDto user : users) {

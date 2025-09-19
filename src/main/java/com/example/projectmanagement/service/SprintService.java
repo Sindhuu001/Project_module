@@ -14,7 +14,7 @@ import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-
+import org.springframework.security.access.method.P;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -35,10 +35,14 @@ public class SprintService {
     @Autowired
     private ModelMapper modelMapper;
 
-    private UserClient userClient;
+    @Autowired
+    private UserService userService;
+
+    @Autowired
+    private ProjectService projectService;
 
     public SprintDto createSprint(SprintDto sprintDto, Long currentUserId) {
-        UserDto currentUserDto = userClient.findById(currentUserId);
+        UserDto currentUserDto = userService.getUserWithRoles(currentUserId);
         if (!RolePermissionChecker.canCreateSprint(currentUserDto.getRoles())) {
             throw new RuntimeException("Access denied: You are not allowed to create a sprint.");
         }
@@ -121,7 +125,7 @@ public class SprintService {
     }
 
     public void deleteSprint(Long id, Long currentUserId) {
-        UserDto currentUser = userClient.findById(currentUserId);
+        UserDto currentUser = userService.getUserWithRoles(currentUserId);
         if (!RolePermissionChecker.canDeleteSprint(currentUser.getRoles())) {
             throw new RuntimeException("Access denied: You are not allowed to delete sprints.");
         }
@@ -194,9 +198,10 @@ public class SprintService {
         }
     }
 
-    private SprintDto convertToDto(Sprint sprint) {
+    public SprintDto convertToDto(Sprint sprint) {
         SprintDto dto = modelMapper.map(sprint, SprintDto.class);
         dto.setProjectId(sprint.getProject().getId());
+        dto.setProject(projectService.convertToDto(sprint.getProject()));
         return dto;
     }
 }

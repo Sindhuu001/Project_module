@@ -8,6 +8,8 @@ import com.example.projectmanagement.entity.Project;
 import com.example.projectmanagement.exception.ValidationException;
 import com.example.projectmanagement.repository.ProjectRepository;
 
+import lombok.AllArgsConstructor;
+
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -20,11 +22,12 @@ import java.util.stream.Collectors;
 
 @Service
 @Transactional
+@AllArgsConstructor
 public class ProjectService {
 
     @Autowired
     private ProjectRepository projectRepository;
-
+    
     // @Autowired
     // private UserRepository userRepository;
 
@@ -33,6 +36,9 @@ public class ProjectService {
     
     @Autowired
     private UserClient userClient;
+
+    @Autowired
+    private UserService userService;
 
     public ProjectDto createProject(ProjectDto projectDto) {
     List<String> errors = new ArrayList<>();
@@ -59,7 +65,7 @@ public class ProjectService {
     // Validate owner via UMS
     UserDto owner;
     try {
-        owner = userClient.findById(projectDto.getOwnerId());
+        owner = userService.getUserWithRoles(projectDto.getOwnerId());
     } catch (Exception e) {
         errors.add("Valid owner ID is required.");
         owner = null;
@@ -150,7 +156,7 @@ public class ProjectService {
             errors.add("Start date cannot be after end date.");
         }
 
-        if (updatedDto.getOwnerId() != null && userClient.findById(updatedDto.getOwnerId()) != null) {
+        if (updatedDto.getOwnerId() != null && userClient.findExternalById(updatedDto.getOwnerId()) != null) {
             errors.add("Owner not found with id: " + updatedDto.getOwnerId());
         }
 
@@ -170,7 +176,7 @@ public class ProjectService {
             existing.setStatus(updatedDto.getStatus());
 
             if (updatedDto.getOwnerId() != null) {
-                UserDto owner = userClient.findById(updatedDto.getOwnerId());
+                UserDto owner = userService.getUserWithRoles(updatedDto.getOwnerId());
                 existing.setOwnerId(owner.getId());
             }
         }
@@ -234,20 +240,21 @@ public class ProjectService {
         }
     }
 
-    private ProjectDto convertToDto(Project project) {
+    public ProjectDto convertToDto(Project project) {
         ProjectDto dto = modelMapper.map(project, ProjectDto.class);
 
         dto.setOwnerId(project.getOwnerId());
         dto.setStartDate(project.getStartDate());
         dto.setEndDate(project.getEndDate());
+        dto.setOwner(project.getOwnerId() != null ? userService.getUserWithRoles(project.getOwnerId()) : null);
 
         // Set memberIds and member UserDtos
         if (project.getMemberIds() != null) {
             List<Long> memberIds = project.getMemberIds();
             dto.setMemberIds(memberIds);
-  
+            
+            dto.setMembers(userService.getUsersByIds(memberIds));
         }
-
         return dto;
     }
 

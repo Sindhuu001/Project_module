@@ -1,8 +1,8 @@
-// package com.example.projectmanagement.security;
+package com.example.projectmanagement.security;
 
-// import java.lang.annotation.*;
+import java.lang.annotation.*;
 
-// @Target(ElementType.PARAMETER)
-// @Retention(RetentionPolicy.RUNTIME)
-// @Documented
-// public @interface CurrentUser { }
+@Target(ElementType.PARAMETER)
+@Retention(RetentionPolicy.RUNTIME)
+@Documented
+public @interface CurrentUser { }

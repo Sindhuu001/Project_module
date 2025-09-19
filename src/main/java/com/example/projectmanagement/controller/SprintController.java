@@ -5,9 +5,11 @@ import com.example.projectmanagement.dto.SprintDto;
 import com.example.projectmanagement.dto.TaskDto;
 import com.example.projectmanagement.dto.UserDto;
 import com.example.projectmanagement.entity.Sprint;
-
+import com.example.projectmanagement.security.CurrentUser;
 import com.example.projectmanagement.service.SprintService;
 import com.example.projectmanagement.service.TaskService;
+import com.example.projectmanagement.service.UserService;
+
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.*;
@@ -30,13 +32,13 @@ public class SprintController {
     private TaskService taskService;
 
     @Autowired
-    private UserClient userClient;
+    private UserService userService;
 
     // Create Sprint with User context
     @PostMapping
     // @PreAuthorize("hasRole('Manager')")
-    public ResponseEntity<SprintDto> createSprint(@Valid @RequestBody SprintDto sprintDto) {
-        UserDto currentUser = userClient.findById(1L);
+    public ResponseEntity<SprintDto> createSprint(@Valid @RequestBody SprintDto sprintDto,
+                                                  @CurrentUser UserDto currentUser) {
                 
         SprintDto createdSprint = sprintService.createSprint(sprintDto, currentUser.getId());
         return new ResponseEntity<>(createdSprint, HttpStatus.CREATED);
@@ -130,7 +132,7 @@ public ResponseEntity<SprintDto> updateSprint(@PathVariable Long id, @Valid @Req
     // Delete sprint with User context
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteSprint(@PathVariable Long id) {
-        UserDto currentUserId = userClient.findById(1L);
+        UserDto currentUserId = userService.getUserWithRoles(id);
                 
         sprintService.deleteSprint(id, currentUserId.getId());
         return ResponseEntity.noContent().build();

@@ -39,6 +39,9 @@ public class StoryService {
 
     private UserClient userClient;
 
+    @Autowired
+    private UserService userService;
+
     // ✅ Create Story
     public StoryDto createStory(StoryDto storyDto) {
         // Epic epic = epicRepository.findById(storyDto.getEpicId())
@@ -61,7 +64,7 @@ public class StoryService {
         Project project = projectRepository.findById(storyDto.getProjectId())
                 .orElseThrow(() -> new RuntimeException("Project not found with id: " + storyDto.getProjectId()));
 
-        UserDto reporter = userClient.findById(storyDto.getReporterId());
+        UserDto reporter = userService.getUserWithRoles(storyDto.getReporterId());
                 
 
         Story story = modelMapper.map(storyDto, Story.class);
@@ -71,7 +74,7 @@ public class StoryService {
         story.setReporterId(reporter.getId());
 
         if (storyDto.getAssigneeId() != null) {
-            UserDto assignee = userClient.findById(storyDto.getAssigneeId());
+            UserDto assignee = userService.getUserWithRoles(storyDto.getAssigneeId());
                 
             story.setAssigneeId(assignee.getId());
         }
@@ -176,7 +179,7 @@ public class StoryService {
         }
 
         if (storyDto.getAssigneeId() != null) {
-            UserDto assignee = userClient.findById(storyDto.getAssigneeId());
+            UserDto assignee = userService.getUserWithRoles(storyDto.getAssigneeId());
             existingStory.setAssigneeId(assignee.getId());
             
         } else {
@@ -203,7 +206,7 @@ public class StoryService {
     }
 
     // ✅ Convert Entity to DTO (null-safe)
-    private StoryDto convertToDto(Story story) {
+    StoryDto convertToDto(Story story) {
         StoryDto dto = modelMapper.map(story, StoryDto.class);
 
         dto.setEpicId(story.getEpic() != null ? story.getEpic().getId() : null);
@@ -211,6 +214,8 @@ public class StoryService {
         dto.setSprintId(story.getSprint() != null ? story.getSprint().getId() : null);
         dto.setProjectId(story.getProject() != null ? story.getProject().getId() : null);
         dto.setAssigneeId(story.getAssigneeId() != null ? story.getAssigneeId() : null);
+        dto.setAssignee(story.getAssigneeId() != null ? userService.getUserWithRoles(story.getAssigneeId()) : null);
+        dto.setReporter(story.getReporterId() != null ? userService.getUserWithRoles(story.getReporterId()) : null);
 
         return dto;
     }

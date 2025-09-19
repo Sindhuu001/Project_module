@@ -30,9 +30,9 @@ public class PerformanceService {
 
     @Autowired
     private StoryRepository storyRepository;
-
+    @Autowired
     private UserClient userClient;
-
+   
     public List<EmployeePerformanceDto> getAllEmployeePerformance() {
         List<UserDto> users = userClient.findAll();
         List<EmployeePerformanceDto> performanceList = new ArrayList<>();

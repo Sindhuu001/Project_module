@@ -2,7 +2,9 @@ package com.example.projectmanagement.entity;
 
 import java.util.List;
 
+import lombok.Data;
 
+@Data
 public class RolePermissionChecker {
 
     public static boolean canUpdateTask(List<String> roles) {

@@ -11,6 +11,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.boot.autoconfigure.security.SecurityProperties.User;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -37,5 +40,44 @@ public class UserService {
             }
         }
         return users;
+    }
+
+    public UserDto getUserById(Long id) {
+        ExternalUserResponse extUser = userClient.findExternalById(id);
+        return UserMapper.toUserDto(extUser, null);
+    }
+
+    // searchUsers
+    public Page<UserDto> searchUsers(String name, String role, Pageable pageable) {
+        // TODO: Implement actual search logic using userClient
+        List<UserDto> allUsers = userClient.findAll();
+        List<UserDto> filtered = new ArrayList<>();
+        for (UserDto user : allUsers) {
+            boolean matches = true;
+            if (name != null && !user.getName().toLowerCase().contains(name.toLowerCase())) {
+                matches = false;
+            }
+            if (role != null && (user.getRoles() == null || !user.getRoles().contains(role))) {
+                matches = false;
+            }
+            if (matches) {
+                filtered.add(user);
+            }
+        }
+        int start = (int) pageable.getOffset();
+        int end = Math.min((start + pageable.getPageSize()), filtered.size());
+        return new PageImpl<>(filtered.subList(start, end), pageable, filtered.size());
+    }
+
+    // getUsersByRole
+    public List<UserDto> getUsersByRole(String role) {
+        List<UserDto> allUsers = userClient.findAll();
+        List<UserDto> filtered = new ArrayList<>();
+        for (UserDto user : allUsers) {
+            if (user.getRoles() != null && user.getRoles().contains(role)) {
+                filtered.add(user);
+            }
+        }
+        return filtered;
     }
 }

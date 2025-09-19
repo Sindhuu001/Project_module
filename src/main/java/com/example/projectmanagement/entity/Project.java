@@ -41,10 +41,15 @@ public class Project {
     @Column(name = "ownerId", nullable = false)
     private Long ownerId;
 
-    @ElementCollection
-    @CollectionTable(name = "project_members", joinColumns = @JoinColumn(name = "project_id"))
+    @ElementCollection(fetch = FetchType.LAZY)
+    @CollectionTable(
+        name = "project_members",
+        joinColumns = @JoinColumn(name = "project_id")
+    )
     @Column(name = "user_id")
-    private List<Long> memberIds;
+    private List<Long> memberIds = new ArrayList<>();
+
+
 
     // @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, fetch =
     // FetchType.LAZY)

@@ -4,12 +4,16 @@ import com.example.projectmanagement.entity.Project;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
 @Data
+@Builder
+@AllArgsConstructor
 public class ProjectDto {
 
     private Long id;

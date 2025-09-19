@@ -47,7 +47,7 @@ public class Story {
     // @JoinColumn(name = "epic_id", nullable = false)
     // private Epic epic;
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "epic_id", nullable = false)
+    @JoinColumn(name = "epic_id", nullable = true)
     private Epic epic;
 
     @OneToMany(mappedBy = "story", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -65,7 +65,7 @@ public class Story {
     private Project project;
     
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "sprint_id", nullable = false)
+    @JoinColumn(name = "sprint_id", nullable = true)
     private Sprint sprint;
 
     @OneToMany(mappedBy = "story", cascade = CascadeType.ALL, orphanRemoval = true)

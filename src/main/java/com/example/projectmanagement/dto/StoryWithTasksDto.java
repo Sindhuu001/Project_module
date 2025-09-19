@@ -2,6 +2,8 @@ package com.example.projectmanagement.dto;
 
 import java.util.List;
 
+import lombok.Data;
+@Data
 public class StoryWithTasksDto {
     private Long storyId;
     private String storyTitle;

@@ -241,7 +241,16 @@ public class ProjectService {
     }
 
     public ProjectDto convertToDto(Project project) {
-        ProjectDto dto = modelMapper.map(project, ProjectDto.class);
+        // ProjectDto dto = modelMapper.map(project, ProjectDto.class);
+        ProjectDto dto = ProjectDto.builder()
+                .id(project.getId())
+                .name(project.getName())
+                .projectKey(project.getProjectKey())
+                .description(project.getDescription())
+                .status(project.getStatus())
+                .createdAt(project.getCreatedAt())
+                .updatedAt(project.getUpdatedAt())
+                .build();
 
         dto.setOwnerId(project.getOwnerId());
         dto.setStartDate(project.getStartDate());

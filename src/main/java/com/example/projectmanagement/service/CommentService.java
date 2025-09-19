@@ -5,22 +5,34 @@ import com.example.projectmanagement.dto.CommentDto;
 import com.example.projectmanagement.dto.UserDto;
 import com.example.projectmanagement.entity.*;
 import com.example.projectmanagement.repository.*;
+
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import lombok.RequiredArgsConstructor;
+
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
-
+@Data
 @Service
-@RequiredArgsConstructor
+@AllArgsConstructor
+@NoArgsConstructor
 public class CommentService {
-
-    private final CommentRepository commentRepository;
-    private final TaskRepository taskRepository;
-    private final StoryRepository storyRepository;
-    private final EpicRepository epicRepository;
     
+    @Autowired
+    private CommentRepository commentRepository;
+    @Autowired
+    private TaskRepository taskRepository;
+    @Autowired
+    private StoryRepository storyRepository;
+    @Autowired
+    private EpicRepository epicRepository;
+    
+    @Autowired
     private UserService userService;
 
     // ------------- Add Comment to TASK -------------

@@ -2,6 +2,8 @@ package com.example.projectmanagement.dto;
 
 import java.util.List;
 
+import lombok.Data;
+@Data
 public class EmployeePerformanceDto {
     private String employeeName;
     private String employeeEmail;

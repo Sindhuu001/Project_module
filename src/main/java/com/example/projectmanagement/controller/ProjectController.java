@@ -1,5 +1,6 @@
 package com.example.projectmanagement.controller;
 
+import com.example.projectmanagement.ExternalDTO.ProjectTasksDto;
 import com.example.projectmanagement.dto.EpicDto;
 import com.example.projectmanagement.dto.ProjectDto;
 import com.example.projectmanagement.dto.SprintDto;
@@ -154,4 +155,8 @@ public ResponseEntity<List<StoryDto>> getStoriesByProject(@PathVariable Long pro
     List<StoryDto> stories = storyService.getStoriesByProjectId(projectId);
     return ResponseEntity.ok(stories);
 }
+@GetMapping("/projects-tasks")
+    public List<ProjectTasksDto> getProjectsWithTasks() {
+        return projectService.getAllProjectsWithTasks();
+    }
 }

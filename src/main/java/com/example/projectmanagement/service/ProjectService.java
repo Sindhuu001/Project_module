@@ -1,5 +1,6 @@
 package com.example.projectmanagement.service;
 
+import com.example.projectmanagement.ExternalDTO.ProjectTasksDto;
 import com.example.projectmanagement.client.UserClient;
 import com.example.projectmanagement.dto.ProjectDto;
 import com.example.projectmanagement.dto.UserDto;
@@ -279,6 +280,18 @@ public class ProjectService {
         Project updated = projectRepository.save(project);
 
         return convertToDto(updated);
+    }
+
+    public List<ProjectTasksDto> getAllProjectsWithTasks() {
+        List<Project> projects = projectRepository.findAll();
+
+        return projects.stream().map(project -> {
+            List<ProjectTasksDto.TaskDto> taskDtos = project.getTasks().stream()
+                    .map(task -> new ProjectTasksDto.TaskDto(task.getId(), task.getTitle()))
+                    .collect(Collectors.toList());
+
+            return new ProjectTasksDto(project.getId(), project.getName(), taskDtos);
+        }).collect(Collectors.toList());
     }
 
 }

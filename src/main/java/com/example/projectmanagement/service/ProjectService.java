@@ -140,56 +140,81 @@ public class ProjectService {
     }
 
     public ProjectDto updateProject(Long id, ProjectDto updatedDto) {
-        List<String> errors = new ArrayList<>();
+    List<String> errors = new ArrayList<>();
 
-        Project existing = projectRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Project not found with id: " + id));
+    Project existing = projectRepository.findById(id)
+            .orElseThrow(() -> new RuntimeException("Project not found with id: " + id));
 
-        Project.ProjectStatus existingStatus = existing.getStatus();
-        Project.ProjectStatus newStatus = updatedDto.getStatus();
+    Project.ProjectStatus existingStatus = existing.getStatus();
+    Project.ProjectStatus newStatus = updatedDto.getStatus();
 
-        if (existingStatus == Project.ProjectStatus.ARCHIVED && newStatus != Project.ProjectStatus.ACTIVE) {
-            errors.add("Cannot update an archived project unless status is changed to ACTIVE.");
-        }
+    // ✅ Archived project rule
+    if (existingStatus == Project.ProjectStatus.ARCHIVED && newStatus != Project.ProjectStatus.ACTIVE) {
+        errors.add("Cannot update an archived project unless status is changed to ACTIVE.");
+    }
 
-        if (updatedDto.getStartDate() != null && updatedDto.getEndDate() != null &&
-                updatedDto.getStartDate().isAfter(updatedDto.getEndDate())) {
-            errors.add("Start date cannot be after end date.");
-        }
+    // ✅ Date validation
+    if (updatedDto.getStartDate() != null && updatedDto.getEndDate() != null &&
+            updatedDto.getStartDate().isAfter(updatedDto.getEndDate())) {
+        errors.add("Start date cannot be after end date.");
+    }
 
-        if (updatedDto.getOwnerId() != null && userClient.findExternalById(updatedDto.getOwnerId()) != null) {
+    // ✅ Owner validation (fixed logic)
+    if (updatedDto.getOwnerId() != null) {
+        try {
+            Object ownerResponse = userClient.findExternalById(updatedDto.getOwnerId());
+            // if your API actually returns a list, you must handle it here
+            if (ownerResponse == null || (ownerResponse instanceof List && ((List<?>) ownerResponse).isEmpty())) {
+                errors.add("Owner not found with id: " + updatedDto.getOwnerId());
+            }
+        } catch (Exception e) {
             errors.add("Owner not found with id: " + updatedDto.getOwnerId());
         }
-
-        if (!errors.isEmpty()) {
-            throw new ValidationException(errors);
-        }
-
-        // Apply changes
-        if (existingStatus == Project.ProjectStatus.ARCHIVED && newStatus == Project.ProjectStatus.ACTIVE) {
-            existing.setStatus(Project.ProjectStatus.ACTIVE);
-        } else {
-            existing.setName(updatedDto.getName());
-            existing.setDescription(updatedDto.getDescription());
-            existing.setProjectKey(updatedDto.getProjectKey());
-            existing.setStartDate(updatedDto.getStartDate());
-            existing.setEndDate(updatedDto.getEndDate());
-            existing.setStatus(updatedDto.getStatus());
-
-            if (updatedDto.getOwnerId() != null) {
-                UserDto owner = userService.getUserWithRoles(updatedDto.getOwnerId());
-                existing.setOwnerId(owner.getId());
-            }
-        }
-
-        // Update members if provided
-        if (updatedDto.getMemberIds() != null) {
-            List<Long> memberIds = updatedDto.getMemberIds();
-            existing.setMemberIds(memberIds);
-        }
-
-        return convertToDto(projectRepository.save(existing));
     }
+
+    if (!errors.isEmpty()) {
+        throw new ValidationException(errors);
+    }
+
+    // ✅ Apply changes
+    if (existingStatus == Project.ProjectStatus.ARCHIVED && newStatus == Project.ProjectStatus.ACTIVE) {
+        existing.setStatus(Project.ProjectStatus.ACTIVE);
+    } else {
+        existing.setName(updatedDto.getName());
+        existing.setDescription(updatedDto.getDescription());
+        existing.setProjectKey(updatedDto.getProjectKey());
+        existing.setStartDate(updatedDto.getStartDate());
+        existing.setEndDate(updatedDto.getEndDate());
+        existing.setStatus(updatedDto.getStatus());
+
+        if (updatedDto.getOwnerId() != null) {
+            existing.setOwnerId(updatedDto.getOwnerId()); // keep just the ID
+        }
+    }
+
+    // ✅ Update members safely
+    if (updatedDto.getMemberIds() != null) {
+        existing.setMemberIds(new ArrayList<>(updatedDto.getMemberIds()));
+    }
+
+    Project saved = projectRepository.save(existing);
+
+    // ✅ Return safe DTO (no recursive mapping!)
+    ProjectDto dto = new ProjectDto();
+    dto.setId(saved.getId());
+    dto.setName(saved.getName());
+    dto.setProjectKey(saved.getProjectKey());
+    dto.setDescription(saved.getDescription());
+    dto.setStatus(saved.getStatus());
+    dto.setOwnerId(saved.getOwnerId());
+    dto.setMemberIds(saved.getMemberIds());
+    dto.setStartDate(saved.getStartDate());
+    dto.setEndDate(saved.getEndDate());
+    dto.setCreatedAt(saved.getCreatedAt());
+    dto.setUpdatedAt(saved.getUpdatedAt());
+
+    return dto;
+}
 
     public void deleteProject(Long id) {
         if (!projectRepository.existsById(id)) {

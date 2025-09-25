@@ -6,7 +6,9 @@ import com.example.projectmanagement.dto.ProjectDto;
 import com.example.projectmanagement.dto.SprintDto;
 import com.example.projectmanagement.dto.StoryDto;
 import com.example.projectmanagement.dto.TaskDto;
+import com.example.projectmanagement.dto.UserDto;
 import com.example.projectmanagement.entity.Project;
+import com.example.projectmanagement.security.CurrentUser;
 import com.example.projectmanagement.service.EpicService;
 import com.example.projectmanagement.service.ProjectService;
 import com.example.projectmanagement.service.SprintService;
@@ -122,9 +124,10 @@ public ResponseEntity<ProjectDto> unarchiveProject(@PathVariable Long projectId)
     }
 
     // ✅ GET Projects by Owner
-    @GetMapping("/owner/{ownerId}")
-    public ResponseEntity<List<ProjectDto>> getProjectsByOwner(@PathVariable Long ownerId) {
-        List<ProjectDto> projects = projectService.getProjectsByOwner(ownerId);
+    @GetMapping("/owner")
+    public ResponseEntity<List<ProjectDto>> getProjectsByOwner( @CurrentUser UserDto currentUser) {
+        System.out.println("Current User: " + currentUser.getName() + ", Roles: " + currentUser.getRoles());
+        List<ProjectDto> projects = projectService.getProjectsByOwner(currentUser.getId());
         return ResponseEntity.ok(projects);
     }
 

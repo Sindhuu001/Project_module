@@ -40,6 +40,8 @@ public class DashboardService {
         long totalTasks = taskRepository.count();
         long totalEpics = epicRepository.count();
         long totalStories = storyRepository.count();
+
+        
         
 
         // Task status counts
@@ -81,6 +83,7 @@ public class DashboardService {
                 
                 .build();
     }
+    
 
     public Map<String, Long> getReminders() {
         Map<String, Long> reminders = new HashMap<>();

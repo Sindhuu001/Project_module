@@ -1,5 +1,6 @@
 package com.example.projectmanagement.service;
 
+import com.example.projectmanagement.ExternalDTO.ProjectIdName;
 import com.example.projectmanagement.ExternalDTO.ProjectTasksDto;
 import com.example.projectmanagement.client.UserClient;
 import com.example.projectmanagement.dto.ProjectDto;
@@ -319,4 +320,34 @@ public class ProjectService {
         }).collect(Collectors.toList());
     }
 
+    public List<ProjectIdName> getAllProjectInfo() {
+    return projectRepository.findAll().stream()
+        .filter(p -> p.getStatus().equals(Project.ProjectStatus.ACTIVE))
+        .map(p -> {
+            ProjectIdName pro = new ProjectIdName();
+            pro.setId(p.getId());
+            pro.setName(p.getName());
+            return pro;
+        })
+        .collect(Collectors.toList());
+}
+
+    public List<UserDto> getProjectMembers(Long id) {
+        // TODO Auto-generated method stub
+        Project project = projectRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Project not found with id: " + id));
+        return userService.getUsersByIds(project.getMemberIds());
+    }
+
+    public List<ProjectIdName> getActiveProjectsByMember(Long userId) {
+        // TODO Auto-generated method stub
+        return projectRepository.findByMemberIdsAndStatus(userId, Project.ProjectStatus.ACTIVE).stream()
+                .map(project -> {
+                    ProjectIdName pro = new ProjectIdName();
+                    pro.setId(project.getId());
+                    pro.setName(project.getName());
+                    return pro;
+                })
+                .collect(Collectors.toList());
+    }
 }

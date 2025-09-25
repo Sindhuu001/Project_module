@@ -1,5 +1,6 @@
 package com.example.projectmanagement.controller;
 
+import com.example.projectmanagement.ExternalDTO.ProjectIdName;
 import com.example.projectmanagement.ExternalDTO.ProjectTasksDto;
 import com.example.projectmanagement.dto.EpicDto;
 import com.example.projectmanagement.dto.ProjectDto;
@@ -162,4 +163,30 @@ public ResponseEntity<List<StoryDto>> getStoriesByProject(@PathVariable Long pro
     public List<ProjectTasksDto> getProjectsWithTasks() {
         return projectService.getAllProjectsWithTasks();
     }
+
+@GetMapping("/get_project_info")
+public ResponseEntity<List<ProjectIdName>> getAllProjectInfo() {
+    List<ProjectIdName> projects = projectService.getAllProjectInfo();
+    if(projects.isEmpty()) {
+        return ResponseEntity.noContent().build();
+    }   
+    return ResponseEntity.ok(projects);
+}
+@GetMapping("/member/{userId}/active-projects")
+public ResponseEntity<List<ProjectIdName>> getActiveProjectsByMember(@PathVariable Long userId) {
+    List<ProjectIdName> projects = projectService.getActiveProjectsByMember(userId);
+    if (projects.isEmpty()) {
+        return ResponseEntity.noContent().build();
+    }
+    return ResponseEntity.ok(projects);
+}
+
+@GetMapping("{id}/members")
+public ResponseEntity<List<UserDto>> getProjectMembers(@PathVariable Long id) {
+    List<UserDto> members = projectService.getProjectMembers(id);
+    if (members.isEmpty()) {
+        return ResponseEntity.noContent().build();
+    }
+    return ResponseEntity.ok(members);
+}
 }

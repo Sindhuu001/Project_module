@@ -135,6 +135,7 @@
     </dependencies>
 
     <build>
+    <finalName>ProjectManagement</finalName>
         <plugins>
             <plugin>
                 <groupId>org.springframework.boot</groupId>

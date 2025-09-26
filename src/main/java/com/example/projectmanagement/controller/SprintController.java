@@ -22,7 +22,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/sprints")
-@CrossOrigin(origins = "*") 
+@CrossOrigin
 public class SprintController {
 
     @Autowired

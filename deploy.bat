@@ -6,7 +6,7 @@ REM CONFIGURATION
 REM ================================
 set VM_USER=pavesadmin
 set VM_PASS=paves@2025
-set VM_HOST=192.168.2.100
+set VM_HOST=192.168.2.69
 set VM_TARGET_DIR=/home/pavesadmin/projectmanagement-app
 set JAR_PATH=target\ProjectManagement.jar
  
@@ -57,7 +57,7 @@ if %errorlevel% neq 0 (
 REM Step 3: Restart service via SSH
 echo [INFO] Restarting timesheet.service on VM...
 if "%VERBOSE%"=="true" (
-    %PLINK_PATH% -pw %VM_PASS% %VM_USER%@%VM_HOST% "echo %VM_PASS% | sudo -S systemctl restart timesheet.service"
+    %PLINK_PATH% -pw %VM_PASS% %VM_USER%@%VM_HOST% "echo %VM_PASS% | sudo -S systemctl restart times.service"
 ) else (
     %PLINK_PATH% -pw %VM_PASS% %VM_USER%@%VM_HOST% "echo %VM_PASS% | sudo -S systemctl restart timesheet.service" >nul 2>&1
 )

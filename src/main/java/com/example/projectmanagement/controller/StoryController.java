@@ -17,7 +17,7 @@ import java.util.Map;
 
 @RequestMapping("/api/stories")
 
-@CrossOrigin(origins = "*") 
+@CrossOrigin 
 
 public class StoryController {
  

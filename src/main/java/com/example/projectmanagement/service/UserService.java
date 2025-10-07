@@ -33,7 +33,7 @@ public class UserService {
         List<UserDto> allUsers = userClient.findAll();
         for (Long id : ids) {
             for (UserDto user : allUsers) {
-                if (user.getId().equals(id)) {
+                if (user.getId() != null && user.getId().equals(id)) {
                     users.add(user);
                     break;
                 }

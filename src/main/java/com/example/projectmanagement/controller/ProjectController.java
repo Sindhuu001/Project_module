@@ -184,9 +184,9 @@ public ResponseEntity<List<ProjectIdName>> getActiveProjectsByMember(@PathVariab
 @GetMapping("{id}/members")
 public ResponseEntity<List<UserDto>> getProjectMembers(@PathVariable Long id) {
     List<UserDto> members = projectService.getProjectMembers(id);
-    if (members.isEmpty()) {
-        return ResponseEntity.noContent().build();
-    }
+    // if (members.isEmpty()) {
+    //     return ResponseEntity.noContent().build();
+    // }
     return ResponseEntity.ok(members);
 }
 }

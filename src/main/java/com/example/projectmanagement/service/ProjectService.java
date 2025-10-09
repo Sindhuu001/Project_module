@@ -336,7 +336,10 @@ public class ProjectService {
         // TODO Auto-generated method stub
         Project project = projectRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Project not found with id: " + id));
-        return userService.getUsersByIds(project.getMemberIds());
+        // return userService.getUsersByIds(project.getMemberIds());
+        return project.getMemberIds().stream()
+                .map(userId -> userService.getUserById(userId))
+                .collect(Collectors.toList());
     }
 
     public List<ProjectIdName> getActiveProjectsByMember(Long userId) {

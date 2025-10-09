@@ -34,9 +34,11 @@ public class UserService {
         for (Long id : ids) {
             for (UserDto user : allUsers) {
                 if (user.getId() != null && user.getId().equals(id)) {
+                    //System.out.println("************user found:************************ " + user);
                     users.add(user);
                     break;
                 }
+                
             }
         }
         return users;

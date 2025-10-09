@@ -22,7 +22,7 @@ public interface StoryRepository extends JpaRepository<Story, Long> {
     List<Story> findByReporterId(Long reporterId);
     List<Story> findBySprintId(Long sprintId);
     
-    List<Story> findByEpicIsNull();
+    List<Story> findByEpicIsNullAndProjectId(Long projectId);
 
     
     @Query("SELECT s FROM Story s WHERE s.epic.id = :epicId AND s.status = :status")

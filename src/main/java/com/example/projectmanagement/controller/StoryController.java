@@ -36,10 +36,10 @@ public class StoryController {
     }
 
     @GetMapping("/no-epic")
-public ResponseEntity<List<StoryDto>> getStoriesWithoutEpic() {
-    List<StoryDto> stories = storyService.getStoriesWithoutEpic();
-    return ResponseEntity.ok(stories);
-}
+    public ResponseEntity<List<StoryDto>> getStoriesWithoutEpic(@RequestParam Long projectId) {
+        List<StoryDto> stories = storyService.getStoriesWithoutEpic(projectId);
+        return ResponseEntity.ok(stories);
+    }
 
  
     // ✅ Get story by ID

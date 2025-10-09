@@ -219,12 +219,12 @@ public class StoryService {
 
         return dto;
     }
-    public List<StoryDto> getStoriesWithoutEpic() {
-    return storyRepository.findByEpicIsNull()
-            .stream()
-            .map(story -> new StoryDto(story.getId(), story.getTitle(), story.getDescription()))
-            .collect(Collectors.toList());
-}
+    public List<StoryDto> getStoriesWithoutEpic(Long projectId) {
+        return storyRepository.findByEpicIsNullAndProjectId(projectId)
+                .stream()
+                .map(story -> new StoryDto(story.getId(), story.getTitle(), story.getDescription()))
+                .collect(Collectors.toList());
+    }
     public void assignStoryToSprint(Long storyId, Long sprintId) {
         Story story = storyRepository.findById(storyId)
                 .orElseThrow(() -> new RuntimeException("Story not found with id: " + storyId));

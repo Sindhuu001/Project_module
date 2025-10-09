@@ -219,8 +219,8 @@ public class StoryService {
 
         return dto;
     }
-    public List<StoryDto> getStoriesWithoutEpic() {
-    return storyRepository.findByEpicIsNull()
+    public List<StoryDto> getStoriesWithoutEpic(Long projectId) {
+    return storyRepository.findByEpicIsNullAndProjectId(projectId)
             .stream()
             .map(story -> new StoryDto(story.getId(), story.getTitle(), story.getDescription()))
             .collect(Collectors.toList());

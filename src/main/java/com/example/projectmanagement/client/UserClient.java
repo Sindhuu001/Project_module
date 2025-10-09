@@ -27,6 +27,6 @@ public interface UserClient {
     @GetMapping("admin/users/{id}/roles")
     ExternalRolesResponse findRolesById(@PathVariable("id") Long id);
 
-     @GetMapping("admin/users/roles")
+     @GetMapping("admin/users/id/roles")
     List<UserDto> findAll();
 }

@@ -93,6 +93,11 @@ public class ProjectService {
 }
 
     @Transactional(readOnly = true)
+    public Long getProjectCount() {
+        return projectRepository.count();
+    }
+
+    @Transactional(readOnly = true)
     public ProjectDto getProjectById(Long id) {
         Project project = projectRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Project not found with id: " + id));

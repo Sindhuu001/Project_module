@@ -57,6 +57,12 @@ public class ProjectController {
         return ResponseEntity.ok(projects);
     }
 
+    @GetMapping("/count")
+    public ResponseEntity<Long> getProjectCount() {
+        Long count = projectService.getProjectCount();
+        return ResponseEntity.ok(count);
+    }
+
     // ✅ GET project by ID
     @GetMapping("/{id}")
     public ResponseEntity<ProjectDto> getProjectById(@PathVariable Long id) {

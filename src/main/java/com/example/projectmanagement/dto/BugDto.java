@@ -9,6 +9,7 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @Builder
 public class BugDto {
+    private Long id;
     private String title;
     private String description;
     private String priority;   // HIGH, LOW, etc.

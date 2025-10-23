@@ -45,4 +45,6 @@ public interface ProjectRepository extends JpaRepository<Project, Long> {
     boolean existsByProjectKey(String projectKey);
 
     List<Project> findByMemberIdsAndStatus(Long userId, ProjectStatus active);
+
+    Long countByStatus(Project.ProjectStatus status);
 }

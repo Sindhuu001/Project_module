@@ -94,7 +94,7 @@ public class ProjectService {
 
     @Transactional(readOnly = true)
     public Long getProjectCount() {
-        return projectRepository.count();
+        return projectRepository.countByStatus(Project.ProjectStatus.ACTIVE);
     }
 
     @Transactional(readOnly = true)

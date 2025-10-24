@@ -1,6 +1,6 @@
 package com.example.projectmanagement.service;
 
-import com.example.projectmanagement.client.UserClient;
+//import com.example.projectmanagement.client.UserClient;
 import com.example.projectmanagement.dto.StoryDto;
 import com.example.projectmanagement.dto.UserDto;
 import com.example.projectmanagement.entity.*;
@@ -37,7 +37,7 @@ public class StoryService {
     @Autowired
     private ModelMapper modelMapper;
 
-    private UserClient userClient;
+    //private UserClient userClient;
 
     @Autowired
     private UserService userService;

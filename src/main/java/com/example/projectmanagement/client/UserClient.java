@@ -3,7 +3,6 @@ package com.example.projectmanagement.client;
 import com.example.projectmanagement.ExternalDTO.ExternalUserResponse;
 import com.example.projectmanagement.dto.UserDto;
 
-import lombok.Value;
 
 import com.example.projectmanagement.ExternalDTO.ExternalRolesResponse;
 

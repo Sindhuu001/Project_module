@@ -17,12 +17,11 @@ import com.example.projectmanagement.service.StoryService;
 import com.example.projectmanagement.service.TaskService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/projects")
@@ -137,6 +136,17 @@ public ResponseEntity<ProjectDto> unarchiveProject(@PathVariable Long projectId)
         List<ProjectDto> projects = projectService.getProjectsByOwner(currentUser.getId());
         return ResponseEntity.ok(projects);
     }
+
+   @GetMapping("/owner/{ownerId}")
+    public ResponseEntity<List<ProjectDto>> getActiveProjectsByOwnerId(@PathVariable Long ownerId) {
+        List<ProjectDto> allProjects = projectService.getProjectsByOwner(ownerId);
+        List<ProjectDto> activeProjects = allProjects.stream()
+                .filter(p -> p.getStatus() == Project.ProjectStatus.ACTIVE)
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(activeProjects);
+    }
+
+
 
     // ✅ GET Projects by Member
     @GetMapping("/member/{userId}")

@@ -1,8 +1,6 @@
 package com.example.projectmanagement.dto;
 
-import com.example.projectmanagement.entity.Bug;
 import lombok.*;
-import java.time.LocalDateTime;
 
 @Data
 @NoArgsConstructor

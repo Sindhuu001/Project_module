@@ -1,7 +1,6 @@
 // 📁 SprintService.java - Updated with 'updateSprint' method accepting only 2 parameters
 package com.example.projectmanagement.service;
 
-import com.example.projectmanagement.client.UserClient;
 import com.example.projectmanagement.dto.SprintDto;
 import com.example.projectmanagement.dto.UserDto;
 import com.example.projectmanagement.entity.Project;
@@ -19,7 +18,6 @@ import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.security.access.method.P;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 

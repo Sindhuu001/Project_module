@@ -12,4 +12,7 @@ public interface BugRepository extends JpaRepository<Bug, Long> {
     List<Bug> findBySprintId(Long sprintId);
     List<Bug> findByStatus(Bug.Status status);
     List<Bug> findBySeverity(Bug.Severity severity);
+    List<Bug> findByEpicId(Long epicId);
+    List<Bug> findByTaskId(Long taskId);
+
 }

@@ -18,6 +18,8 @@ public class BugDto {
     private Long reporter;
     private Long projectId;
     private Long sprintId;
+    private Long epicId;
+    private Long taskId;
     private String stepsToReproduce;
     private String expectedResult;
     private String actualResult;

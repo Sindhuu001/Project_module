@@ -132,6 +132,20 @@ public class ProjectService {
     }
 
     @Transactional(readOnly = true)
+    public List<Map<String, Object>> getActiveProjectsByOwner1(Long ownerId) {
+        return projectRepository.findByOwnerId(ownerId).stream()
+                .filter(project -> project.getStatus() == Project.ProjectStatus.ACTIVE) // filter active
+                .map(project -> {
+                    Map<String, Object> map = new HashMap<>();
+                    map.put("id", project.getId());
+                    map.put("name", project.getName());
+                    return map;
+                })
+                .collect(Collectors.toList());
+    }
+
+
+    @Transactional(readOnly = true)
     public List<ProjectDto> getProjectsByMember(Long userId) {
         return projectRepository.findByMemberId(userId).stream()
                 .map(this::convertToDto)

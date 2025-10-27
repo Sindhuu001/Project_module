@@ -69,4 +69,15 @@ public class BugController {
     public void deleteBug(@PathVariable Long id) {
         bugService.deleteBug(id);
     }
+
+    @GetMapping("/epic/{epicId}")
+    public List<BugDto> getBugsByEpic(@PathVariable Long epicId) {
+        return bugService.getBugsByEpic(epicId);
+    }
+
+    @GetMapping("/task/{taskId}")
+    public List<BugDto> getBugsByTask(@PathVariable Long taskId) {
+        return bugService.getBugsByTask(taskId);
+    }
+
 }

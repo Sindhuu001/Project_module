@@ -79,6 +79,8 @@ public class Task {
     @JoinColumn(name = "story_id", nullable = false)
     private Story story;
 
+    private boolean isBillable;
+
 
     // Constructors
     public Task() {}

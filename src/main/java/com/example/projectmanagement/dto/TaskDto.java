@@ -41,6 +41,7 @@ public class TaskDto {
     private ProjectDto project;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private boolean isBillable;
     
     // Constructors
     public TaskDto() {}

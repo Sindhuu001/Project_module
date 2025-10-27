@@ -264,7 +264,7 @@ public class ProjectService {
                 .projectKey(project.getProjectKey())
                 .description(project.getDescription())
                 .status(project.getStatus())
-                .currentStage(project.getCurrentStage()) // ✅ Added for currentStage
+                .currentStage(project.getCurrentStage()) 
                 .createdAt(project.getCreatedAt())
                 .updatedAt(project.getUpdatedAt())
                 .build();

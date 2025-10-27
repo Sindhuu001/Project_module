@@ -53,6 +53,7 @@ public class TaskService {
         Task task = modelMapper.map(taskDto, Task.class);
         task.setProject(project);
         task.setReporterId(reporter.getId());
+        task.setBillable(taskDto.isBillable());
 
         if (taskDto.getStoryId() != null) {
             Story story = storyRepository.findById(taskDto.getStoryId())
@@ -238,6 +239,7 @@ public class TaskService {
             dto.setAssigneeId(task.getAssigneeId());
             dto.setAssignee(userService.getUserWithRoles(task.getAssigneeId()));
         }
+        dto.setBillable(task.isBillable());
         return dto;
     }
 

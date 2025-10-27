@@ -1,6 +1,7 @@
 package com.example.projectmanagement.entity;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import java.time.LocalDateTime;
 
@@ -15,25 +16,29 @@ public class Bug {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
+    
+    @NotNull
     private String title;
     @Column(length = 2000)
     private String description;
-
+    @NotNull
     @Enumerated(EnumType.STRING)
     private Priority priority;
-
+    @NotNull
     @Enumerated(EnumType.STRING)
     private Status status;
-
+    @NotNull
     @Enumerated(EnumType.STRING)
     private Severity severity;
 
     private String type;
 
-    private Long assignedTo;  // userId
-    private Long reporter;    // userId
+    private Long assignedTo; 
+    @NotNull // userId
+    private Long reporter; 
+    @NotNull   // userId
     private Long projectId;
+
     private Long sprintId;
 
     private Long epicId;
@@ -50,7 +55,7 @@ public class Bug {
     private String actualResult;
 
     private String attachments; // could store file path or URL
-
+    @NotNull
     private LocalDateTime createdDate;
     private LocalDateTime updatedDate;
     private LocalDateTime resolvedDate;

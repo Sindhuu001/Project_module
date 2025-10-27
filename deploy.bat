@@ -6,7 +6,7 @@ REM CONFIGURATION
 REM ================================
 set VM_USER=pavesadmin
 set VM_PASS=paves@2025
-set VM_HOST=192.168.2.75
+set VM_HOST=192.168.2.44
 set VM_TARGET_DIR=/home/pavesadmin/projectmanagement-app
 set JAR_PATH=target\ProjectManagement.jar
  
@@ -55,11 +55,11 @@ if %errorlevel% neq 0 (
 )
  
 REM Step 3: Restart service via SSH
-echo [INFO] Restarting timesheet.service on VM...
+echo [INFO] Restarting projectmanagement.service on VM...
 if "%VERBOSE%"=="true" (
-    %PLINK_PATH% -pw %VM_PASS% %VM_USER%@%VM_HOST% "echo %VM_PASS% | sudo -S systemctl restart times.service"
+    %PLINK_PATH% -pw %VM_PASS% %VM_USER%@%VM_HOST% "echo %VM_PASS% | sudo -S systemctl restart projectmanagement.service"
 ) else (
-    %PLINK_PATH% -pw %VM_PASS% %VM_USER%@%VM_HOST% "echo %VM_PASS% | sudo -S systemctl restart timesheet.service" >nul 2>&1
+    %PLINK_PATH% -pw %VM_PASS% %VM_USER%@%VM_HOST% "echo %VM_PASS% | sudo -S systemctl restart projectmanagement.service" >nul 2>&1
 )
 if %errorlevel% neq 0 (
     echo [ERROR] Failed to restart service! Exiting...
@@ -69,9 +69,9 @@ if %errorlevel% neq 0 (
 REM Step 4: Show service logs (last 6 lines in normal mode)
 echo [INFO] Fetching service logs...
 if "%VERBOSE%"=="true" (
-    %PLINK_PATH% -pw %VM_PASS% %VM_USER%@%VM_HOST% "journalctl -u timesheet.service -n 20 --no-pager"
+    %PLINK_PATH% -pw %VM_PASS% %VM_USER%@%VM_HOST% "journalctl -u projectmanagement.service -n 20 --no-pager"
 ) else (
-    %PLINK_PATH% -pw %VM_PASS% %VM_USER%@%VM_HOST% "journalctl -u timesheet.service -n 6 --no-pager"
+    %PLINK_PATH% -pw %VM_PASS% %VM_USER%@%VM_HOST% "journalctl -u projectmanagement.service -n 6 --no-pager"
 )
  
 REM Step 5: Done

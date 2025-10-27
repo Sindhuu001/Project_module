@@ -4,7 +4,6 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
-
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -38,6 +37,11 @@ public class Project {
     @Column(nullable = false)
     private ProjectStatus status = ProjectStatus.ACTIVE;
 
+    // 🧩 New field: currentStage (optional)
+    @Enumerated(EnumType.STRING)
+    @Column(name = "current_stage", nullable = true)
+    private ProjectStage currentStage=ProjectStage.INITIATION;  // e.g., PLANNING, DESIGN, DEVELOPMENT, etc.
+
     @Column(name = "ownerId", nullable = false)
     private Long ownerId;
 
@@ -49,11 +53,6 @@ public class Project {
     @Column(name = "user_id")
     private List<Long> memberIds = new ArrayList<>();
 
-
-
-    // @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, fetch =
-    // FetchType.LAZY)
-    // private List<Epic> epics;
     @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<Epic> epics = new ArrayList<>();
 
@@ -77,16 +76,31 @@ public class Project {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
+    // ✅ Project Status Enum
     public enum ProjectStatus {
-        ACTIVE, ARCHIVED, PLANNING, COMPLETED;
+        ACTIVE,
+        ARCHIVED,
+        PLANNING,
+        COMPLETED
+    }
 
+    // 🧭 Project Stage Enum (optional)
+    public enum ProjectStage {
+        INITIATION,
+        PLANNING,
+        DESIGN,
+        DEVELOPMENT,
+        TESTING,
+        DEPLOYMENT,
+        MAINTENANCE,
+        COMPLETED
     }
 
     public Project() {
     }
 
-    public Project(String name, String projectKey, String description, Long ownerId, LocalDateTime startDate,
-            LocalDateTime endDate) {
+    public Project(String name, String projectKey, String description, Long ownerId,
+                   LocalDateTime startDate, LocalDateTime endDate) {
         this.name = name;
         this.projectKey = projectKey;
         this.description = description;
@@ -94,5 +108,4 @@ public class Project {
         this.startDate = startDate;
         this.endDate = endDate;
     }
-
 }

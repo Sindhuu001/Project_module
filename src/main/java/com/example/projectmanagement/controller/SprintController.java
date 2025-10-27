@@ -1,6 +1,4 @@
 package com.example.projectmanagement.controller;
-
-import com.example.projectmanagement.client.UserClient;
 import com.example.projectmanagement.dto.SprintDto;
 import com.example.projectmanagement.dto.TaskDto;
 import com.example.projectmanagement.dto.UserDto;

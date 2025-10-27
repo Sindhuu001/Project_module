@@ -4,6 +4,7 @@ package com.example.projectmanagement.service;
 import com.example.projectmanagement.dto.TaskDto;
 import com.example.projectmanagement.dto.UserDto;
 import com.example.projectmanagement.entity.*;
+import com.example.projectmanagement.entity.Task.TaskStatus;
 import com.example.projectmanagement.repository.*;
 
 import org.modelmapper.ModelMapper;
@@ -175,6 +176,7 @@ public class TaskService {
                 .collect(Collectors.toList());
     }
 
+
     public List<TaskDto> getBacklogTasks() {
         return taskRepository.findBacklogTasks().stream()
                 .map(this::convertToDto)
@@ -237,5 +239,9 @@ public class TaskService {
             dto.setAssignee(userService.getUserWithRoles(task.getAssigneeId()));
         }
         return dto;
+    }
+
+    public long countTasksByStatus(TaskStatus status) {
+        return taskRepository.countByStatus(status);
     }
 }

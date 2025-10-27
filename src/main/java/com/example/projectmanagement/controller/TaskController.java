@@ -66,6 +66,12 @@ public class TaskController {
         return ResponseEntity.ok(tasks);
     }
     
+    @GetMapping("/status/done/count")
+    public ResponseEntity<Long> getDoneTaskCount() {
+        long count = taskService.countTasksByStatus(Task.TaskStatus.DONE);
+        return ResponseEntity.ok(count);
+    }
+
     @PutMapping("/{id}")
     public ResponseEntity<TaskDto> updateTask(@PathVariable Long id, @Valid @RequestBody TaskDto taskDto) {
         TaskDto updatedTask = taskService.updateTask(id, taskDto);

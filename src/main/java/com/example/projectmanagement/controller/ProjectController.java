@@ -17,12 +17,12 @@ import com.example.projectmanagement.service.StoryService;
 import com.example.projectmanagement.service.TaskService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/projects")
@@ -40,7 +40,7 @@ public class ProjectController {
 
     @Autowired
     private TaskService taskService;
-    
+
     @Autowired
     private StoryService storyService;
 
@@ -57,6 +57,12 @@ public class ProjectController {
         return ResponseEntity.ok(projects);
     }
 
+    @GetMapping("/count")
+    public ResponseEntity<Long> getProjectCount() {
+        Long count = projectService.getProjectCount();
+        return ResponseEntity.ok(count);
+    }
+
     // ✅ GET project by ID
     @GetMapping("/{id}")
     public ResponseEntity<ProjectDto> getProjectById(@PathVariable Long id) {
@@ -65,19 +71,18 @@ public class ProjectController {
     }
 
     // ✅ UPDATE project
-  @PutMapping("/{id}")
-public ResponseEntity<ProjectDto> updateProject(@PathVariable Long id,
-                                                @RequestBody ProjectDto updatedProjectDto) {
-    ProjectDto updated = projectService.updateProject(id, updatedProjectDto);
-    return ResponseEntity.ok(updated);
-}
-@PatchMapping("/api/projects/{projectId}/unarchive")
-public ResponseEntity<ProjectDto> unarchiveProject(@PathVariable Long projectId) {
-    ProjectDto dto = projectService.unarchiveProject(projectId);
-    return ResponseEntity.ok(dto);
-}
+    @PutMapping("/{id}")
+    public ResponseEntity<ProjectDto> updateProject(@PathVariable Long id,
+            @RequestBody ProjectDto updatedProjectDto) {
+        ProjectDto updated = projectService.updateProject(id, updatedProjectDto);
+        return ResponseEntity.ok(updated);
+    }
 
-
+    @PatchMapping("/api/projects/{projectId}/unarchive")
+    public ResponseEntity<ProjectDto> unarchiveProject(@PathVariable Long projectId) {
+        ProjectDto dto = projectService.unarchiveProject(projectId);
+        return ResponseEntity.ok(dto);
+    }
 
     // ✅ DELETE project
     @DeleteMapping("/{id}")
@@ -89,18 +94,20 @@ public ResponseEntity<ProjectDto> unarchiveProject(@PathVariable Long projectId)
     // ✅ GET all projects with pagination, filters
     // @GetMapping
     // public ResponseEntity<Page<ProjectDto>> getAllProjects(
-    //         @RequestParam(defaultValue = "0") int page,
-    //         @RequestParam(defaultValue = "10") int size,
-    //         @RequestParam(defaultValue = "id") String sortBy,
-    //         @RequestParam(defaultValue = "asc") String sortDir,
-    //         @RequestParam(required = false) String name,
-    //         @RequestParam(required = false) Project.ProjectStatus status) {
+    // @RequestParam(defaultValue = "0") int page,
+    // @RequestParam(defaultValue = "10") int size,
+    // @RequestParam(defaultValue = "id") String sortBy,
+    // @RequestParam(defaultValue = "asc") String sortDir,
+    // @RequestParam(required = false) String name,
+    // @RequestParam(required = false) Project.ProjectStatus status) {
 
-    //     Sort sort = sortDir.equalsIgnoreCase("desc") ? Sort.by(sortBy).descending() : Sort.by(sortBy).ascending();
-    //     Pageable pageable = PageRequest.of(page, size, sort);
+    // Sort sort = sortDir.equalsIgnoreCase("desc") ? Sort.by(sortBy).descending() :
+    // Sort.by(sortBy).ascending();
+    // Pageable pageable = PageRequest.of(page, size, sort);
 
-    //     Page<ProjectDto> projects = projectService.searchProjects(name, status, pageable);
-    //     return ResponseEntity.ok(projects);
+    // Page<ProjectDto> projects = projectService.searchProjects(name, status,
+    // pageable);
+    // return ResponseEntity.ok(projects);
     // }
 
     // ✅ GET Epics by project ID
@@ -126,10 +133,16 @@ public ResponseEntity<ProjectDto> unarchiveProject(@PathVariable Long projectId)
 
     // ✅ GET Projects by Owner
     @GetMapping("/owner")
-    public ResponseEntity<List<ProjectDto>> getProjectsByOwner( @CurrentUser UserDto currentUser) {
+    public ResponseEntity<List<ProjectDto>> getProjectsByOwner(@CurrentUser UserDto currentUser) {
         System.out.println("Current User: " + currentUser.getName() + ", Roles: " + currentUser.getRoles());
         List<ProjectDto> projects = projectService.getProjectsByOwner(currentUser.getId());
         return ResponseEntity.ok(projects);
+    }
+
+    @GetMapping("/owner/{ownerId}")
+    public ResponseEntity<List<Map<String, Object>>> getActiveProjectsByOwnerId(@PathVariable Long ownerId) {
+        List<Map<String, Object>> activeProjects = projectService.getActiveProjectsByOwner1(ownerId);
+        return ResponseEntity.ok(activeProjects);
     }
 
     // ✅ GET Projects by Member
@@ -154,39 +167,42 @@ public ResponseEntity<ProjectDto> unarchiveProject(@PathVariable Long projectId)
         ProjectDto updatedProject = projectService.removeMemberFromProject(projectId, userId);
         return ResponseEntity.ok(updatedProject);
     }
+
     @GetMapping("/{projectId}/stories")
-public ResponseEntity<List<StoryDto>> getStoriesByProject(@PathVariable Long projectId) {
-    List<StoryDto> stories = storyService.getStoriesByProjectId(projectId);
-    return ResponseEntity.ok(stories);
-}
-@GetMapping("/projects-tasks")
+    public ResponseEntity<List<StoryDto>> getStoriesByProject(@PathVariable Long projectId) {
+        List<StoryDto> stories = storyService.getStoriesByProjectId(projectId);
+        return ResponseEntity.ok(stories);
+    }
+
+    @GetMapping("/projects-tasks")
     public List<ProjectTasksDto> getProjectsWithTasks() {
         return projectService.getAllProjectsWithTasks();
     }
 
-@GetMapping("/get_project_info")
-public ResponseEntity<List<ProjectIdName>> getAllProjectInfo() {
-    List<ProjectIdName> projects = projectService.getAllProjectInfo();
-    if(projects.isEmpty()) {
-        return ResponseEntity.noContent().build();
-    }   
-    return ResponseEntity.ok(projects);
-}
-@GetMapping("/member/{userId}/active-projects")
-public ResponseEntity<List<ProjectIdName>> getActiveProjectsByMember(@PathVariable Long userId) {
-    List<ProjectIdName> projects = projectService.getActiveProjectsByMember(userId);
-    if (projects.isEmpty()) {
-        return ResponseEntity.noContent().build();
+    @GetMapping("/get_project_info")
+    public ResponseEntity<List<ProjectIdName>> getAllProjectInfo() {
+        List<ProjectIdName> projects = projectService.getAllProjectInfo();
+        if (projects.isEmpty()) {
+            return ResponseEntity.noContent().build();
+        }
+        return ResponseEntity.ok(projects);
     }
-    return ResponseEntity.ok(projects);
-}
 
-@GetMapping("{id}/members")
-public ResponseEntity<List<UserDto>> getProjectMembers(@PathVariable Long id) {
-    List<UserDto> members = projectService.getProjectMembers(id);
-    // if (members.isEmpty()) {
-    //     return ResponseEntity.noContent().build();
-    // }
-    return ResponseEntity.ok(members);
-}
+    @GetMapping("/member/{userId}/active-projects")
+    public ResponseEntity<List<ProjectIdName>> getActiveProjectsByMember(@PathVariable Long userId) {
+        List<ProjectIdName> projects = projectService.getActiveProjectsByMember(userId);
+        if (projects.isEmpty()) {
+            return ResponseEntity.noContent().build();
+        }
+        return ResponseEntity.ok(projects);
+    }
+
+    @GetMapping("{id}/members")
+    public ResponseEntity<List<UserDto>> getProjectMembers(@PathVariable Long id) {
+        List<UserDto> members = projectService.getProjectMembers(id);
+        // if (members.isEmpty()) {
+        // return ResponseEntity.noContent().build();
+        // }
+        return ResponseEntity.ok(members);
+    }
 }

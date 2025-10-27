@@ -1,13 +1,11 @@
 package com.example.projectmanagement.controller;
-
 import com.example.projectmanagement.dto.DashboardSummaryDto;
-import com.example.projectmanagement.dto.ReminderDto;
 import com.example.projectmanagement.service.DashboardService;
-import com.example.projectmanagement.service.ReminderService;
+//import com.example.projectmanagement.service.ReminderService;
 
 import java.util.Map;
 
-import org.springframework.beans.factory.annotation.Autowired;
+//import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -15,8 +13,8 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/dashboard")
 @CrossOrigin
 public class DashboardController {
-@Autowired
-private ReminderService reminderService;
+// @Autowired
+// private ReminderService reminderService;
 
     private final DashboardService dashboardService;
 

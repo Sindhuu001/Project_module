@@ -25,11 +25,11 @@ public class PerformanceService {
     @Autowired
     private ProjectRepository projectRepository;
 
-    @Autowired
-    private EpicRepository epicRepository;
+    // @Autowired
+    // private EpicRepository epicRepository;
 
-    @Autowired
-    private StoryRepository storyRepository;
+    // @Autowired
+    // private StoryRepository storyRepository;
     @Autowired
     private UserClient userClient;
    

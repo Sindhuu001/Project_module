@@ -7,6 +7,7 @@ import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -14,6 +15,7 @@ import java.util.List;
 @Data
 @Builder
 @AllArgsConstructor
+@NoArgsConstructor
 public class ProjectDto {
 
     private Long id;
@@ -31,12 +33,15 @@ public class ProjectDto {
 
     private Project.ProjectStatus status;
 
+    // ✅ Changed from String → Enum (to match entity)
+    private Project.ProjectStage currentStage;
+
     @NotNull(message = "Owner is required")
     private Long ownerId;
 
-    // ✅ Add this field to match the frontend's payload
     private List<Long> memberIds;
 
+    // Optional: user details from UMS or another service
     private UserDto owner;
     private List<UserDto> members;
 
@@ -45,14 +50,10 @@ public class ProjectDto {
     private LocalDateTime startDate;
     private LocalDateTime endDate;
 
-    public ProjectDto() {}
-
     public ProjectDto(String name, String projectKey, String description, Long ownerId) {
         this.name = name;
         this.projectKey = projectKey;
         this.description = description;
         this.ownerId = ownerId;
     }
-
-    
 }

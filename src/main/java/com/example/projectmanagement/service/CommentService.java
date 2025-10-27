@@ -1,6 +1,5 @@
 package com.example.projectmanagement.service;
 
-import com.example.projectmanagement.client.UserClient;
 import com.example.projectmanagement.dto.CommentDto;
 import com.example.projectmanagement.dto.UserDto;
 import com.example.projectmanagement.entity.*;
@@ -9,7 +8,6 @@ import com.example.projectmanagement.repository.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.RequiredArgsConstructor;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;

@@ -28,9 +28,9 @@ public class DashboardController {
     }
 
     @GetMapping("/reminders")
-public ResponseEntity<Map<String, Long>> getReminders() {
-    return ResponseEntity.ok(dashboardService.getReminders());
-}
+    public ResponseEntity<Map<String, Long>> getReminders() {
+        return ResponseEntity.ok(dashboardService.getReminders());
+    }
 
 
 }

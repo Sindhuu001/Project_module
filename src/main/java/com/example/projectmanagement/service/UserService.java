@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -21,9 +22,13 @@ public class UserService {
 
     private final UserClient userClient;
 
+    @Autowired
+    private CachedUserService cachedUserService;
+
     public UserDto getUserWithRoles(Long id) {
-        ExternalUserResponse extUser = userClient.findExternalById(id);
-        ExternalRolesResponse rolesResponse = userClient.findRolesById(id);
+        ExternalUserResponse extUser = cachedUserService.getUserById(id);
+        ExternalRolesResponse rolesResponse = cachedUserService.getUserRolesById(id);
+
         return UserMapper.toUserDto(extUser, rolesResponse.getRoles());
     }
 
@@ -42,7 +47,7 @@ public class UserService {
     }
 
     public UserDto getUserById(Long id) {
-        ExternalUserResponse extUser = userClient.findExternalById(id);
+        ExternalUserResponse extUser = cachedUserService.getUserById(id);
         return UserMapper.toUserDto(extUser, null);
     }
 

@@ -102,4 +102,19 @@ public class BugService {
     public void deleteBug(Long id) {
         bugRepository.deleteById(id);
     }
+
+    public List<BugDto> getBugsByEpic(Long epicId) {
+        return bugRepository.findByEpicId(epicId)
+                .stream()
+                .map(bug -> modelMapper.map(bug, BugDto.class))
+                .collect(Collectors.toList());
+    }
+
+    public List<BugDto> getBugsByTask(Long taskId) {
+        return bugRepository.findByTaskId(taskId)
+                .stream()
+                .map(bug -> modelMapper.map(bug, BugDto.class))
+                .collect(Collectors.toList());
+    }
+
 }

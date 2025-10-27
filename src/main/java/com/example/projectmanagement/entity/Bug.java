@@ -36,6 +36,10 @@ public class Bug {
     private Long projectId;
     private Long sprintId;
 
+    private Long epicId;
+    private Long taskId;
+
+
     @Column(length = 2000)
     private String stepsToReproduce;
 

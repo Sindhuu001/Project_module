@@ -14,7 +14,9 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @Entity
-@Table(name = "sprints")
+@Table(name = "sprints", uniqueConstraints = {
+        @UniqueConstraint(columnNames = {"name", "project_id"})
+})
 @Data
 public class Sprint {
     

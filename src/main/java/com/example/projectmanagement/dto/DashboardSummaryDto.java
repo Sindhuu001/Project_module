@@ -5,6 +5,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
 import java.util.Map;
 
 @Data
@@ -17,9 +18,12 @@ public class DashboardSummaryDto {
     private Map<String, Long> taskStatusCount;
     private Long totalEpics;
     private Map<String, Long> epicStatusCount;
-     private long totalStories;   
-      private Map<String, Long> storyStatusCount; 
-    private Long totalUsers;
+    private Long totalStories;
+    private Map<String, Long> storyStatusCount; 
+    //private Long totalUsers;
+    private List<?> projects;
+    private List<?> stories;
+    private List<?> tasks;
 
 }
     

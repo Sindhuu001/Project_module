@@ -58,8 +58,13 @@ public class SprintService {
         Project project = projectRepository.findById(sprintDto.getProjectId())
                 .orElseThrow(() -> new RuntimeException("Project not found with id: " + sprintDto.getProjectId()));
 
-        if (sprintDto.getStartDate().isAfter(sprintDto.getEndDate())) {
-            throw new RuntimeException("Start date cannot be after end date");
+        if (sprintRepository.existsByNameAndProjectId(sprintDto.getName(), sprintDto.getProjectId())) {
+            throw new RuntimeException("Sprint with name '" + sprintDto.getName() + "' already exists in this project.");
+        }
+
+        if (sprintDto.getStartDate().isAfter(sprintDto.getEndDate())||
+            sprintDto.getStartDate().isEqual(sprintDto.getEndDate())) {
+            throw new RuntimeException("End Date must be later than Start Date");
         }
 
         validateNoSprintOverlap(sprintDto.getProjectId(), sprintDto.getStartDate(), sprintDto.getEndDate(), null);

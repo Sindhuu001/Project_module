@@ -11,6 +11,9 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@Table(name = "epic", uniqueConstraints = {
+        @UniqueConstraint(columnNames = {"name", "project_id"})
+})
 public class Epic {
 
     @Id

@@ -64,6 +64,13 @@ public class StoryService {
         Project project = projectRepository.findById(storyDto.getProjectId())
                 .orElseThrow(() -> new RuntimeException("Project not found with id: " + storyDto.getProjectId()));
 
+        boolean exists = storyRepository.existsByTitleAndProjectIdAndEpicId(
+                storyDto.getTitle(), storyDto.getProjectId(), storyDto.getEpicId()
+        );
+        if (exists) {
+            throw new IllegalArgumentException("A story with the same title already exists under this epic and project.");
+        }
+
         UserDto reporter = userService.getUserWithRoles(storyDto.getReporterId());
                 
 

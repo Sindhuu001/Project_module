@@ -53,4 +53,5 @@ public interface StoryRepository extends JpaRepository<Story, Long> {
         @Param("projectId") Long projectId,
         Pageable pageable
     );
+    boolean existsByTitleAndProjectIdAndEpicId(String title, Long projectId, Long epicId);
 }

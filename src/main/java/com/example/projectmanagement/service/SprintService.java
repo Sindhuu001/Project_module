@@ -22,6 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -235,6 +236,13 @@ public class SprintService {
         SprintDto dto = modelMapper.map(sprint, SprintDto.class);
         dto.setProjectId(sprint.getProject().getId());
         dto.setProject(projectService.convertToDto(sprint.getProject()));
+        return dto;
+    }
+
+    public SprintDto convertToDto1(Sprint sprint, Map<Long, UserDto> userMap) {
+        SprintDto dto = modelMapper.map(sprint, SprintDto.class);
+        dto.setProjectId(sprint.getProject().getId());
+        dto.setProject(projectService.convertToDto1(sprint.getProject(), userMap));
         return dto;
     }
 }

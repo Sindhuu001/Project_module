@@ -27,6 +27,7 @@ public class TestController {
     @GetMapping("/users/{id}")
     public UserDto testUserClientById(@PathVariable Long id) {
         return userService.getUserWithRoles(id);
+        
     }
 
 }

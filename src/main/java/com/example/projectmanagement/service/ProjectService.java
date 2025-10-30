@@ -16,7 +16,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Service
@@ -113,9 +115,34 @@ public class ProjectService {
 
     @Transactional(readOnly = true)
     public List<ProjectDto> getAllProjects() {
-        return projectRepository.findAll().stream()
-                .map(this::convertToDto)
-                .collect(Collectors.toList());
+
+        long start = System.currentTimeMillis();
+
+        List<UserDto> allUsers = userClient.findAll();
+Map<Long, UserDto> userMap = allUsers.stream()
+    .collect(Collectors.toMap(UserDto::getId, Function.identity()));
+
+    // List<ProjectDto> dtos = projectRepository.findAll().stream()
+    //         .map(this::convertToDto)
+    //         .collect(Collectors.toList());
+    List<ProjectDto> dtos = projectRepository.findAll().stream()
+        .map(project -> convertToDto1(project, userMap))
+        .collect(Collectors.toList());
+        System.out.println("Time taken to fetch all projects with users: " + (System.currentTimeMillis() - start) + " ms");
+        return dtos;
+    }
+
+    public ProjectDto convertToDto1(Project project, Map<Long, UserDto> userMap) {
+        long start = System.currentTimeMillis();
+        ProjectDto dto = modelMapper.map(project, ProjectDto.class);
+        dto.setOwner(userMap.get(project.getOwnerId()));
+        dto.setMembers(
+            project.getMemberIds().stream()
+                .map(userMap::get)
+                .collect(Collectors.toList())
+        );
+        System.out.println("###########################Time taken to convert single Project to ProjectDto: " + (System.currentTimeMillis() - start) + " ms");
+        return dto;
     }
 
     @Transactional(readOnly = true)
@@ -272,6 +299,9 @@ public class ProjectService {
     }
 
     public ProjectDto convertToDto(Project project) {
+
+        long start = System.currentTimeMillis();
+
         ProjectDto dto = ProjectDto.builder()
                 .id(project.getId())
                 .name(project.getName())
@@ -293,6 +323,9 @@ public class ProjectService {
             dto.setMemberIds(memberIds);
             dto.setMembers(userService.getUsersByIds(memberIds));
         }
+
+        System.out.println("&&&&&&&&&&&&&&&&&&&&&&&&&&Time taken to convert Project to ProjectDto: " + (System.currentTimeMillis() - start) + " ms");
+
         return dto;
     }
 

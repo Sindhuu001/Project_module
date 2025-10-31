@@ -1,12 +1,14 @@
 // 📁 Updated TaskService.java with Role-Based Access Check
 package com.example.projectmanagement.service;
 
+import com.example.projectmanagement.client.UserClient;
 import com.example.projectmanagement.dto.TaskDto;
 import com.example.projectmanagement.dto.UserDto;
 import com.example.projectmanagement.entity.*;
 import com.example.projectmanagement.entity.Task.TaskStatus;
 import com.example.projectmanagement.repository.*;
 
+import org.checkerframework.checker.units.qual.s;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -16,6 +18,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Service
@@ -39,6 +43,9 @@ public class TaskService {
     private SprintService sprintService;
     @Autowired
     private StoryService storyService;
+
+    @Autowired
+    private UserClient userClient;
 
     public long countTasksByStoryId(Long storyId) {
         return taskRepository.countByStoryId(storyId);
@@ -206,6 +213,7 @@ public class TaskService {
     }
 
     public Page<TaskDto> searchTasks(String title, Task.Priority priority, Long assigneeId, Pageable pageable) {
+        // long start = System.currentTimeMillis();
         if (assigneeId != null) {
             return taskRepository.findByAssigneeId(assigneeId, pageable)
                     .map(this::convertToDto);
@@ -219,25 +227,30 @@ public class TaskService {
             return taskRepository.findAll(pageable)
                     .map(this::convertToDto);
         }
+        //System.out.println("Time taken to search tasks: " + (System.currentTimeMillis() - start) + " ms");
     }
 
     private TaskDto convertToDto(Task task) {
         TaskDto dto = modelMapper.map(task, TaskDto.class);
+        List<UserDto> allUsers = userClient.findAll();
+Map<Long, UserDto> userMap = allUsers.stream()
+    .collect(Collectors.toMap(UserDto::getId, Function.identity()));
+    
         dto.setProjectId(task.getProject().getId());
-        dto.setProject(task.getProject() != null ? projectService.convertToDto(task.getProject()) : null);
+        dto.setProject(task.getProject() != null ? projectService.convertToDto1(task.getProject(),userMap) : null);
         dto.setReporterId(task.getReporterId());
-        dto.setReporter(task.getReporterId() != null ? userService.getUserWithRoles(task.getReporterId()) : new UserDto(12345L, "Unknown User", "unknown.user@example.com", null));
+        dto.setReporter(task.getReporterId() != null ? userMap.get(task.getReporterId()) : new UserDto(12345L, "Unknown User", "unknown.user@example.com", null));
         if (task.getStory() != null) {
             dto.setStoryId(task.getStory().getId());
-            dto.setStory(storyService.convertToDto(task.getStory()));
+            dto.setStory(storyService.convertToDto1(task.getStory(),userMap));
         }
         if (task.getSprint() != null) {
             dto.setSprintId(task.getSprint().getId());
-            dto.setSprint(sprintService.convertToDto(task.getSprint()));
+            dto.setSprint(sprintService.convertToDto1(task.getSprint(),userMap));
         }
         if (task.getAssigneeId() != null) {
             dto.setAssigneeId(task.getAssigneeId());
-            dto.setAssignee(userService.getUserWithRoles(task.getAssigneeId()));
+            dto.setAssignee(userMap.get(task.getAssigneeId()));
         }
         dto.setBillable(task.isBillable());
         return dto;

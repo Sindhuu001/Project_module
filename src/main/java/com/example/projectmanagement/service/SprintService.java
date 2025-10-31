@@ -1,4 +1,3 @@
-// 📁 SprintService.java - Updated with 'updateSprint' method accepting only 2 parameters
 package com.example.projectmanagement.service;
 
 import com.example.projectmanagement.dto.SprintDto;
@@ -23,6 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -58,8 +58,13 @@ public class SprintService {
         Project project = projectRepository.findById(sprintDto.getProjectId())
                 .orElseThrow(() -> new RuntimeException("Project not found with id: " + sprintDto.getProjectId()));
 
-        if (sprintDto.getStartDate().isAfter(sprintDto.getEndDate())) {
-            throw new RuntimeException("Start date cannot be after end date");
+        if (sprintRepository.existsByNameAndProjectId(sprintDto.getName(), sprintDto.getProjectId())) {
+            throw new RuntimeException("Sprint with name '" + sprintDto.getName() + "' already exists in this project.");
+        }
+
+        if (sprintDto.getStartDate().isAfter(sprintDto.getEndDate())||
+            sprintDto.getStartDate().isEqual(sprintDto.getEndDate())) {
+            throw new RuntimeException("End Date must be later than Start Date");
         }
 
         validateNoSprintOverlap(sprintDto.getProjectId(), sprintDto.getStartDate(), sprintDto.getEndDate(), null);
@@ -231,6 +236,13 @@ public class SprintService {
         SprintDto dto = modelMapper.map(sprint, SprintDto.class);
         dto.setProjectId(sprint.getProject().getId());
         dto.setProject(projectService.convertToDto(sprint.getProject()));
+        return dto;
+    }
+
+    public SprintDto convertToDto1(Sprint sprint, Map<Long, UserDto> userMap) {
+        SprintDto dto = modelMapper.map(sprint, SprintDto.class);
+        dto.setProjectId(sprint.getProject().getId());
+        dto.setProject(projectService.convertToDto1(sprint.getProject(), userMap));
         return dto;
     }
 }

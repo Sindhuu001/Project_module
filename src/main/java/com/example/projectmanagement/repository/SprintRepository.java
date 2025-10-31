@@ -45,6 +45,8 @@ long countSprintsEndingSoon(@Param("futureDate") LocalDateTime futureDate);
 
 long countByEndDateBetween(LocalDateTime start, LocalDateTime end);
 
+boolean existsByNameAndProjectId(String name, Long projectId);
+
 
 
 }

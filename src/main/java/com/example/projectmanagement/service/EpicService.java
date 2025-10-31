@@ -36,6 +36,10 @@ public class EpicService {
     // ✅ Create Epic
     public EpicDto createEpic(EpicDto epicDto) {
         Epic epic = convertToEntity(epicDto);
+        boolean exists = epicRepository.existsByNameAndProjectId(epic.getName(), epic.getProject().getId());
+        if (exists) {
+            throw new IllegalArgumentException("Epic name already exists in this project");
+        }
         Epic savedEpic = epicRepository.save(epic);
         return convertToDto(savedEpic);
     }

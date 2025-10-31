@@ -1,8 +1,8 @@
 package com.example.projectmanagement.security;
-
+ 
 import java.util.ArrayList;
 import java.util.List;
-
+ 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -11,14 +11,14 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.web.SecurityFilterChain;
 import static org.springframework.security.config.Customizer.withDefaults;
-
+ 
 @Configuration
 @EnableWebSecurity
 public class Securityconfig {
-
+ 
     // @Autowired
     // private CustomJwtAuthenticationConverter customJwtAuthenticationConverter;
-
+ 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
@@ -37,7 +37,7 @@ public class Securityconfig {
                 )
             ).cors(withDefaults())
             .csrf(csrf -> csrf.disable());
-            
+           
         return http.build();
     }
     private JwtAuthenticationConverter jwtAuthenticationConverter() {

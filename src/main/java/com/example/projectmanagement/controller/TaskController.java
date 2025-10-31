@@ -49,12 +49,14 @@ public class TaskController {
             @RequestParam(required = false) String title,
             @RequestParam(required = false) Task.Priority priority,
             @RequestParam(required = false) Long assigneeId) {
+        long start = System.currentTimeMillis();
         
         Sort sort = sortDir.equalsIgnoreCase("desc") ? 
                 Sort.by(sortBy).descending() : Sort.by(sortBy).ascending();
         Pageable pageable = PageRequest.of(page, size, sort);
         
         Page<TaskDto> tasks = taskService.searchTasks(title, priority, assigneeId, pageable);
+        System.out.println("**************Time taken to search tasks: " + (System.currentTimeMillis() - start) + " ms");
         return ResponseEntity.ok(tasks);
     }
     

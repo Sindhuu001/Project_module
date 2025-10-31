@@ -14,7 +14,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Entity
-@Table(name = "stories")
+@Table(name = "stories",uniqueConstraints = {
+        @UniqueConstraint(columnNames = {"title", "project_id","epic_id"})
+})
 @Data
 public class Story {
     

@@ -1,5 +1,6 @@
 package com.example.projectmanagement.service;
 
+import com.example.projectmanagement.client.UserClient;
 //import com.example.projectmanagement.client.UserClient;
 import com.example.projectmanagement.dto.StoryDto;
 import com.example.projectmanagement.dto.UserDto;
@@ -14,6 +15,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Service
@@ -42,6 +45,9 @@ public class StoryService {
     @Autowired
     private UserService userService;
 
+    @Autowired
+    private UserClient userClient;
+
     // ✅ Create Story
     public StoryDto createStory(StoryDto storyDto) {
         // Epic epic = epicRepository.findById(storyDto.getEpicId())
@@ -63,6 +69,13 @@ public class StoryService {
         }
         Project project = projectRepository.findById(storyDto.getProjectId())
                 .orElseThrow(() -> new RuntimeException("Project not found with id: " + storyDto.getProjectId()));
+
+        boolean exists = storyRepository.existsByTitleAndProjectIdAndEpicId(
+                storyDto.getTitle(), storyDto.getProjectId(), storyDto.getEpicId()
+        );
+        if (exists) {
+            throw new IllegalArgumentException("A story with the same title already exists under this epic and project.");
+        }
 
         UserDto reporter = userService.getUserWithRoles(storyDto.getReporterId());
                 
@@ -101,8 +114,11 @@ public class StoryService {
 
     @Transactional(readOnly = true)
     public Page<StoryDto> getAllStories(Pageable pageable) {
+        // using convertToDto1 to include user details
+        Map<Long, UserDto> userMap = userClient.findAll().stream()
+                .collect(Collectors.toMap(UserDto::getId, Function.identity()));
         return storyRepository.findAll(pageable)
-                .map(this::convertToDto);
+                .map(story -> convertToDto1(story, userMap));
     }
 
     // ✅ Get Stories by Epic ID
@@ -240,6 +256,20 @@ public class StoryService {
         }
 
         storyRepository.save(story);
+    }
+
+    public StoryDto convertToDto1(Story story, Map<Long, UserDto> userMap) {
+        StoryDto dto = modelMapper.map(story, StoryDto.class);
+
+        dto.setEpicId(story.getEpic() != null ? story.getEpic().getId() : null);
+        dto.setReporterId(story.getReporterId() != null ? story.getReporterId() : null);
+        dto.setSprintId(story.getSprint() != null ? story.getSprint().getId() : null);
+        dto.setProjectId(story.getProject() != null ? story.getProject().getId() : null);
+        dto.setAssigneeId(story.getAssigneeId() != null ? story.getAssigneeId() : null);
+        dto.setAssignee(story.getAssigneeId() != null ? userMap.get(story.getAssigneeId()) : null);
+        dto.setReporter(story.getReporterId() != null ? userMap.get(story.getReporterId()) : null);
+
+        return dto;
     }
 
 }

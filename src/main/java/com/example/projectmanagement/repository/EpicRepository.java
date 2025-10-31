@@ -28,4 +28,5 @@ public interface EpicRepository extends JpaRepository<Epic, Long> {
 
     @Query("SELECT e FROM Epic e WHERE e.priority = :priority")
     Page<Epic> findByPriority(@Param("priority") Epic.Priority priority, Pageable pageable);
+    boolean existsByNameAndProjectId(String name, Long projectId);
 }

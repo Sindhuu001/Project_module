@@ -20,8 +20,12 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/projects")
@@ -213,9 +217,38 @@ public class ProjectController {
     @GetMapping("{id}/members")
     public ResponseEntity<List<UserDto>> getProjectMembers(@PathVariable Long id) {
         List<UserDto> members = projectService.getProjectMembers(id);
+
+
         // if (members.isEmpty()) {
         // return ResponseEntity.noContent().build();
         // }
         return ResponseEntity.ok(members);
     }
+  @GetMapping("{id}/members-with-owner")
+public ResponseEntity<List<UserDto>> getProjectMembersWithOwner(@PathVariable Long id) {
+    // Get project members
+    List<UserDto> members = projectService.getProjectMembers(id);
+
+    // Get project owner
+    UserDto owner = projectService.getProjectOwner(id);
+
+    // Combine both in a single list (owner first)
+    List<UserDto> combined = new ArrayList<>();
+    if (owner != null) {
+        combined.add(owner);
+    }
+    if (members != null && !members.isEmpty()) {
+        // Avoid duplicate if owner is also listed as a member
+        combined.addAll(
+            members.stream()
+                   .filter(m -> !m.getId().equals(owner.getId()))
+                   .collect(Collectors.toList())
+        );
+    }
+
+    return ResponseEntity.ok(combined);
+}
+
+
+    
 }

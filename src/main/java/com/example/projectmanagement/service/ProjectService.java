@@ -372,6 +372,11 @@ public class ProjectService {
                 .orElseThrow(() -> new RuntimeException("Project not found with id: " + id));
         return userService.getUsersByIds(project.getMemberIds());
     }
+ public List<UserDto> getProjectMembersOwner(Long id) {
+        Project project = projectRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Project not found with id: " + id));
+        return userService.getUsersByIds(project.getMemberIds());
+    }
 
     public List<ProjectIdName> getActiveProjectsByMember(Long userId) {
         return projectRepository.findByMemberIdsAndStatus(userId, Project.ProjectStatus.ACTIVE).stream()
@@ -383,5 +388,20 @@ public class ProjectService {
                 })
                 .collect(Collectors.toList());
     }
+
+   @Transactional(readOnly = true)
+public UserDto getProjectOwner(Long projectId) {
+    Project project = projectRepository.findById(projectId)
+        .orElseThrow(() -> new RuntimeException("Project not found with id: " + projectId));
+
+    Long ownerId = project.getOwnerId();
+    if (ownerId == null) {
+        throw new RuntimeException("Project has no assigned owner.");
+    }
+
+    return userService.getUserWithRoles(ownerId);
+}
+
+
 }
  

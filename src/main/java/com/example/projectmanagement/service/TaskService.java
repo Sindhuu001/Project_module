@@ -2,13 +2,16 @@
 package com.example.projectmanagement.service;
 
 import com.example.projectmanagement.dto.TaskDto;
+import com.example.projectmanagement.dto.UserDto;
 import com.example.projectmanagement.entity.*;
+import com.example.projectmanagement.entity.Task.TaskStatus;
 import com.example.projectmanagement.repository.*;
-// import com.example.projectmanagement.entity.RolePermissionChecker;
+
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,8 +26,19 @@ public class TaskService {
     @Autowired private ProjectRepository projectRepository;
     @Autowired private StoryRepository storyRepository;
     @Autowired private SprintRepository sprintRepository;
-    @Autowired private UserRepository userRepository;
-    @Autowired private ModelMapper modelMapper;
+    
+    @Autowired 
+    private ModelMapper modelMapper;
+
+    @Autowired
+    private UserService userService;
+    
+    @Autowired
+    private ProjectService projectService;
+    @Autowired
+    private SprintService sprintService;
+    @Autowired
+    private StoryService storyService;
 
     public long countTasksByStoryId(Long storyId) {
         return taskRepository.countByStoryId(storyId);
@@ -34,12 +48,12 @@ public class TaskService {
         Project project = projectRepository.findById(taskDto.getProjectId())
                 .orElseThrow(() -> new RuntimeException("Project not found with id: " + taskDto.getProjectId()));
 
-        User reporter = userRepository.findById(taskDto.getReporterId())
-                .orElseThrow(() -> new RuntimeException("Reporter not found with id: " + taskDto.getReporterId()));
-
+        UserDto reporter = userService.getUserWithRoles(taskDto.getReporterId());
+                
         Task task = modelMapper.map(taskDto, Task.class);
         task.setProject(project);
-        task.setReporter(reporter);
+        task.setReporterId(reporter.getId());
+        task.setBillable(taskDto.isBillable());
 
         if (taskDto.getStoryId() != null) {
             Story story = storyRepository.findById(taskDto.getStoryId())
@@ -54,9 +68,9 @@ public class TaskService {
         }
 
         if (taskDto.getAssigneeId() != null) {
-            User assignee = userRepository.findById(taskDto.getAssigneeId())
-                    .orElseThrow(() -> new RuntimeException("Assignee not found with id: " + taskDto.getAssigneeId()));
-            task.setAssignee(assignee);
+            UserDto assignee = userService.getUserWithRoles(taskDto.getAssigneeId());
+                    
+            task.setAssigneeId(assignee.getId());
         }
 
         Task savedTask = taskRepository.save(task);
@@ -67,12 +81,12 @@ public class TaskService {
         Task existingTask = taskRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Task not found with id: " + id));
 
-        // User currentUser = userRepository.findById(taskDto.getReporterId())
-        //         .orElseThrow(() -> new RuntimeException("User not found"));
+        UserDto currentUser = userService.getUserWithRoles(taskDto.getReporterId());
+                
 
-        // if (!RolePermissionChecker.canUpdateTask(currentUser.getRole())) {
-        //     throw new RuntimeException("Access denied: You are not allowed to update tasks.");
-        // }
+        if (!RolePermissionChecker.canUpdateTask(currentUser.getRoles())) {
+            throw new RuntimeException("Access denied: You are not allowed to update tasks.");
+        }
 
         existingTask.setTitle(taskDto.getTitle());
         existingTask.setDescription(taskDto.getDescription());
@@ -98,11 +112,11 @@ public class TaskService {
         }
 
         if (taskDto.getAssigneeId() != null) {
-            User assignee = userRepository.findById(taskDto.getAssigneeId())
-                    .orElseThrow(() -> new RuntimeException("Assignee not found with id: " + taskDto.getAssigneeId()));
-            existingTask.setAssignee(assignee);
+            // UserDto assignee = userClient.findById(taskDto.getAssigneeId());
+                    
+            existingTask.setAssigneeId(taskDto.getAssigneeId());
         } else {
-            existingTask.setAssignee(null);
+            existingTask.setAssigneeId(null);
         }
 
         Task updatedTask = taskRepository.save(existingTask);
@@ -163,6 +177,7 @@ public class TaskService {
                 .collect(Collectors.toList());
     }
 
+
     public List<TaskDto> getBacklogTasks() {
         return taskRepository.findBacklogTasks().stream()
                 .map(this::convertToDto)
@@ -209,16 +224,26 @@ public class TaskService {
     private TaskDto convertToDto(Task task) {
         TaskDto dto = modelMapper.map(task, TaskDto.class);
         dto.setProjectId(task.getProject().getId());
-        dto.setReporterId(task.getReporter().getId());
+        dto.setProject(task.getProject() != null ? projectService.convertToDto(task.getProject()) : null);
+        dto.setReporterId(task.getReporterId());
+        dto.setReporter(task.getReporterId() != null ? userService.getUserWithRoles(task.getReporterId()) : new UserDto(12345L, "Unknown User", "unknown.user@example.com", null));
         if (task.getStory() != null) {
             dto.setStoryId(task.getStory().getId());
+            dto.setStory(storyService.convertToDto(task.getStory()));
         }
         if (task.getSprint() != null) {
             dto.setSprintId(task.getSprint().getId());
+            dto.setSprint(sprintService.convertToDto(task.getSprint()));
         }
-        if (task.getAssignee() != null) {
-            dto.setAssigneeId(task.getAssignee().getId());
+        if (task.getAssigneeId() != null) {
+            dto.setAssigneeId(task.getAssigneeId());
+            dto.setAssignee(userService.getUserWithRoles(task.getAssigneeId()));
         }
+        dto.setBillable(task.isBillable());
         return dto;
+    }
+
+    public long countTasksByStatus(TaskStatus status) {
+        return taskRepository.countByStatus(status);
     }
 }

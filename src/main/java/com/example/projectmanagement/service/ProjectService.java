@@ -1,12 +1,14 @@
 package com.example.projectmanagement.service;
- 
+
+import com.example.projectmanagement.ExternalDTO.ProjectIdName;
+import com.example.projectmanagement.ExternalDTO.ProjectTasksDto;
+import com.example.projectmanagement.client.UserClient;
 import com.example.projectmanagement.dto.ProjectDto;
 import com.example.projectmanagement.dto.UserDto;
 import com.example.projectmanagement.entity.Project;
-import com.example.projectmanagement.entity.User;
 import com.example.projectmanagement.exception.ValidationException;
 import com.example.projectmanagement.repository.ProjectRepository;
-import com.example.projectmanagement.repository.UserRepository;
+import lombok.AllArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -19,16 +21,20 @@ import java.util.stream.Collectors;
  
 @Service
 @Transactional
+@AllArgsConstructor
 public class ProjectService {
  
     @Autowired
     private ProjectRepository projectRepository;
- 
-    @Autowired
-    private UserRepository userRepository;
- 
+
     @Autowired
     private ModelMapper modelMapper;
+
+    @Autowired
+    private UserClient userClient;
+
+    @Autowired
+    private UserService userService;
 
     public ProjectDto createProject(ProjectDto projectDto) {
         List<String> errors = new ArrayList<>();
@@ -52,27 +58,43 @@ public class ProjectService {
             errors.add("Start date cannot be after end date.");
         }
 
-        if (projectDto.getOwnerId() == null || !userRepository.existsById(projectDto.getOwnerId())) {
+        // Validate owner via UMS
+        UserDto owner;
+        try {
+            owner = userService.getUserWithRoles(projectDto.getOwnerId());
+        } catch (Exception e) {
             errors.add("Valid owner ID is required.");
+            owner = null;
         }
 
         if (!errors.isEmpty()) {
             throw new ValidationException(errors);
         }
 
-        User owner = userRepository.findById(projectDto.getOwnerId()).get();
         Project project = modelMapper.map(projectDto, Project.class);
-        project.setOwner(owner);
+        project.setOwnerId(owner.getId()); // store UMS userId
 
-        // Handle members if provided
-        if (projectDto.getMemberIds() != null && !projectDto.getMemberIds().isEmpty()) {
-            List<User> members = userRepository.findAllById(projectDto.getMemberIds());
-            project.setMembers(members);
+        // ✅ Handle currentStage (new field)
+        if (projectDto.getCurrentStage() != null) {
+            project.setCurrentStage(projectDto.getCurrentStage());
         } else {
-            project.setMembers(new ArrayList<>());
+            project.setCurrentStage(Project.ProjectStage.INITIATION); // default
+        }
+
+        // Handle members
+        List<Long> memberIds = projectDto.getMemberIds();
+        if (memberIds != null && !memberIds.isEmpty()) {
+            project.setMemberIds(memberIds);
+        } else {
+            project.setMemberIds(new ArrayList<>());
         }
 
         return convertToDto(projectRepository.save(project));
+    }
+
+    @Transactional(readOnly = true)
+    public Long getProjectCount() {
+        return projectRepository.countByStatus(Project.ProjectStatus.ACTIVE);
     }
 
     @Transactional(readOnly = true)
@@ -108,7 +130,21 @@ public class ProjectService {
                 .map(this::convertToDto)
                 .collect(Collectors.toList());
     }
- 
+
+    @Transactional(readOnly = true)
+    public List<Map<String, Object>> getActiveProjectsByOwner1(Long ownerId) {
+        return projectRepository.findByOwnerId(ownerId).stream()
+                .filter(project -> project.getStatus() == Project.ProjectStatus.ACTIVE) // filter active
+                .map(project -> {
+                    Map<String, Object> map = new HashMap<>();
+                    map.put("id", project.getId());
+                    map.put("name", project.getName());
+                    return map;
+                })
+                .collect(Collectors.toList());
+    }
+
+
     @Transactional(readOnly = true)
     public List<ProjectDto> getProjectsByMember(Long userId) {
         return projectRepository.findByMemberId(userId).stream()
@@ -132,24 +168,34 @@ public class ProjectService {
         Project.ProjectStatus existingStatus = existing.getStatus();
         Project.ProjectStatus newStatus = updatedDto.getStatus();
 
+        // ✅ Archived project rule
         if (existingStatus == Project.ProjectStatus.ARCHIVED && newStatus != Project.ProjectStatus.ACTIVE) {
             errors.add("Cannot update an archived project unless status is changed to ACTIVE.");
         }
 
+        // ✅ Date validation
         if (updatedDto.getStartDate() != null && updatedDto.getEndDate() != null &&
                 updatedDto.getStartDate().isAfter(updatedDto.getEndDate())) {
             errors.add("Start date cannot be after end date.");
         }
 
-        if (updatedDto.getOwnerId() != null && !userRepository.existsById(updatedDto.getOwnerId())) {
-            errors.add("Owner not found with id: " + updatedDto.getOwnerId());
+        // ✅ Owner validation (fixed logic)
+        if (updatedDto.getOwnerId() != null) {
+            try {
+                Object ownerResponse = userClient.findExternalById(updatedDto.getOwnerId());
+                if (ownerResponse == null || (ownerResponse instanceof List && ((List<?>) ownerResponse).isEmpty())) {
+                    errors.add("Owner not found with id: " + updatedDto.getOwnerId());
+                }
+            } catch (Exception e) {
+                errors.add("Owner not found with id: " + updatedDto.getOwnerId());
+            }
         }
 
         if (!errors.isEmpty()) {
             throw new ValidationException(errors);
         }
 
-        // Apply changes
+        // ✅ Apply updates
         if (existingStatus == Project.ProjectStatus.ARCHIVED && newStatus == Project.ProjectStatus.ACTIVE) {
             existing.setStatus(Project.ProjectStatus.ACTIVE);
         } else {
@@ -161,18 +207,22 @@ public class ProjectService {
             existing.setStatus(updatedDto.getStatus());
 
             if (updatedDto.getOwnerId() != null) {
-                User owner = userRepository.findById(updatedDto.getOwnerId()).get();
-                existing.setOwner(owner);
+                existing.setOwnerId(updatedDto.getOwnerId());
+            }
+
+            // ✅ Added: update currentStage
+            if (updatedDto.getCurrentStage() != null) {
+                existing.setCurrentStage(updatedDto.getCurrentStage());
             }
         }
 
-        // Update members if provided
         if (updatedDto.getMemberIds() != null) {
-            List<User> members = userRepository.findAllById(updatedDto.getMemberIds());
-            existing.setMembers(members);
+            existing.setMemberIds(new ArrayList<>(updatedDto.getMemberIds()));
         }
 
-        return convertToDto(projectRepository.save(existing));
+        Project saved = projectRepository.save(existing);
+
+        return convertToDto(saved);
     }
 
     public void deleteProject(Long id) {
@@ -185,12 +235,9 @@ public class ProjectService {
     public ProjectDto addMemberToProject(Long projectId, Long userId) {
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new RuntimeException("Project not found with id: " + projectId));
- 
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
- 
-        if (!project.getMembers().contains(user)) {
-            project.getMembers().add(user);
+
+        if (!project.getMemberIds().contains(userId)) {
+            project.getMemberIds().add(userId);
             projectRepository.save(project);
         }
  
@@ -200,11 +247,8 @@ public class ProjectService {
     public ProjectDto removeMemberFromProject(Long projectId, Long userId) {
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new RuntimeException("Project not found with id: " + projectId));
- 
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
- 
-        project.getMembers().remove(user);
+
+        project.getMemberIds().remove(userId);
         projectRepository.save(project);
  
         return convertToDto(project);
@@ -226,27 +270,29 @@ public class ProjectService {
                     .map(this::convertToDto);
         }
     }
- 
-    private ProjectDto convertToDto(Project project) {
-        ProjectDto dto = modelMapper.map(project, ProjectDto.class);
 
-        dto.setOwnerId(project.getOwner().getId());
+    public ProjectDto convertToDto(Project project) {
+        ProjectDto dto = ProjectDto.builder()
+                .id(project.getId())
+                .name(project.getName())
+                .projectKey(project.getProjectKey())
+                .description(project.getDescription())
+                .status(project.getStatus())
+                .currentStage(project.getCurrentStage()) 
+                .createdAt(project.getCreatedAt())
+                .updatedAt(project.getUpdatedAt())
+                .build();
+
+        dto.setOwnerId(project.getOwnerId());
         dto.setStartDate(project.getStartDate());
         dto.setEndDate(project.getEndDate());
+        dto.setOwner(project.getOwnerId() != null ? userService.getUserWithRoles(project.getOwnerId()) : null);
 
-        // Set memberIds and member UserDtos
-        if (project.getMembers() != null) {
-            List<Long> memberIds = project.getMembers().stream()
-                    .map(User::getId)
-                    .collect(Collectors.toList());
+        if (project.getMemberIds() != null) {
+            List<Long> memberIds = project.getMemberIds();
             dto.setMemberIds(memberIds);
-
-            List<UserDto> memberDtos = project.getMembers().stream()
-                    .map(user -> modelMapper.map(user, UserDto.class))
-                    .collect(Collectors.toList());
-            dto.setMembers(memberDtos);
+            dto.setMembers(userService.getUsersByIds(memberIds));
         }
-
         return dto;
     }
 
@@ -264,5 +310,45 @@ public class ProjectService {
         return convertToDto(updated);
     }
 
+    public List<ProjectTasksDto> getAllProjectsWithTasks() {
+        List<Project> projects = projectRepository.findAll();
+
+        return projects.stream().map(project -> {
+            List<ProjectTasksDto.TaskDto> taskDtos = project.getTasks().stream()
+                    .map(task -> new ProjectTasksDto.TaskDto(task.getId(), task.getTitle()))
+                    .collect(Collectors.toList());
+
+            return new ProjectTasksDto(project.getId(), project.getName(), taskDtos);
+        }).collect(Collectors.toList());
+    }
+
+    public List<ProjectIdName> getAllProjectInfo() {
+        return projectRepository.findAll().stream()
+                .filter(p -> p.getStatus().equals(Project.ProjectStatus.ACTIVE))
+                .map(p -> {
+                    ProjectIdName pro = new ProjectIdName();
+                    pro.setId(p.getId());
+                    pro.setName(p.getName());
+                    return pro;
+                })
+                .collect(Collectors.toList());
+    }
+
+    public List<UserDto> getProjectMembers(Long id) {
+        Project project = projectRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Project not found with id: " + id));
+        return userService.getUsersByIds(project.getMemberIds());
+    }
+
+    public List<ProjectIdName> getActiveProjectsByMember(Long userId) {
+        return projectRepository.findByMemberIdsAndStatus(userId, Project.ProjectStatus.ACTIVE).stream()
+                .map(project -> {
+                    ProjectIdName pro = new ProjectIdName();
+                    pro.setId(project.getId());
+                    pro.setName(project.getName());
+                    return pro;
+                })
+                .collect(Collectors.toList());
+    }
 }
  

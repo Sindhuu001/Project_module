@@ -1,118 +1,87 @@
 package com.example.projectmanagement.service;
 
+import com.example.projectmanagement.ExternalDTO.ExternalRolesResponse;
+import com.example.projectmanagement.ExternalDTO.ExternalUserResponse;
+import com.example.projectmanagement.ExternalDTO.UserMapper;
+import com.example.projectmanagement.client.UserClient;
 import com.example.projectmanagement.dto.UserDto;
-import com.example.projectmanagement.entity.User;
-import com.example.projectmanagement.repository.UserRepository;
-import org.modelmapper.ModelMapper;
+import lombok.RequiredArgsConstructor;
+
+import java.util.ArrayList;
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
-@Transactional
+@RequiredArgsConstructor
 public class UserService {
 
-    @Autowired
-    private UserRepository userRepository;
+    private final UserClient userClient;
 
     @Autowired
-    private ModelMapper modelMapper;
+    private CachedUserService cachedUserService;
 
-    public UserDto createUser(UserDto userDto) {
-        if (userRepository.existsByEmail(userDto.getEmail())) {
-            throw new RuntimeException("User with email " + userDto.getEmail() + " already exists");
-        }
+    public UserDto getUserWithRoles(Long id) {
+        ExternalUserResponse extUser = cachedUserService.getUserById(id);
+        ExternalRolesResponse rolesResponse = cachedUserService.getUserRolesById(id);
 
-        User user = modelMapper.map(userDto, User.class);
-        User savedUser = userRepository.save(user);
-        return modelMapper.map(savedUser, UserDto.class);
+        return UserMapper.toUserDto(extUser, rolesResponse.getRoles());
     }
 
-    @Transactional(readOnly = true)
+    public  List<UserDto> getUsersByIds(List<Long> ids) {
+        List<UserDto> users = new ArrayList<>();
+        List<UserDto> allUsers = userClient.findAll();
+        for (Long id : ids) {
+            for (UserDto user : allUsers) {
+                if (user.getId() != null && user.getId().equals(id)) {
+                    users.add(user);
+                    break;
+                }
+            }
+        }
+        return users;
+    }
+
     public UserDto getUserById(Long id) {
-        User user = userRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("User not found with id: " + id));
-        return modelMapper.map(user, UserDto.class);
+        ExternalUserResponse extUser = cachedUserService.getUserById(id);
+        return UserMapper.toUserDto(extUser, null);
     }
 
-    @Transactional(readOnly = true)
-    public UserDto getUserByEmail(String email) {
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found with email: " + email));
-        return modelMapper.map(user, UserDto.class);
-    }
-
-    @Transactional(readOnly = true)
-    public User findByEmail(String email) {
-        return userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found with email: " + email));
-    }
-
-    @Transactional(readOnly = true)
-    public List<UserDto> getAllUsers() {
-        return userRepository.findAll().stream()
-                .map(user -> modelMapper.map(user, UserDto.class))
-                .collect(Collectors.toList());
-    }
-
-    @Transactional(readOnly = true)
-    public Page<UserDto> getAllUsers(Pageable pageable) {
-        return userRepository.findAll(pageable)
-                .map(user -> modelMapper.map(user, UserDto.class));
-    }
-
-    @Transactional(readOnly = true)
-    public List<UserDto> getUsersByRole(User.UserRole role) {
-        return userRepository.findByRole(role).stream()
-                .map(user -> modelMapper.map(user, UserDto.class))
-                .collect(Collectors.toList());
-    }
-
-    @Transactional(readOnly = true)
-    public List<UserDto> getUsersByProject(Long projectId) {
-        return userRepository.findByProjectId(projectId).stream()
-                .map(user -> modelMapper.map(user, UserDto.class))
-                .collect(Collectors.toList());
-    }
-
-    public UserDto updateUser(Long id, UserDto userDto) {
-        User user = userRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-
-        user.setName(userDto.getName());
-        user.setEmail(userDto.getEmail());
-        user.setRole(userDto.getRole()); // ✅ FIXED: use setRole instead of setRoles
-
-        User updatedUser = userRepository.save(user);
-        return modelMapper.map(updatedUser, UserDto.class);
-    }
-
-    public void deleteUser(Long id) {
-        if (!userRepository.existsById(id)) {
-            throw new RuntimeException("User not found with id: " + id);
+    // searchUsers
+    public Page<UserDto> searchUsers(String name, String role, Pageable pageable) {
+        // TODO: Implement actual search logic using userClient
+        List<UserDto> allUsers = userClient.findAll();
+        List<UserDto> filtered = new ArrayList<>();
+        for (UserDto user : allUsers) {
+            boolean matches = true;
+            if (name != null && !user.getName().toLowerCase().contains(name.toLowerCase())) {
+                matches = false;
+            }
+            if (role != null && (user.getRoles() == null || !user.getRoles().contains(role))) {
+                matches = false;
+            }
+            if (matches) {
+                filtered.add(user);
+            }
         }
-        userRepository.deleteById(id);
+        int start = (int) pageable.getOffset();
+        int end = Math.min((start + pageable.getPageSize()), filtered.size());
+        return new PageImpl<>(filtered.subList(start, end), pageable, filtered.size());
     }
 
-    @Transactional(readOnly = true)
-    public Page<UserDto> searchUsers(String name, User.UserRole role, Pageable pageable) {
-        if (name != null && role != null) {
-            return userRepository.findByNameContaining(name, pageable)
-                    .map(user -> modelMapper.map(user, UserDto.class));
-        } else if (name != null) {
-            return userRepository.findByNameContaining(name, pageable)
-                    .map(user -> modelMapper.map(user, UserDto.class));
-        } else if (role != null) {
-            return userRepository.findByRole(role, pageable)
-                    .map(user -> modelMapper.map(user, UserDto.class));
-        } else {
-            return userRepository.findAll(pageable)
-                    .map(user -> modelMapper.map(user, UserDto.class));
+    // getUsersByRole
+    public List<UserDto> getUsersByRole(String role) {
+        List<UserDto> allUsers = userClient.findAll();
+        List<UserDto> filtered = new ArrayList<>();
+        for (UserDto user : allUsers) {
+            if (user.getRoles() != null && user.getRoles().contains(role)) {
+                filtered.add(user);
+            }
         }
+        return filtered;
     }
 }

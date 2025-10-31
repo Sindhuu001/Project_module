@@ -50,6 +50,7 @@ public class Epic {
     private List<Comment> comments = new ArrayList<>();
 
     // Enums
+    
     public enum EpicStatus {
         OPEN,
         IN_PROGRESS,

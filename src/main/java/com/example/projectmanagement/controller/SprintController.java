@@ -1,15 +1,17 @@
 package com.example.projectmanagement.controller;
-
 import com.example.projectmanagement.dto.SprintDto;
 import com.example.projectmanagement.dto.TaskDto;
+import com.example.projectmanagement.dto.UserDto;
 import com.example.projectmanagement.entity.Sprint;
-import com.example.projectmanagement.entity.User;
-import com.example.projectmanagement.repository.UserRepository;
+import com.example.projectmanagement.security.CurrentUser;
 import com.example.projectmanagement.service.SprintService;
 import com.example.projectmanagement.service.TaskService;
+import com.example.projectmanagement.service.UserService;
+
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.*;
+
 import org.springframework.http.*;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -19,7 +21,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/sprints")
-@CrossOrigin(origins = "*") 
+@CrossOrigin
 public class SprintController {
 
     @Autowired
@@ -29,15 +31,15 @@ public class SprintController {
     private TaskService taskService;
 
     @Autowired
-    private UserRepository userRepository;
+    private UserService userService;
 
     // Create Sprint with User context
     @PostMapping
-    @PreAuthorize("hasRole('Manager')")
-    public ResponseEntity<SprintDto> createSprint(@Valid @RequestBody SprintDto sprintDto) {
-        User currentUser = userRepository.findById(1L)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-        SprintDto createdSprint = sprintService.createSprint(sprintDto, currentUser);
+    // @PreAuthorize("hasRole('Manager')")
+    public ResponseEntity<SprintDto> createSprint(@Valid @RequestBody SprintDto sprintDto,
+                                                  @CurrentUser UserDto currentUser) {
+                
+        SprintDto createdSprint = sprintService.createSprint(sprintDto, currentUser.getId());
         return new ResponseEntity<>(createdSprint, HttpStatus.CREATED);
     }
 
@@ -87,7 +89,7 @@ public class SprintController {
     }
 
     @DeleteMapping("/{sprintId}/tasks/{taskId}")
-    @PreAuthorize("hasRole('Manager')")
+    // @PreAuthorize("hasRole('Manager')")
     public ResponseEntity<TaskDto> removeTaskFromSprint(@PathVariable Long sprintId, @PathVariable Long taskId) {
         TaskDto updatedTask = taskService.removeTaskFromSprint(taskId);
         return ResponseEntity.ok(updatedTask);
@@ -141,9 +143,9 @@ public ResponseEntity<SprintDto> updateSprint(@PathVariable Long id, @Valid @Req
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('Manager')")
     public ResponseEntity<Void> deleteSprint(@PathVariable Long id) {
-        User currentUser = userRepository.findById(1L)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-        sprintService.deleteSprint(id, currentUser);
+        UserDto currentUserId = userService.getUserWithRoles(id);
+                
+        sprintService.deleteSprint(id, currentUserId.getId());
         return ResponseEntity.noContent().build();
     }
 }

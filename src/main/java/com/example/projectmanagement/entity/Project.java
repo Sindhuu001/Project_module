@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
+import lombok.Data;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -13,6 +14,7 @@ import java.util.List;
 
 @Entity
 @Table(name = "projects")
+@Data
 public class Project {
 
     @Id
@@ -40,21 +42,23 @@ public class Project {
     @Column(nullable = false)
     private ProjectStatus status = ProjectStatus.ACTIVE;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "owner_id", nullable = false)
-    private User owner;
+    // 🧩 New field: currentStage (optional)
+    @Enumerated(EnumType.STRING)
+    @Column(name = "current_stage", nullable = true)
+    private ProjectStage currentStage=ProjectStage.INITIATION;  // e.g., PLANNING, DESIGN, DEVELOPMENT, etc.
 
-    @ManyToMany
-    @JoinTable(
+    @Column(name = "ownerId", nullable = false)
+    private Long ownerId;
+
+    @ElementCollection(fetch = FetchType.LAZY)
+    @CollectionTable(
         name = "project_members",
-        joinColumns = @JoinColumn(name = "project_id"),
-        inverseJoinColumns = @JoinColumn(name = "user_id")
+        joinColumns = @JoinColumn(name = "project_id")
     )
-    private List<User> members;
+    @Column(name = "user_id")
+    private List<Long> memberIds = new ArrayList<>();
 
-    // @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    // private List<Epic> epics;
-    @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true,fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<Epic> epics = new ArrayList<>();
 
     @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
@@ -77,141 +81,36 @@ public class Project {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
+    // ✅ Project Status Enum
     public enum ProjectStatus {
-        ACTIVE, ARCHIVED, PLANNING, COMPLETED;
-
-
+        ACTIVE,
+        ARCHIVED,
+        PLANNING,
+        COMPLETED
     }
-    
 
-    public Project() {}
+    // 🧭 Project Stage Enum (optional)
+    public enum ProjectStage {
+        INITIATION,
+        PLANNING,
+        DESIGN,
+        DEVELOPMENT,
+        TESTING,
+        DEPLOYMENT,
+        MAINTENANCE,
+        COMPLETED
+    }
 
-    public Project(String name, String projectKey, String description, User owner, LocalDateTime startDate, LocalDateTime endDate) {
+    public Project() {
+    }
+
+    public Project(String name, String projectKey, String description, Long ownerId,
+                   LocalDateTime startDate, LocalDateTime endDate) {
         this.name = name;
         this.projectKey = projectKey;
         this.description = description;
-        this.owner = owner;
-        this.startDate=startDate;
-        this.endDate=endDate;
-    }
-
-    // Getters and setters...
-
-    // Add startDate and endDate getters/setters:
-    public LocalDateTime getStartDate() {
-        return startDate;
-    }
-
-    public void setStartDate(LocalDateTime startDate) {
+        this.ownerId = ownerId;
         this.startDate = startDate;
-    }
-
-    public LocalDateTime getEndDate() {
-        return endDate;
-    }
-
-    public void setEndDate(LocalDateTime endDate) {
         this.endDate = endDate;
-    }
-
-    // (All other existing getters/setters remain unchanged)
-
-
-
-    // Getters and Setters
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public String getProjectKey() {
-        return projectKey;
-    }
-
-    public void setProjectKey(String projectKey) {
-        this.projectKey = projectKey;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
-    }
-
-    public ProjectStatus getStatus() {
-        return status;
-    }
-
-    public void setStatus(ProjectStatus status) {
-        this.status = status;
-    }
-
-    public User getOwner() {
-        return owner;
-    }
-
-    public void setOwner(User owner) {
-        this.owner = owner;
-    }
-
-    public List<User> getMembers() {
-        return members;
-    }
-
-    public void setMembers(List<User> members) {
-        this.members = members;
-    }
-
-    public List<Epic> getEpics() {
-        return epics;
-    }
-
-    public void setEpics(List<Epic> epics) {
-        this.epics = epics;
-    }
-
-    public List<Sprint> getSprints() {
-        return sprints;
-    }
-
-    public void setSprints(List<Sprint> sprints) {
-        this.sprints = sprints;
-    }
-
-    public List<Task> getTasks() {
-        return tasks;
-    }
-
-    public void setTasks(List<Task> tasks) {
-        this.tasks = tasks;
-    }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
-    }
-
-    public LocalDateTime getUpdatedAt() {
-        return updatedAt;
-    }
-
-    public void setUpdatedAt(LocalDateTime updatedAt) {
-        this.updatedAt = updatedAt;
     }
 }

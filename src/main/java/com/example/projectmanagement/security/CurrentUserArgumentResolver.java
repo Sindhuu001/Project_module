@@ -37,8 +37,8 @@ public class CurrentUserArgumentResolver implements HandlerMethodArgumentResolve
         Long userId = jwt.hasClaim("user_id") ? Long.valueOf(jwt.getClaimAsString("user_id")) : null;
         String name = jwt.getClaimAsString("name");
         List<String> roles = jwt.getClaimAsStringList("roles");
-        
+        String email = jwt.getClaimAsString("email");
 
-        return new UserDto(userId, name, roles);
+        return new UserDto(userId, name,email, roles);
     }
 }

@@ -1,8 +1,10 @@
 package com.example.projectmanagement.service;
 
+import com.example.projectmanagement.client.UserClient;
 import com.example.projectmanagement.dto.EmployeePerformanceDto;
 import com.example.projectmanagement.dto.EpicWithStoriesDto;
 import com.example.projectmanagement.dto.StoryWithTasksDto;
+import com.example.projectmanagement.dto.UserDto;
 import com.example.projectmanagement.entity.*;
 import com.example.projectmanagement.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,8 +17,7 @@ import java.util.stream.Collectors;
 @Service
 public class PerformanceService {
 
-    @Autowired
-    private UserRepository userRepository;
+    
 
     @Autowired
     private TaskRepository taskRepository;
@@ -24,17 +25,19 @@ public class PerformanceService {
     @Autowired
     private ProjectRepository projectRepository;
 
-    @Autowired
-    private EpicRepository epicRepository;
+    // @Autowired
+    // private EpicRepository epicRepository;
 
+    // @Autowired
+    // private StoryRepository storyRepository;
     @Autowired
-    private StoryRepository storyRepository;
-
+    private UserClient userClient;
+   
     public List<EmployeePerformanceDto> getAllEmployeePerformance() {
-        List<User> users = userRepository.findAll();
+        List<UserDto> users = userClient.findAll();
         List<EmployeePerformanceDto> performanceList = new ArrayList<>();
 
-        for (User user : users) {
+        for (UserDto user : users) {
             List<Project> projects = projectRepository.findByMemberId(user.getId());
             List<Task> tasks = taskRepository.findByAssigneeId(user.getId());
 

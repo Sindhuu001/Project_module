@@ -4,9 +4,10 @@ import com.example.projectmanagement.entity.Task;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+import lombok.Data;
 
 import java.time.LocalDateTime;
-
+@Data
 public class TaskDto {
     
     private Long id;
@@ -40,6 +41,7 @@ public class TaskDto {
     private ProjectDto project;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private boolean isBillable;
     
     // Constructors
     public TaskDto() {}

@@ -19,7 +19,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/tasks")
-@CrossOrigin(origins = "*") 
+@CrossOrigin
 public class TaskController {
     
     @Autowired
@@ -72,6 +72,12 @@ public class TaskController {
         return ResponseEntity.ok(tasks);
     }
     
+    @GetMapping("/status/done/count")
+    public ResponseEntity<Long> getDoneTaskCount() {
+        long count = taskService.countTasksByStatus(Task.TaskStatus.DONE);
+        return ResponseEntity.ok(count);
+    }
+
     @PutMapping("/{id}")
     @PreAuthorize("hasAnyRole('Manager','Employee')")
     public ResponseEntity<TaskDto> updateTask(@PathVariable Long id, @Valid @RequestBody TaskDto taskDto) {

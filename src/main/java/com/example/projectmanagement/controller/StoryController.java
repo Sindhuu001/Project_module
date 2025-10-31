@@ -19,7 +19,7 @@ import java.util.Map;
 
 @RequestMapping("/api/stories")
 
-@CrossOrigin(origins = "*") 
+@CrossOrigin 
 
 public class StoryController {
  
@@ -39,9 +39,8 @@ public class StoryController {
     }
 
     @GetMapping("/no-epic")
-    @PreAuthorize("hasAnyRole('Manager','Admin','Employee')")
-public ResponseEntity<List<StoryDto>> getStoriesWithoutEpic() {
-    List<StoryDto> stories = storyService.getStoriesWithoutEpic();
+public ResponseEntity<List<StoryDto>> getStoriesWithoutEpic(@RequestParam Long projectId) {
+    List<StoryDto> stories = storyService.getStoriesWithoutEpic(projectId);
     return ResponseEntity.ok(stories);
 }
 

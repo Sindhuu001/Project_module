@@ -4,15 +4,17 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
+import lombok.Data;
+
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
+
 
 @Entity
 @Table(name = "tasks")
+@Data
 public class Task {
     
     @Id
@@ -57,14 +59,11 @@ public class Task {
     @JoinColumn(name = "sprint_id")
     private Sprint sprint;
     
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "assignee_id")
-    private User assignee;
     
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "reporter_id", nullable = false)
-    private User reporter;
-    
+    private Long assigneeId;
+
+    private Long reporterId;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -85,57 +84,18 @@ public class Task {
     @JoinColumn(name = "story_id", nullable = false)
     private Story story;
 
+    private boolean isBillable;
+
 
     // Constructors
     public Task() {}
-    
-    public Task(String title, String description, Project project, User reporter) {
+
+    public Task(String title, String description, Project project, Long reporterId) {
         this.title = title;
         this.description = description;
         this.project = project;
-        this.reporter = reporter;
+        this.reporterId = reporterId;
     }
     
-    // Getters and Setters
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
     
-    public String getTitle() { return title; }
-    public void setTitle(String title) { this.title = title; }
-    
-    public String getDescription() { return description; }
-    public void setDescription(String description) { this.description = description; }
-    
-    public TaskStatus getStatus() { return status; }
-    public void setStatus(TaskStatus status) { this.status = status; }
-    
-    public Priority getPriority() { return priority; }
-    public void setPriority(Priority priority) { this.priority = priority; }
-    
-    public Integer getStoryPoints() { return storyPoints; }
-    public void setStoryPoints(Integer storyPoints) { this.storyPoints = storyPoints; }
-    
-    public LocalDateTime getDueDate() { return dueDate; }
-    public void setDueDate(LocalDateTime dueDate) { this.dueDate = dueDate; }
-    
-    public Project getProject() { return project; }
-    public void setProject(Project project) { this.project = project; }
-    
-    public Story getStory() { return story; }
-    public void setStory(Story story) { this.story = story; }
-    
-    public Sprint getSprint() { return sprint; }
-    public void setSprint(Sprint sprint) { this.sprint = sprint; }
-    
-    public User getAssignee() { return assignee; }
-    public void setAssignee(User assignee) { this.assignee = assignee; }
-    
-    public User getReporter() { return reporter; }
-    public void setReporter(User reporter) { this.reporter = reporter; }
-    
-    public LocalDateTime getCreatedAt() { return createdAt; }
-    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
-    
-    public LocalDateTime getUpdatedAt() { return updatedAt; }
-    public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
 }

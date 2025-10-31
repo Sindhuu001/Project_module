@@ -1,5 +1,8 @@
 package com.example.projectmanagement.dto;
 
+import lombok.Data;
+
+@Data
 public class ReminderDto {
     private long tasksDueSoon;
     private long projectsWithoutOwner;

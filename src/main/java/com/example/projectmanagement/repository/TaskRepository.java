@@ -32,7 +32,7 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
     @Query("SELECT t FROM Task t WHERE t.sprint.id = :sprintId AND t.status = :status")
     List<Task> findBySprintIdAndStatus(@Param("sprintId") Long sprintId, @Param("status") Task.TaskStatus status);
     
-    @Query("SELECT t FROM Task t WHERE t.assignee.id = :assigneeId")
+    @Query("SELECT t FROM Task t WHERE t.assigneeId = :assigneeId")
     Page<Task> findByAssigneeId(@Param("assigneeId") Long assigneeId, Pageable pageable);
     
     @Query("SELECT t FROM Task t WHERE t.title LIKE %:title%")
@@ -42,16 +42,16 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
     Page<Task> findByPriority(@Param("priority") Task.Priority priority, Pageable pageable);
 
     @Query("SELECT COUNT(t) FROM Task t WHERE t.story.id = :storyId")
-long countByStoryId(@Param("storyId") Long storyId);
+    long countByStoryId(@Param("storyId") Long storyId);
 
     
     @Query("SELECT t FROM Task t WHERE t.sprint IS NULL AND t.status IN ('BACKLOG', 'TODO')")
     List<Task> findBacklogTasks();
 
     @Query("SELECT COUNT(t) FROM Task t WHERE t.dueDate BETWEEN CURRENT_TIMESTAMP AND :futureDate")
-long countTasksDueSoon(@Param("futureDate") LocalDateTime futureDate);
-long countByStatus(Task.TaskStatus status);
+    long countTasksDueSoon(@Param("futureDate") LocalDateTime futureDate);
+    long countByStatus(Task.TaskStatus status);
 
-long countByDueDateBetween(LocalDateTime start, LocalDateTime end);
+    long countByDueDateBetween(LocalDateTime start, LocalDateTime end);
 
 }

@@ -18,9 +18,9 @@ public class Comment {
     @Column(nullable = false, length = 1000)
     private String content;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id")
-    private User user;
+    @Column(name = "user_id", nullable = false)
+    private Long userId;
+
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "task_id")

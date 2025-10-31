@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
+import lombok.Data;
+
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -13,6 +15,7 @@ import java.util.List;
 
 @Entity
 @Table(name = "stories")
+@Data
 public class Story {
     
     @Id
@@ -49,27 +52,25 @@ public class Story {
     // @JoinColumn(name = "epic_id", nullable = false)
     // private Epic epic;
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "epic_id", nullable = false)
+    @JoinColumn(name = "epic_id", nullable = true)
     private Epic epic;
 
     @OneToMany(mappedBy = "story", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Task> tasks = new ArrayList<>();
 
-    
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "assignee_id")
-    private User assignee;
-    
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "reporter_id", nullable = false)
-    private User reporter;
+
+
+    private Long assigneeId;
+
+
+    private Long reporterId;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "project_id", nullable = false)
     private Project project;
     
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "sprint_id", nullable = false)
+    @JoinColumn(name = "sprint_id", nullable = true)
     private Sprint sprint;
 
     @OneToMany(mappedBy = "story", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -97,67 +98,13 @@ public class Story {
     
     // Constructors
     public Story() {}
-    
-    public Story(String title, String description, Epic epic, User reporter) {
+
+    public Story(String title, String description, Epic epic, Long reporterId) {
         this.title = title;
         this.description = description;
         this.epic = epic;
-        this.reporter = reporter;
+        this.reporterId = reporterId;
     }
     
-    // Getters and Setters
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
     
-    public String getTitle() { return title; }
-    public void setTitle(String title) { this.title = title; }
-    
-    public String getDescription() { return description; }
-    public void setDescription(String description) { this.description = description; }
-    
-    public StoryStatus getStatus() { return status; }
-    public void setStatus(StoryStatus status) { this.status = status; }
-    
-    public Priority getPriority() { return priority; }
-    public void setPriority(Priority priority) { this.priority = priority; }
-    
-    public Integer getStoryPoints() { return storyPoints; }
-    public void setStoryPoints(Integer storyPoints) { this.storyPoints = storyPoints; }
-    
-    public String getAcceptanceCriteria() { return acceptanceCriteria; }
-    public void setAcceptanceCriteria(String acceptanceCriteria) { this.acceptanceCriteria = acceptanceCriteria; }
-    
-    public Epic getEpic() { return epic; }
-    public void setEpic(Epic epic) { this.epic = epic; }
-    
-    public User getAssignee() { return assignee; }
-    public void setAssignee(User assignee) { this.assignee = assignee; }
-    
-    public User getReporter() { return reporter; }
-    public void setReporter(User reporter) { this.reporter = reporter; }
-    
-    public List<Task> getTasks() { return tasks; }
-    public void setTasks(List<Task> tasks) { this.tasks = tasks; }
-    
-    public LocalDateTime getCreatedAt() { return createdAt; }
-    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
-    
-    public LocalDateTime getUpdatedAt() { return updatedAt; }
-    public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
-
-    public Sprint getSprint() {
-        return sprint;
-    }
-    
-    public void setSprint(Sprint sprint) {
-        this.sprint = sprint;
-    }
-    
-    public Project getProject() {
-        return project;
-    }
-    
-    public void setProject(Project project) {
-        this.project = project;
-    }
 }

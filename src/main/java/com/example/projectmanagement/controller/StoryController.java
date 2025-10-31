@@ -36,20 +36,20 @@ public class StoryController {
     }
 
     @GetMapping("/no-epic")
-public ResponseEntity<List<StoryDto>> getStoriesWithoutEpic(@RequestParam Long projectId) {
-    List<StoryDto> stories = storyService.getStoriesWithoutEpic(projectId);
-    return ResponseEntity.ok(stories);
-}
+    public ResponseEntity<List<StoryDto>> getStoriesWithoutEpic(@RequestParam Long projectId) {
+        List<StoryDto> stories = storyService.getStoriesWithoutEpic(projectId);
+        return ResponseEntity.ok(stories);
+    }
 
  
     // ✅ Get story by ID
 
     @GetMapping("/{id:\\d+}")
-public ResponseEntity<StoryDto> getStoryById(@PathVariable Long id) {
-    StoryDto story = storyService.getStoryById(id);
-    return ResponseEntity.ok(story);
-}
- 
+    public ResponseEntity<StoryDto> getStoryById(@PathVariable Long id) {
+        StoryDto story = storyService.getStoryById(id);
+        return ResponseEntity.ok(story);
+    }
+    
     // ✅ Get all stories with optional filters and pagination
 
     @GetMapping

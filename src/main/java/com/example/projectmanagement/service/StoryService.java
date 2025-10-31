@@ -132,8 +132,10 @@ public class StoryService {
     // ✅ Get Stories by Project ID
     @Transactional(readOnly = true)
     public List<StoryDto> getStoriesByProjectId(Long projectId) {
+        Map<Long, UserDto> userMap = userClient.findAll().stream()
+                .collect(Collectors.toMap(UserDto::getId, Function.identity()));
         return storyRepository.findByProjectId(projectId).stream()
-                .map(this::convertToDto)
+                .map(story -> convertToDto1(story, userMap))
                 .collect(Collectors.toList());
     }
 
@@ -217,8 +219,12 @@ public class StoryService {
     // ✅ Search Stories with filters
     @Transactional(readOnly = true)
     public Page<StoryDto> searchStories(String title, Story.Priority priority, Long epicId, Long projectId, Long sprintId, Pageable pageable) {
+        List<UserDto> allUsers = userClient.findAll();
+        Map<Long, UserDto> userMap = allUsers.stream()
+                .collect(Collectors.toMap(UserDto::getId, Function.identity()));
         return storyRepository.searchByFilters(title, priority, epicId, projectId, sprintId, pageable)
-                .map(this::convertToDto);
+                .map(story -> convertToDto1(story, userMap)
+                );
     }
 
     // ✅ Convert Entity to DTO (null-safe)
@@ -236,11 +242,11 @@ public class StoryService {
         return dto;
     }
     public List<StoryDto> getStoriesWithoutEpic(Long projectId) {
-    return storyRepository.findByEpicIsNullAndProjectId(projectId)
-            .stream()
-            .map(story -> new StoryDto(story.getId(), story.getTitle(), story.getDescription()))
-            .collect(Collectors.toList());
-}
+        return storyRepository.findByEpicIsNullAndProjectId(projectId)
+                .stream()
+                .map(story -> new StoryDto(story.getId(), story.getTitle(), story.getDescription()))
+                .collect(Collectors.toList());
+    }
     public void assignStoryToSprint(Long storyId, Long sprintId) {
         Story story = storyRepository.findById(storyId)
                 .orElseThrow(() -> new RuntimeException("Story not found with id: " + storyId));

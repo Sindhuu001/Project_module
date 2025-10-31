@@ -1,5 +1,6 @@
 package com.example.projectmanagement.service;
 
+import com.example.projectmanagement.client.UserClient;
 import com.example.projectmanagement.dto.SprintDto;
 import com.example.projectmanagement.dto.UserDto;
 import com.example.projectmanagement.entity.Project;
@@ -23,6 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Service
@@ -48,6 +50,8 @@ public class SprintService {
 
     @Autowired
     private StoryRepository storyRepository;
+    @Autowired
+    private UserClient userClient;
 
     public SprintDto createSprint(SprintDto sprintDto, Long currentUserId) {
         UserDto currentUserDto = userService.getUserWithRoles(currentUserId);
@@ -186,8 +190,10 @@ public class SprintService {
 
     @Transactional(readOnly = true)
     public Page<SprintDto> getAllSprints(Pageable pageable) {
+        Map<Long, UserDto> userMap = userClient.findAll().stream()
+                .collect(Collectors.toMap(UserDto::getId, Function.identity()));
         return sprintRepository.findAll(pageable)
-                .map(this::convertToDto);
+                .map(sprint -> convertToDto1(sprint, userMap));
     }
 
     @Transactional(readOnly = true)

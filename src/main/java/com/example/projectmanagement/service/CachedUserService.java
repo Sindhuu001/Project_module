@@ -20,12 +20,6 @@ public class CachedUserService {
     @Cacheable(value = "users", key = "#id")
     public ExternalUserResponse getUserById(Long id) {
         System.out.println("Fetching user from user-service via Feign...");
-        // simulate delay
-        try {
-            Thread.sleep(20000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
         return userClient.findExternalById(id);
     }
 

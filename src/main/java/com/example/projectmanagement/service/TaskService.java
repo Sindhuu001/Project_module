@@ -233,8 +233,8 @@ public class TaskService {
     private TaskDto convertToDto(Task task) {
         TaskDto dto = modelMapper.map(task, TaskDto.class);
         List<UserDto> allUsers = userClient.findAll();
-Map<Long, UserDto> userMap = allUsers.stream()
-    .collect(Collectors.toMap(UserDto::getId, Function.identity()));
+        Map<Long, UserDto> userMap = allUsers.stream()
+            .collect(Collectors.toMap(UserDto::getId, Function.identity()));
     
         dto.setProjectId(task.getProject().getId());
         dto.setProject(task.getProject() != null ? projectService.convertToDto1(task.getProject(),userMap) : null);

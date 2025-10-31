@@ -8,7 +8,6 @@ import com.example.projectmanagement.dto.SprintDto;
 import com.example.projectmanagement.dto.StoryDto;
 import com.example.projectmanagement.dto.TaskDto;
 import com.example.projectmanagement.dto.UserDto;
-import com.example.projectmanagement.entity.Project;
 import com.example.projectmanagement.security.CurrentUser;
 import com.example.projectmanagement.service.EpicService;
 import com.example.projectmanagement.service.ProjectService;
@@ -22,7 +21,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
-import java.util.stream.Collectors;
 import java.util.Map;
 
 @RestController
@@ -57,7 +55,9 @@ public class ProjectController {
     @GetMapping
     @PreAuthorize("hasAnyRole('Manager','Admin','Employee')")
     public ResponseEntity<List<ProjectDto>> getAllProjects() {
+        long start = System.currentTimeMillis();
         List<ProjectDto> projects = projectService.getAllProjects();
+        System.out.println("*****************Time taken to fetch all projects: " + (System.currentTimeMillis() - start) + " ms");
         return ResponseEntity.ok(projects);
     }
 

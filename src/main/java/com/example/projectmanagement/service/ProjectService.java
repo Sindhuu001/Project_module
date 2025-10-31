@@ -174,8 +174,11 @@ public class ProjectService {
 
     @Transactional(readOnly = true)
     public List<ProjectDto> getProjectsByMember(Long userId) {
+        List<UserDto> allUsers = userClient.findAll();
+        Map<Long, UserDto> userMap = allUsers.stream()
+            .collect(Collectors.toMap(UserDto::getId, Function.identity()));
         return projectRepository.findByMemberId(userId).stream()
-                .map(this::convertToDto)
+                .map(project -> convertToDto1(project, userMap))
                 .collect(Collectors.toList());
     }
 

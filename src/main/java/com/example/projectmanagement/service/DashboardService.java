@@ -2,7 +2,7 @@ package com.example.projectmanagement.service;
 
 import com.example.projectmanagement.dto.DashboardSummaryDto;
 import com.example.projectmanagement.entity.Epic;
-
+import com.example.projectmanagement.entity.Project;
 import com.example.projectmanagement.entity.Story;
 import com.example.projectmanagement.entity.Task;
 import com.example.projectmanagement.repository.*;
@@ -11,7 +11,10 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.EnumMap;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 public class DashboardService {
@@ -40,10 +43,6 @@ public class DashboardService {
         long totalTasks = taskRepository.count();
         long totalEpics = epicRepository.count();
         long totalStories = storyRepository.count();
-
-        
-        
-
         // Task status counts
         Map<Task.TaskStatus, Long> taskStatusMap = new EnumMap<>(Task.TaskStatus.class);
         for (Task.TaskStatus status : Task.TaskStatus.values()) {
@@ -108,5 +107,35 @@ public class DashboardService {
 
         return reminders;
     }
-    
+
+
+    public Map<String, Object> getDashboardData(Long userId) {
+
+    // --- Task Status Counts ---
+    EnumMap<Task.TaskStatus, Long> taskStatusMap = new EnumMap<>(Task.TaskStatus.class);
+    for (Task.TaskStatus status : Task.TaskStatus.values()) {
+        taskStatusMap.put(status, taskRepository.countByAssigneeIdAndStatus(userId, status));
+    }
+
+    // --- Story Status Counts ---
+    EnumMap<Story.StoryStatus, Long> storyStatusMap = new EnumMap<>(Story.StoryStatus.class);
+    for (Story.StoryStatus status : Story.StoryStatus.values()) {
+        storyStatusMap.put(status, storyRepository.countByAssigneeIdAndStatus(userId, status));
+    }
+
+    // --- Convert Enum keys to String for JSON output ---
+    Map<String, Object> result = new LinkedHashMap<>();
+    result.put("taskStatus", taskStatusMap.entrySet().stream()
+            .collect(Collectors.toMap(e -> e.getKey().name(), Map.Entry::getValue)));
+    // result.put("epicStatus", epicStatusMap.entrySet().stream()
+    //         .collect(Collectors.toMap(e -> e.getKey().name(), Map.Entry::getValue)));
+    result.put("storyStatus", storyStatusMap.entrySet().stream()
+            .collect(Collectors.toMap(e -> e.getKey().name(), Map.Entry::getValue)));
+
+    return result;
+}
+
+
+
+
 }

@@ -1,6 +1,8 @@
 package com.example.projectmanagement.repository;
 
 import com.example.projectmanagement.entity.Task;
+import com.example.projectmanagement.entity.Task.TaskStatus;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -53,5 +55,9 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
     long countByStatus(Task.TaskStatus status);
 
     long countByDueDateBetween(LocalDateTime start, LocalDateTime end);
+
+    long countByAssigneeId(Long userId);
+
+    Long countByAssigneeIdAndStatus(Long userId, TaskStatus status);
 
 }

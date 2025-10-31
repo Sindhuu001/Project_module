@@ -1,30 +1,29 @@
 package com.example.projectmanagement.dto;
 
-import lombok.AllArgsConstructor;
+import com.example.projectmanagement.entity.Project;
 import lombok.Builder;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 
 import java.util.List;
 import java.util.Map;
 
 @Data
 @Builder
-@NoArgsConstructor
-@AllArgsConstructor
 public class DashboardSummaryDto {
+
+    // Overall counts
     private Long totalProjects;
     private Long totalTasks;
-    private Map<String, Long> taskStatusCount;
     private Long totalEpics;
-    private Map<String, Long> epicStatusCount;
     private Long totalStories;
-    private Map<String, Long> storyStatusCount; 
-    //private Long totalUsers;
-    private List<?> projects;
-    private List<?> stories;
-    private List<?> tasks;
 
+    // For user-specific summary
+    private List<Project> projectsInvolved;
+    private Long tasksAssigned;
+    private Long storiesAssigned;
+
+    // Status counts
+    private Map<String, Long> taskStatusCount;
+    private Map<String, Long> storyStatusCount;
+    private Map<String, Long> epicStatusCount;
 }
-    
-

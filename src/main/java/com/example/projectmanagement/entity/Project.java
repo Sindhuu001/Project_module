@@ -37,10 +37,9 @@ public class Project {
     @Column(nullable = false)
     private ProjectStatus status = ProjectStatus.ACTIVE;
 
-    // 🧩 New field: currentStage (optional)
     @Enumerated(EnumType.STRING)
     @Column(name = "current_stage", nullable = true)
-    private ProjectStage currentStage=ProjectStage.INITIATION;  // e.g., PLANNING, DESIGN, DEVELOPMENT, etc.
+    private ProjectStage currentStage=ProjectStage.INITIATION;  
 
     @Column(name = "ownerId", nullable = false)
     private Long ownerId;

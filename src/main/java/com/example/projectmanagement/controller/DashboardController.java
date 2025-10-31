@@ -31,6 +31,14 @@ public class DashboardController {
     public ResponseEntity<Map<String, Long>> getReminders() {
         return ResponseEntity.ok(dashboardService.getReminders());
     }
+    
+    @GetMapping("/{userId}")
+    public ResponseEntity<?> getDashboardData(@PathVariable Long userId) {
+        Map<String, Object> summary = dashboardService.getDashboardData(userId);
+        return ResponseEntity.ok(summary);
+    }
+
+
 
 
 }

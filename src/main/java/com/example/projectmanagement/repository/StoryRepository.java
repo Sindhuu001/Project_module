@@ -1,6 +1,8 @@
 package com.example.projectmanagement.repository;
 
 import com.example.projectmanagement.entity.Story;
+import com.example.projectmanagement.entity.Story.StoryStatus;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -54,4 +56,5 @@ public interface StoryRepository extends JpaRepository<Story, Long> {
         Pageable pageable
     );
     boolean existsByTitleAndProjectIdAndEpicId(String title, Long projectId, Long epicId);
+    Long countByAssigneeIdAndStatus(Long userId, StoryStatus status);
 }

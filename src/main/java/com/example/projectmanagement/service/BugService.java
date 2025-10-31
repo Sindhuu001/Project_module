@@ -75,17 +75,16 @@ public class BugService {
                 .collect(Collectors.toList());
     }
 
-    public BugDto updateBug(Long id, BugDto updatedBugDto) {
-        Bug existingBug = bugRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Bug not found with ID: " + id));
+   public BugDto updateBug(Long id, BugDto updatedBugDto) {
+    Bug existingBug = bugRepository.findById(id)
+            .orElseThrow(() -> new RuntimeException("Bug not found with ID: " + id));
 
-        modelMapper.map(updatedBugDto, existingBug);
-        existingBug.setUpdatedDate(LocalDateTime.now());
+    modelMapper.map(updatedBugDto, existingBug);
+    existingBug.setUpdatedDate(LocalDateTime.now());
 
-        Bug saved = bugRepository.save(existingBug);
-        return modelMapper.map(saved, BugDto.class);
-    }
-
+    Bug saved = bugRepository.save(existingBug);
+    return modelMapper.map(saved, BugDto.class);
+}
     public BugDto updateBugStatus(Long id, Bug.Status status) {
         Bug bug = bugRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Bug not found with ID: " + id));

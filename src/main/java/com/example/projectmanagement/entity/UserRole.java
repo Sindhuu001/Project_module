@@ -1,4 +1,4 @@
-// package com.example.projectmanagement.entity;
+ package com.example.projectmanagement.entity;
 
 // import jakarta.persistence.*;
 // import jakarta.validation.constraints.Email;
@@ -48,10 +48,10 @@
 //     @Column(name = "updated_at")
 //     private LocalDateTime updatedAt;
 
-//     // Enum inside the class
-//     public enum UserRole {
-//         ADMIN, DEVELOPER, TESTER, PRODUCT_OWNER, SCRUM_MASTER
-//     }
+    // Enum inside the class
+    public enum UserRole {
+        ADMIN, DEVELOPER, TESTER, PRODUCT_OWNER, SCRUM_MASTER
+    }
 
 //     // Constructors
 //     public User() {}

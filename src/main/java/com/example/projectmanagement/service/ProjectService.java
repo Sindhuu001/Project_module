@@ -20,12 +20,12 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-
+ 
 @Service
 @Transactional
 @AllArgsConstructor
 public class ProjectService {
-
+ 
     @Autowired
     private ProjectRepository projectRepository;
 
@@ -105,14 +105,14 @@ public class ProjectService {
                 .orElseThrow(() -> new RuntimeException("Project not found with id: " + id));
         return convertToDto(project);
     }
-
+ 
     @Transactional(readOnly = true)
     public ProjectDto getProjectByKey(String projectKey) {
         Project project = projectRepository.findByProjectKey(projectKey)
                 .orElseThrow(() -> new RuntimeException("Project not found with key: " + projectKey));
         return convertToDto(project);
     }
-
+ 
     @Transactional(readOnly = true)
     public List<ProjectDto> getAllProjects() {
 
@@ -144,13 +144,13 @@ public class ProjectService {
         System.out.println("###########################Time taken to convert single Project to ProjectDto: " + (System.currentTimeMillis() - start) + " ms");
         return dto;
     }
-
+ 
     @Transactional(readOnly = true)
     public Page<ProjectDto> getAllProjects(Pageable pageable) {
         return projectRepository.findAll(pageable)
                 .map(this::convertToDto);
     }
-
+ 
     @Transactional(readOnly = true)
     public List<ProjectDto> getProjectsByOwner(Long ownerId) {
         return projectRepository.findByOwnerId(ownerId).stream()
@@ -181,14 +181,14 @@ public class ProjectService {
                 .map(project -> convertToDto1(project, userMap))
                 .collect(Collectors.toList());
     }
-
+ 
     @Transactional(readOnly = true)
     public List<ProjectDto> getProjectsByStatus(Project.ProjectStatus status) {
         return projectRepository.findByStatus(status).stream()
                 .map(this::convertToDto)
                 .collect(Collectors.toList());
     }
-
+ 
     public ProjectDto updateProject(Long id, ProjectDto updatedDto) {
         List<String> errors = new ArrayList<>();
 
@@ -261,7 +261,7 @@ public class ProjectService {
         }
         projectRepository.deleteById(id);
     }
-
+ 
     public ProjectDto addMemberToProject(Long projectId, Long userId) {
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new RuntimeException("Project not found with id: " + projectId));
@@ -270,20 +270,20 @@ public class ProjectService {
             project.getMemberIds().add(userId);
             projectRepository.save(project);
         }
-
+ 
         return convertToDto(project);
     }
-
+ 
     public ProjectDto removeMemberFromProject(Long projectId, Long userId) {
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new RuntimeException("Project not found with id: " + projectId));
 
         project.getMemberIds().remove(userId);
         projectRepository.save(project);
-
+ 
         return convertToDto(project);
     }
-
+ 
     @Transactional(readOnly = true)
     public Page<ProjectDto> searchProjects(String name, Project.ProjectStatus status, Pageable pageable) {
         if (name != null && status != null) {
@@ -375,6 +375,11 @@ public class ProjectService {
                 .orElseThrow(() -> new RuntimeException("Project not found with id: " + id));
         return userService.getUsersByIds(project.getMemberIds());
     }
+ public List<UserDto> getProjectMembersOwner(Long id) {
+        Project project = projectRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Project not found with id: " + id));
+        return userService.getUsersByIds(project.getMemberIds());
+    }
 
     public List<ProjectIdName> getActiveProjectsByMember(Long userId) {
         return projectRepository.findByMemberIdsAndStatus(userId, Project.ProjectStatus.ACTIVE).stream()
@@ -386,4 +391,20 @@ public class ProjectService {
                 })
                 .collect(Collectors.toList());
     }
+
+   @Transactional(readOnly = true)
+public UserDto getProjectOwner(Long projectId) {
+    Project project = projectRepository.findById(projectId)
+        .orElseThrow(() -> new RuntimeException("Project not found with id: " + projectId));
+
+    Long ownerId = project.getOwnerId();
+    if (ownerId == null) {
+        throw new RuntimeException("Project has no assigned owner.");
+    }
+
+    return userService.getUserWithRoles(ownerId);
 }
+
+
+}
+ 

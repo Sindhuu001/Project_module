@@ -1,5 +1,7 @@
 package com.example.projectmanagement.config;
 
+import com.example.projectmanagement.entity.Bug;
+import com.example.projectmanagement.dto.BugDto;
 import org.modelmapper.Converter;
 import org.modelmapper.ModelMapper;
 import org.modelmapper.convention.MatchingStrategies;
@@ -24,17 +26,18 @@ public class ModelMapperConfig {
                 .setFieldMatchingEnabled(true)
                 .setFieldAccessLevel(org.modelmapper.config.Configuration.AccessLevel.PRIVATE);
 
-        // ✅ Converter: Hibernate PersistentBag (or any Collection) → List
+        // ✅ Convert collections safely
         Converter<Collection<?>, List<?>> toList =
                 ctx -> ctx.getSource() == null ? null : new ArrayList<>(ctx.getSource());
-
-        // ✅ Converter: Hibernate PersistentSet (or any Collection) → Set
         Converter<Collection<?>, Set<?>> toSet =
                 ctx -> ctx.getSource() == null ? null : new HashSet<>(ctx.getSource());
 
-        // Register both
         mapper.addConverter(toList);
         mapper.addConverter(toSet);
+
+        // 🚫 Prevent overwriting IDs when mapping BugDto → Bug
+        mapper.typeMap(BugDto.class, Bug.class)
+                .addMappings(m -> m.skip(Bug::setId));
 
         return mapper;
     }

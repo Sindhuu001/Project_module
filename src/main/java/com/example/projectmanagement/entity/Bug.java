@@ -62,7 +62,7 @@ public class Bug {
 
     // Enums for Status, Priority, and Severity
     public enum Status {
-        open, IN_PROGRESS, RESOLVED, CLOSED, REOPENED
+        OPEN, IN_PROGRESS, RESOLVED, CLOSED, REOPENED
     }
 
     public enum Priority {

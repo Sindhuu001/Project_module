@@ -2,6 +2,7 @@ package com.example.projectmanagement.entity;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 import org.hibernate.annotations.CreationTimestamp;
@@ -22,6 +23,10 @@ public class Project {
 
     @NotBlank(message = "Project name is required")
     @Size(min = 2, max = 100, message = "Project name must be between 2 and 100 characters")
+    @Pattern(
+        regexp = "^(?!.* {3,})[A-Za-z0-9 ]+$",
+        message = "Name must contain only letters, digits, spaces, and not more than 2 consecutive spaces"
+    )
     @Column(nullable = false)
     private String name;
 

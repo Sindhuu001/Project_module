@@ -3,13 +3,16 @@ package com.example.projectmanagement.security;
 import com.example.projectmanagement.dto.UserDto;
 import org.springframework.core.MethodParameter;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.stereotype.Component;
 import org.springframework.web.bind.support.WebDataBinderFactory;
 import org.springframework.web.context.request.NativeWebRequest;
 import org.springframework.web.method.support.HandlerMethodArgumentResolver;
 import org.springframework.web.method.support.ModelAndViewContainer;
 
+import java.util.Collections;
 import java.util.List;
 
 @Component
@@ -17,7 +20,7 @@ public class CurrentUserArgumentResolver implements HandlerMethodArgumentResolve
 
     @Override
     public boolean supportsParameter(MethodParameter parameter) {
-        return parameter.getParameterAnnotation(CurrentUser.class) != null &&
+        return parameter.hasParameterAnnotation(CurrentUser.class) &&
                parameter.getParameterType().equals(UserDto.class);
     }
 
@@ -27,18 +30,20 @@ public class CurrentUserArgumentResolver implements HandlerMethodArgumentResolve
                                   NativeWebRequest webRequest,
                                   WebDataBinderFactory binderFactory) {
 
-        Authentication authentication = (Authentication) webRequest.getUserPrincipal();
-        if (authentication == null || !(authentication.getPrincipal() instanceof Jwt)) {
-            return null;
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        if (authentication == null || !(authentication instanceof JwtAuthenticationToken)) {
+            return null; // User not authenticated
         }
 
-        Jwt jwt = (Jwt) authentication.getPrincipal();
+        JwtAuthenticationToken jwtAuthToken = (JwtAuthenticationToken) authentication;
+        Jwt jwt = jwtAuthToken.getToken();
 
         Long userId = jwt.hasClaim("user_id") ? Long.valueOf(jwt.getClaimAsString("user_id")) : null;
         String name = jwt.getClaimAsString("name");
-        List<String> roles = jwt.getClaimAsStringList("roles");
         String email = jwt.getClaimAsString("email");
+        List<String> roles = jwt.hasClaim("roles") ? jwt.getClaimAsStringList("roles") : Collections.emptyList();
 
-        return new UserDto(userId, name,email, roles);
+        return new UserDto(userId, name, email, roles);
     }
 }

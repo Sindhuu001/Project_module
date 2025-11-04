@@ -6,16 +6,17 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
  
 @Configuration
 @EnableWebSecurity
 public class Securityconfig {
  
-    // private final PermissionCheckFilter permissionCheckFilter;
+    private final PermissionCheckFilter permissionCheckFilter;
  
-    // public Securityconfig(PermissionCheckFilter permissionCheckFilter) {
-    //     this.permissionCheckFilter = permissionCheckFilter;
-    // }
+    public Securityconfig(PermissionCheckFilter permissionCheckFilter) {
+        this.permissionCheckFilter = permissionCheckFilter;
+    }
  
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -48,7 +49,7 @@ public class Securityconfig {
            
             // ✅ Add permission filter AFTER authentication check
             // This ensures only authenticated requests reach your permission filter
-            //.addFilterAfter(permissionCheckFilter, UsernamePasswordAuthenticationFilter.class)
+            .addFilterAfter(permissionCheckFilter, UsernamePasswordAuthenticationFilter.class)
             .oauth2ResourceServer(oauth2 -> oauth2.jwt())
             // ✅ Disable form login (REST API doesn't need it)
             .formLogin(form -> form.disable())

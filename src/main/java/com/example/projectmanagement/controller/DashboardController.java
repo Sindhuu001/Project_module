@@ -23,13 +23,13 @@ public class DashboardController {
         this.dashboardService = dashboardService;
     }
 
-    @GetMapping("/summary")
+    @GetMapping("/summary/")
     @PreAuthorize("hasAnyRole('Manager','Admin','Employee')")
     public ResponseEntity<DashboardSummaryDto> getDashboardSummary() {
         return ResponseEntity.ok(dashboardService.getSummary());
     }
 
-    @GetMapping("/reminders")
+    @GetMapping("/reminders/")
     public ResponseEntity<Map<String, Long>> getReminders() {
         return ResponseEntity.ok(dashboardService.getReminders());
     }

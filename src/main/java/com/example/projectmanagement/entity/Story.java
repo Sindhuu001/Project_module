@@ -5,10 +5,8 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
-
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
-
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -27,7 +25,7 @@ public class Story {
     @NotBlank(message = "Story title is required")
     @Size(min = 2, max = 200, message = "Story title must be between 2 and 200 characters")
     @Pattern(
-        regexp = "^(?!.* {3,})[A-Za-z0-9 ]+$",
+        regexp = "^(?!.* {3,})[A-Za-z0-9 _-]+$",
         message = "Name must contain only letters, digits, spaces, and not more than 2 consecutive spaces"
     )
     @Column(nullable = false)
@@ -60,11 +58,7 @@ public class Story {
     @OneToMany(mappedBy = "story", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Task> tasks = new ArrayList<>();
 
-
-
     private Long assigneeId;
-
-
     private Long reporterId;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -107,6 +101,4 @@ public class Story {
         this.epic = epic;
         this.reporterId = reporterId;
     }
-    
-    
 }

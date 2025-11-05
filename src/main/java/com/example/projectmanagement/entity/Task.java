@@ -1,21 +1,18 @@
 package com.example.projectmanagement.entity;
-
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
-
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
-
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-
-
 @Entity
-@Table(name = "tasks")
+@Table(name = "tasks", uniqueConstraints = {
+        @UniqueConstraint(columnNames = {"title", "project_id", "story_id"})
+})
 @Data
 public class Task {
     
@@ -100,6 +97,4 @@ public class Task {
         this.project = project;
         this.reporterId = reporterId;
     }
-    
-    
 }

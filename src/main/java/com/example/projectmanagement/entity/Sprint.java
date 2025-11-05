@@ -1,15 +1,11 @@
 package com.example.projectmanagement.entity;
-
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
-
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
-
-
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -63,9 +59,6 @@ public class Sprint {
         PLANNING, ACTIVE, COMPLETED
     }
 
-    
-
-    
     private Long startedBy;
 
     private LocalDateTime startedAt;
@@ -82,8 +75,5 @@ public class Sprint {
         this.startDate = startDate;
         this.endDate = endDate;
         this.project = project;
-    }
-    
-    // Getters and Setters
-    
+    }    
 }

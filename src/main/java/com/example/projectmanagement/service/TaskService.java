@@ -7,16 +7,12 @@ import com.example.projectmanagement.dto.UserDto;
 import com.example.projectmanagement.entity.*;
 import com.example.projectmanagement.entity.Task.TaskStatus;
 import com.example.projectmanagement.repository.*;
-
-import org.checkerframework.checker.units.qual.s;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -88,12 +84,12 @@ public class TaskService {
         Task existingTask = taskRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Task not found with id: " + id));
 
-        UserDto currentUser = userService.getUserWithRoles(taskDto.getReporterId());
+        // UserDto currentUser = userService.getUserWithRoles(taskDto.getReporterId());
                 
 
-        if (!RolePermissionChecker.canUpdateTask(currentUser.getRoles())) {
-            throw new RuntimeException("Access denied: You are not allowed to update tasks.");
-        }
+        // if (!RolePermissionChecker.canUpdateTask(currentUser.getRoles())) {
+        //     throw new RuntimeException("Access denied: You are not allowed to update tasks.");
+        // }
 
         existingTask.setTitle(taskDto.getTitle());
         existingTask.setDescription(taskDto.getDescription());

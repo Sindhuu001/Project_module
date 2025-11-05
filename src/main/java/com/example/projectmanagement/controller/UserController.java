@@ -11,9 +11,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-
 import java.util.List;
 
 @RestController
@@ -34,14 +32,14 @@ public class UserController {
     // }
     
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('Manager','Admin','Employee')")
+   // @PreAuthorize("hasAnyRole('Manager','Admin','Employee')")
     public ResponseEntity<UserDto> getUserById(@PathVariable Long id) {
         UserDto user = userService.getUserById(id);
         return ResponseEntity.ok(user);
     }
     
     @GetMapping
-    @PreAuthorize("hasAnyRole('Manager','Admin','Employee')")
+   // @PreAuthorize("hasAnyRole('Manager','Admin','Employee')")
     public ResponseEntity<Page<UserDto>> getAllUsers(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "100") int size,
@@ -71,7 +69,7 @@ public class UserController {
     // }
     
     @GetMapping("/{userId}/tasks")
-    @PreAuthorize("hasAnyRole('Manager','Admin','Employee')")
+   // @PreAuthorize("hasAnyRole('Manager','Admin','Employee')")
     public ResponseEntity<List<TaskDto>> getUserTasks(@PathVariable Long userId) {
         List<TaskDto> tasks = taskService.getTasksByAssignee(userId);
         return ResponseEntity.ok(tasks);

@@ -2,17 +2,14 @@ package com.example.projectmanagement.service;
 
 import com.example.projectmanagement.dto.DashboardSummaryDto;
 import com.example.projectmanagement.entity.Epic;
-import com.example.projectmanagement.entity.Project;
 import com.example.projectmanagement.entity.Story;
 import com.example.projectmanagement.entity.Task;
 import com.example.projectmanagement.repository.*;
 import org.springframework.stereotype.Service;
-
 import java.time.LocalDateTime;
 import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -133,9 +130,5 @@ public class DashboardService {
             .collect(Collectors.toMap(e -> e.getKey().name(), Map.Entry::getValue)));
 
     return result;
-}
-
-
-
-
+    }
 }

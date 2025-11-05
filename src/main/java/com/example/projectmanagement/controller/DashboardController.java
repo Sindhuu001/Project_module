@@ -7,7 +7,6 @@ import java.util.Map;
 
 //import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -24,7 +23,7 @@ public class DashboardController {
     }
 
     @GetMapping("/summary/")
-    @PreAuthorize("hasAnyRole('Manager','Admin','Employee')")
+   // @PreAuthorize("hasAnyRole('Manager','Admin','Employee')")
     public ResponseEntity<DashboardSummaryDto> getDashboardSummary() {
         return ResponseEntity.ok(dashboardService.getSummary());
     }

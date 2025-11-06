@@ -5,6 +5,7 @@ import com.example.projectmanagement.service.PerformanceService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 import java.util.List;
 @CrossOrigin 
@@ -20,7 +21,7 @@ public String test() {
 }
 
     @GetMapping("/employees")
-   // @PreAuthorize("hasAnyRole('Manager','Admin','Employee')")
+   @PreAuthorize("hasAnyRole('Manager','Admin','Employee')")
     public ResponseEntity<List<EmployeePerformanceDto>> getAllEmployeePerformance() {
         List<EmployeePerformanceDto> result = performanceService.getAllEmployeePerformance();
         return ResponseEntity.ok(result);

@@ -4,6 +4,7 @@ import com.example.projectmanagement.dto.EpicDto;
 import com.example.projectmanagement.service.EpicService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -18,7 +19,7 @@ public class EpicController {
 
     // Create new Epic
     @PostMapping
-   // @PreAuthorize("hasRole('Manager')")
+   @PreAuthorize("hasRole('Manager')")
     public ResponseEntity<EpicDto> createEpic(@RequestBody EpicDto epicDto) {
         EpicDto createdEpic = epicService.createEpic(epicDto);
         return ResponseEntity.ok(createdEpic);
@@ -26,14 +27,14 @@ public class EpicController {
 
     // Get all epics
     @GetMapping
-   // @PreAuthorize("hasAnyRole('Manager','Admin','Employee')")
+   @PreAuthorize("hasAnyRole('Manager','Admin','Employee')")
     public ResponseEntity<List<EpicDto>> getAllEpics() {
         return ResponseEntity.ok(epicService.getAllEpics());
     }
 
     // Get epic by ID
     @GetMapping("/{id}")
-   // @PreAuthorize("hasAnyRole('Manager','Admin','Employee')")
+   @PreAuthorize("hasAnyRole('Manager','Admin','Employee')")
     public ResponseEntity<EpicDto> getEpicById(@PathVariable Long id) {
         EpicDto epicDto = epicService.getEpicById(id);
         if (epicDto != null) {
@@ -45,7 +46,7 @@ public class EpicController {
 
     // Update epic
     @PutMapping("/{id}")
-   // @PreAuthorize("hasRole('Manager')")
+   @PreAuthorize("hasRole('Manager')")
     public ResponseEntity<EpicDto> updateEpic(@PathVariable Long id, @RequestBody EpicDto epicDto) {
         EpicDto updatedEpic = epicService.updateEpic(id, epicDto);
         if (updatedEpic != null) {
@@ -57,7 +58,7 @@ public class EpicController {
 
     // Delete epic
     @DeleteMapping("/{id}")
-   // @PreAuthorize("hasRole('Manager')")
+   @PreAuthorize("hasRole('Manager')")
     public ResponseEntity<Void> deleteEpic(@PathVariable Long id) {
         boolean deleted = epicService.deleteEpic(id);
         if (deleted) {
@@ -69,7 +70,7 @@ public class EpicController {
 
     // Get epics by project ID
     @GetMapping("/project/{projectId}")
-   // @PreAuthorize("hasAnyRole('Manager','Admin','Employee')")
+   @PreAuthorize("hasAnyRole('Manager','Admin','Employee')")
     public ResponseEntity<List<EpicDto>> getEpicsByProjectId(@PathVariable Long projectId) {
         return ResponseEntity.ok(epicService.getEpicsByProjectId(projectId));
     }

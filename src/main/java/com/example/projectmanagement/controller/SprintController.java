@@ -63,12 +63,11 @@ public class SprintController {
         return ResponseEntity.ok(sprints);
     }
 
-//     @GetMapping("/{sprintId}/tasks")
-//    @PreAuthorize("hasAnyRole('Manager','Admin','Employee')")
-//     public ResponseEntity<List<TaskDto>> getSprintTasks(@PathVariable Long sprintId) {
-//         List<TaskDto> tasks = taskService.getTasksBySprint(sprintId);
-//         return ResponseEntity.ok(tasks);
-//     }
+    @GetMapping("/{sprintId}/tasks")
+   @PreAuthorize("hasAnyRole('Manager','Admin','Employee')")
+    public ResponseEntity<List<TaskDto.Summary>> getTaskSummaries(@PathVariable Long sprintId) {
+        return ResponseEntity.ok(taskService.getTaskSummariesBySprintId(sprintId));
+    }
 
     @PostMapping("/{sprintId}/tasks")
    @PreAuthorize("hasRole('Manager')")
@@ -99,10 +98,10 @@ public class SprintController {
         return ResponseEntity.ok(sprints);
     }
 
-    @GetMapping("/active")
-   @PreAuthorize("hasAnyRole('Manager','Admin','Employee')")
-    public ResponseEntity<List<SprintDto>> getActiveSprints() {
-        List<SprintDto> sprints = sprintService.getActiveSprintsOnDate(LocalDateTime.now());
+    @GetMapping("/active/project/{projectId}")
+    @PreAuthorize("hasAnyRole('Manager','Admin','Employee')")
+    public ResponseEntity<List<SprintDto>> getActiveSprintsByProject(@PathVariable Long projectId) {
+        List<SprintDto> sprints = sprintService.getActiveSprintsByProject(projectId);
         return ResponseEntity.ok(sprints);
     }
 
@@ -124,10 +123,10 @@ public class SprintController {
     // Update sprint with User context
     @PutMapping("/{id}")
    @PreAuthorize("hasRole('Manager')")
-public ResponseEntity<SprintDto> updateSprint(@PathVariable Long id, @Valid @RequestBody SprintDto sprintDto) {
-    SprintDto updatedSprint = sprintService.updateSprint(id, sprintDto); // ✅ Only 2 parameters
-    return ResponseEntity.ok(updatedSprint);
-}
+    public ResponseEntity<SprintDto> updateSprint(@PathVariable Long id, @Valid @RequestBody SprintDto sprintDto) {
+        SprintDto updatedSprint = sprintService.updateSprint(id, sprintDto); // ✅ Only 2 parameters
+        return ResponseEntity.ok(updatedSprint);
+    }
     @PutMapping("/{id}/start")
    @PreAuthorize("hasRole('Manager')")
     public ResponseEntity<SprintDto> startSprint(@PathVariable Long id) {

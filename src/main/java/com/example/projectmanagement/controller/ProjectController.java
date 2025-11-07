@@ -136,9 +136,9 @@ public class ProjectController {
 
     // ✅ GET Tasks by project ID
     @GetMapping("/{id}/tasks")
-   @PreAuthorize("hasAnyRole('Manager','Admin','Employee')")
-    public ResponseEntity<List<TaskDto>> getProjectTasks(@PathVariable Long id) {
-        List<TaskDto> tasks = taskService.getTasksByProject(id);
+    @PreAuthorize("hasAnyRole('Manager','Admin','Employee')")
+    public ResponseEntity<List<TaskDto.Summary>> getProjectTasks(@PathVariable Long id) {
+        List<TaskDto.Summary> tasks = taskService.getTaskSummariesByProject(id);
         return ResponseEntity.ok(tasks);
     }
 

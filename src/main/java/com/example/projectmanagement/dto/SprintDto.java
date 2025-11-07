@@ -31,7 +31,7 @@ public class SprintDto {
     @NotNull(message = "Project ID is required")
     private Long projectId;
     
-    private ProjectDto project;
+    private String projectName;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     
@@ -67,10 +67,10 @@ public class SprintDto {
     
     public Long getProjectId() { return projectId; }
     public void setProjectId(Long projectId) { this.projectId = projectId; }
-    
-    public ProjectDto getProject() { return project; }
-    public void setProject(ProjectDto project) { this.project = project; }
-    
+
+    public String getProjectName() { return projectName; }
+    public void setProjectName(String projectName) { this.projectName = projectName; }
+
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
     

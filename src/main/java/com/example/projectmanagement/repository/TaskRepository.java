@@ -1,5 +1,6 @@
 package com.example.projectmanagement.repository;
 
+import com.example.projectmanagement.dto.TaskDto;
 import com.example.projectmanagement.entity.Task;
 import com.example.projectmanagement.entity.Task.TaskStatus;
 import org.springframework.data.domain.Page;
@@ -12,8 +13,11 @@ import java.util.List;
 
 @Repository
 public interface TaskRepository extends JpaRepository<Task, Long> {
-
-    List<Task> findByProjectId(Long projectId);
+    @Query("""
+    SELECT new com.example.projectmanagement.dto.TaskDto$Summary(t.id,t.title,t.status,t.story.id,t.story.sprint.id)
+    FROM Task t
+    WHERE t.project.id = :projectId""")
+    List<TaskDto.Summary> findTaskSummariesByProjectId(@Param("projectId") Long projectId);
 
     List<Task> findByStoryId(Long storyId);
 
@@ -50,6 +54,10 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
 
     @Query("SELECT COUNT(t) FROM Task t WHERE t.dueDate BETWEEN CURRENT_TIMESTAMP AND :futureDate")
     long countTasksDueSoon(@Param("futureDate") LocalDateTime futureDate);
+
+    @Query("SELECT new com.example.projectmanagement.dto.TaskDto$Summary(t.id, t.title, t.status, t.story.id, t.story.sprint.id) " +
+       "FROM Task t WHERE t.story.sprint.id = :sprintId")
+    List<TaskDto.Summary> findTaskSummariesBySprintId(@Param("sprintId") Long sprintId);
 
     long countByStatus(TaskStatus status);
 

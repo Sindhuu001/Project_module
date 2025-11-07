@@ -24,10 +24,8 @@ public interface SprintRepository extends JpaRepository<Sprint, Long> {
     
     @Query("SELECT s FROM Sprint s WHERE s.project.id = :projectId")
     Page<Sprint> findByProjectId(@Param("projectId") Long projectId, Pageable pageable);
-    
-    @Query("SELECT s FROM Sprint s WHERE s.startDate <= :date AND s.endDate >= :date")
-    List<Sprint> findActiveSprintsOnDate(@Param("date") LocalDateTime date);
-    
+    @Query("SELECT s FROM Sprint s WHERE s.status = 'ACTIVE' AND s.project.id = :projectId")
+    List<Sprint> findActiveSprintsByProject(@Param("projectId") Long projectId);
     @Query("SELECT s FROM Sprint s WHERE s.endDate < :date AND s.status != 'COMPLETED'")
     List<Sprint> findOverdueSprints(@Param("date") LocalDateTime date);
 

@@ -81,5 +81,28 @@ public class TaskDto {
         private Task.TaskStatus status;
         private Long storyId;
         private Long sprintId;
+        private Task.Priority priority;
+        private Long reporterId;
+        private String reporterName;
+        private Long assigneeId;
+        private String assigneeName;
+        private LocalDateTime createdAt;
+        private boolean isBillable;
+
+        public Summary(Long id, String title, Task.TaskStatus status,
+                   Long storyId, Long sprintId, Task.Priority priority,
+                   Long reporterId, Long assigneeId,
+                   LocalDateTime createdAt, boolean isBillable) {
+            this.id = id;
+            this.title = title;
+            this.status = status;
+            this.storyId = storyId;
+            this.sprintId = sprintId;
+            this.priority = priority;
+            this.reporterId = reporterId;
+            this.assigneeId = assigneeId;
+            this.createdAt = createdAt;
+            this.isBillable = isBillable;
+        }
     }
 }

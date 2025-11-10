@@ -14,7 +14,7 @@ import java.util.List;
 @Repository
 public interface TaskRepository extends JpaRepository<Task, Long> {
     @Query("""
-    SELECT new com.example.projectmanagement.dto.TaskDto$Summary(t.id,t.title,t.status,t.story.id,t.story.sprint.id)
+    SELECT new com.example.projectmanagement.dto.TaskDto$Summary(t.id,t.title,t.status,t.story.id,t.story.sprint.id,t.priority,t.reporterId,t.assigneeId,t.createdAt,t.isBillable)
     FROM Task t
     WHERE t.project.id = :projectId""")
     List<TaskDto.Summary> findTaskSummariesByProjectId(@Param("projectId") Long projectId);

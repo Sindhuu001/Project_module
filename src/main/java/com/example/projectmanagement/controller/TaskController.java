@@ -40,7 +40,7 @@ public class TaskController {
     }
     
     @GetMapping
-   @PreAuthorize("hasAnyRole('Manager','Admin','Employee')")
+    @PreAuthorize("hasAnyRole('Manager','Admin','Employee')")
     public ResponseEntity<Page<TaskDto>> getAllTasks(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,

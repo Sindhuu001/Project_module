@@ -1,5 +1,6 @@
 package com.example.projectmanagement.service;
 
+import com.example.projectmanagement.ExternalDTO.ProjectTasksDto.TaskDto;
 import com.example.projectmanagement.client.UserClient;
 import com.example.projectmanagement.dto.SprintDto;
 import com.example.projectmanagement.dto.UserDto;
@@ -132,6 +133,7 @@ public class SprintService {
 
     // 5️⃣ Mark sprint as completed
     sprint.setStatus(Sprint.SprintStatus.COMPLETED);
+    sprint.setEndDate(LocalDateTime.now());
     Sprint updatedSprint = sprintRepository.save(sprint);
 
     // 6️⃣ Return DTO
@@ -211,11 +213,13 @@ public class SprintService {
     }
 
     @Transactional(readOnly = true)
-    public List<SprintDto> getActiveSprintsOnDate(LocalDateTime date) {
-        return sprintRepository.findActiveSprintsOnDate(date).stream()
+    public List<SprintDto> getActiveSprintsByProject(Long projectId) {
+        return sprintRepository.findActiveSprintsByProject(projectId).stream()
                 .map(this::convertToDto)
                 .collect(Collectors.toList());
+
     }
+
 
     @Transactional(readOnly = true)
     public List<SprintDto> getOverdueSprints() {
@@ -241,14 +245,14 @@ public class SprintService {
     public SprintDto convertToDto(Sprint sprint) {
         SprintDto dto = modelMapper.map(sprint, SprintDto.class);
         dto.setProjectId(sprint.getProject().getId());
-        dto.setProject(projectService.convertToDto(sprint.getProject()));
+        dto.setProjectName(sprint.getProject().getName());
         return dto;
     }
 
     public SprintDto convertToDto1(Sprint sprint, Map<Long, UserDto> userMap) {
         SprintDto dto = modelMapper.map(sprint, SprintDto.class);
         dto.setProjectId(sprint.getProject().getId());
-        dto.setProject(projectService.convertToDto1(sprint.getProject(), userMap));
+        dto.setProjectName(sprint.getProject().getName());
         return dto;
     }
 }

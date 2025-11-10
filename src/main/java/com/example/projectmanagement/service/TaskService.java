@@ -120,12 +120,14 @@ public class TaskService {
                 .map(this::convertToDto);
     }
 
-    public List<TaskDto> getTasksByProject(Long projectId) {
-        return taskRepository.findByProjectId(projectId).stream()
-                .map(this::convertToDto)
-                .collect(Collectors.toList());
+    public List<TaskDto.Summary> getTaskSummariesByProject(Long projectId) {
+        return taskRepository.findTaskSummariesByProjectId(projectId);
     }
 
+    public List<TaskDto.Summary> getTaskSummariesBySprintId(Long sprintId) {
+    return taskRepository.findTaskSummariesBySprintId(sprintId);
+}
+   
     public List<TaskDto> getTasksByStory(Long storyId) {
         return taskRepository.findByStoryId(storyId).stream()
                 .map(this::convertToDto)
@@ -182,6 +184,7 @@ public class TaskService {
                 .collect(Collectors.toMap(UserDto::getId, Function.identity()));
 
         dto.setProjectId(task.getProject().getId());
+        dto.setSprintId(task.getSprintId());
         dto.setProject(task.getProject() != null ? projectService.convertToDto1(task.getProject(), userMap) : null);
 
         dto.setReporterId(task.getReporterId());

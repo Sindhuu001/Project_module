@@ -48,14 +48,14 @@ public class ProjectController {
     // ✅ CREATE a new project
     
     @PostMapping
-   @PreAuthorize("hasRole('Manager')")
+    @PreAuthorize("hasRole('Manager')")
     public ResponseEntity<ProjectDto> createProject(@Valid @RequestBody ProjectDto projectDto) {
         ProjectDto createdProject = projectService.createProject(projectDto);
         return ResponseEntity.status(HttpStatus.CREATED).body(createdProject);
     }
 
     @GetMapping
-   @PreAuthorize("hasAnyRole('Manager','Admin','Employee')")
+    @PreAuthorize("hasAnyRole('Manager','Admin','Employee')")
     public ResponseEntity<List<ProjectDto>> getAllProjects() {
         long start = System.currentTimeMillis();
         List<ProjectDto> projects = projectService.getAllProjects();
@@ -71,7 +71,7 @@ public class ProjectController {
 
     // ✅ GET project by ID
     @GetMapping("/{id}")
-   @PreAuthorize("hasAnyRole('Manager','Admin','Employee')")
+    @PreAuthorize("hasAnyRole('Manager','Admin','Employee')")
     public ResponseEntity<ProjectDto> getProjectById(@PathVariable Long id) {
         ProjectDto project = projectService.getProjectById(id);
         return ResponseEntity.ok(project);
@@ -93,7 +93,7 @@ public class ProjectController {
 
     // ✅ DELETE project
     @DeleteMapping("/{id}")
-   @PreAuthorize("hasRole('Manager')")
+    @PreAuthorize("hasRole('Manager')")
     public ResponseEntity<Void> deleteProject(@PathVariable Long id) {
         projectService.deleteProject(id);
         return ResponseEntity.noContent().build();
@@ -120,7 +120,7 @@ public class ProjectController {
 
     // ✅ GET Epics by project ID
     @GetMapping("/{id}/epics")
-   @PreAuthorize("hasAnyRole('Manager','Admin','Employee')")
+    @PreAuthorize("hasAnyRole('Manager','Admin','Employee')")
     public ResponseEntity<List<EpicDto>> getProjectEpics(@PathVariable Long id) {
         List<EpicDto> epics = epicService.getEpicsByProjectId(id);
         return ResponseEntity.ok(epics);
@@ -128,7 +128,7 @@ public class ProjectController {
 
     // ✅ GET Sprints by project ID
     @GetMapping("/{id}/sprints")
-   @PreAuthorize("hasAnyRole('Manager','Admin','Employee')")
+    @PreAuthorize("hasAnyRole('Manager','Admin','Employee')")
     public ResponseEntity<List<SprintDto>> getProjectSprints(@PathVariable Long id) {
         List<SprintDto> sprints = sprintService.getSprintsByProject(id);
         return ResponseEntity.ok(sprints);

@@ -121,8 +121,31 @@ public class TaskService {
     }
 
     public List<TaskDto.Summary> getTaskSummariesByProject(Long projectId) {
-        return taskRepository.findTaskSummariesByProjectId(projectId);
+        List<TaskDto.Summary> summaries = taskRepository.findTaskSummariesByProjectId(projectId);
+
+        // Fetch all users once instead of calling the API repeatedly
+        List<UserDto> allUsers = userClient.findAll();
+        Map<Long, UserDto> userMap = allUsers.stream()
+                .collect(Collectors.toMap(UserDto::getId, Function.identity()));
+
+        for (TaskDto.Summary summary : summaries) {
+            // Reporter name
+            if (summary.getReporterId() != null && userMap.containsKey(summary.getReporterId())) {
+                summary.setReporterName(userMap.get(summary.getReporterId()).getName());
+            } else {
+                summary.setReporterName("Unassigned");
+            }
+
+            // Assignee name
+            if (summary.getAssigneeId() != null && userMap.containsKey(summary.getAssigneeId())) {
+                summary.setAssigneeName(userMap.get(summary.getAssigneeId()).getName());
+            } else {
+                summary.setAssigneeName("Unassigned");
+            }
+        }
+        return summaries;
     }
+
 
     public List<TaskDto.Summary> getTaskSummariesBySprintId(Long sprintId) {
     return taskRepository.findTaskSummariesBySprintId(sprintId);

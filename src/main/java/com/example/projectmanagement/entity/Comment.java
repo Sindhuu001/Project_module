@@ -44,9 +44,6 @@ public class Comment {
     @OneToMany(mappedBy = "parent", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<Comment> replies = new ArrayList<>();
 
-    
-
-
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 

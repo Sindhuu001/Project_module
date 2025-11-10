@@ -10,37 +10,60 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
+/**
+ * Full Task DTO – includes all fields for detailed payloads.
+ */
 @Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class TaskDto {
+
     private Long id;
+
+    // === Basic Task Fields ===
     @NotBlank(message = "Task title is required")
     @Size(min = 2, max = 200, message = "Task title must be between 2 and 200 characters")
     private String title;
+
     @Size(max = 1000, message = "Description cannot exceed 1000 characters")
     private String description;
-    private Task.TaskStatus status;
-    private Task.Priority priority;
-    private Integer storyPoints;
-    private LocalDateTime dueDate;
+
+    private Task.TaskStatus status;   // BACKLOG, TODO, IN_PROGRESS, REVIEW, DONE, CLOSED, etc.
+    private Task.Priority priority;   // LOW, MEDIUM, HIGH, CRITICAL
+
+    private Integer storyPoints;      // Agile estimation points
+    private boolean billable;         // true / false
+
+    private LocalDateTime dueDate;    // Task due date
+    private LocalDateTime createdAt;  // Created timestamp
+    private LocalDateTime updatedAt;  // Updated timestamp
+
+    // === Foreign Keys (for lightweight payloads) ===
     @NotNull(message = "Project ID is required")
     private Long projectId;
+
     @NotNull(message = "Reporter ID is required")
     private Long reporterId;
+
+    private Long assigneeId;
     private Long storyId;
     private Long sprintId;
-    private Long assigneeId;
-    private UserDto assignee;
-    private UserDto reporter;
-    private StoryDto story;
-    private SprintDto sprint;
-    private ProjectDto project;
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
- 
-    private boolean isBillable;
 
-    public TaskDto() {}
+    // === Nested DTOs (for full relational data) ===
+    private UserDto reporter;     // Full reporter info (id, name, username, email, etc.)
+    private UserDto assignee;     // Full assignee info
+    private ProjectDto project;   // Full project info
+    private StoryDto story;       // Linked story (if any)
+    private SprintDto sprint;     // Linked sprint (if any)
 
+    // === Optional additional info (useful for frontend display) ===
+    private String reporterName;
+    private String assigneeName;
+    private String projectName;
+    private String sprintName;
+    private String storyTitle;
+
+    // === Convenience constructor for lightweight creation ===
     public TaskDto(String title, String description, Long projectId, Long reporterId) {
         this.title = title;
         this.description = description;
@@ -48,7 +71,7 @@ public class TaskDto {
         this.reporterId = reporterId;
     }
 
-    // ✅ Inner summary DTO for lightweight responses
+    // ✅ Optional Summary inner class for lightweight responses
     @Data
     @NoArgsConstructor
     @AllArgsConstructor

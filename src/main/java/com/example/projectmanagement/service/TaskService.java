@@ -148,8 +148,8 @@ public class TaskService {
 
 
     public List<TaskDto.Summary> getTaskSummariesBySprintId(Long sprintId) {
-    return taskRepository.findTaskSummariesBySprintId(sprintId);
-}
+        return taskRepository.findTaskSummariesBySprintId(sprintId);
+    }
    
     public List<TaskDto> getTasksByStory(Long storyId) {
         return taskRepository.findByStoryId(storyId).stream()

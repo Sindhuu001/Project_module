@@ -88,11 +88,12 @@ public class TaskDto {
         private String assigneeName;
         private LocalDateTime createdAt;
         private boolean isBillable;
+        private LocalDateTime dueDate;
 
         public Summary(Long id, String title, Task.TaskStatus status,
                    Long storyId, Long sprintId, Task.Priority priority,
                    Long reporterId, Long assigneeId,
-                   LocalDateTime createdAt, boolean isBillable) {
+                   LocalDateTime createdAt, boolean isBillable, LocalDateTime dueDate) {
             this.id = id;
             this.title = title;
             this.status = status;
@@ -103,6 +104,8 @@ public class TaskDto {
             this.assigneeId = assigneeId;
             this.createdAt = createdAt;
             this.isBillable = isBillable;
+            this.dueDate = dueDate;
         }
     }
 }
+         

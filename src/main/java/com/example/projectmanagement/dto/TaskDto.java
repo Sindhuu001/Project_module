@@ -90,10 +90,11 @@ public class TaskDto {
         private boolean isBillable;
         private LocalDateTime dueDate;
 
+        // ✅ Constructor for 10-argument query (project-level)
         public Summary(Long id, String title, Task.TaskStatus status,
-                   Long storyId, Long sprintId, Task.Priority priority,
-                   Long reporterId, Long assigneeId,
-                   LocalDateTime createdAt, boolean isBillable, LocalDateTime dueDate) {
+                    Long storyId, Long sprintId, Task.Priority priority,
+                    Long reporterId, Long assigneeId,
+                    LocalDateTime createdAt, boolean isBillable) {
             this.id = id;
             this.title = title;
             this.status = status;
@@ -104,8 +105,18 @@ public class TaskDto {
             this.assigneeId = assigneeId;
             this.createdAt = createdAt;
             this.isBillable = isBillable;
-            this.dueDate = dueDate;
+        }
+
+        // ✅ Constructor for 5-argument query (sprint-level)
+        public Summary(Long id, String title, Task.TaskStatus status,
+                    Long storyId, Long sprintId) {
+            this.id = id;
+            this.title = title;
+            this.status = status;
+            this.storyId = storyId;
+            this.sprintId = sprintId;
         }
     }
+
 }
          

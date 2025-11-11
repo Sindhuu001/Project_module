@@ -64,7 +64,7 @@ public class SprintController {
     }
 
     @GetMapping("/{sprintId}/tasks")
-   @PreAuthorize("hasAnyRole('Manager','Admin','Employee')")
+    @PreAuthorize("hasAnyRole('Manager','Admin','Employee')")
     public ResponseEntity<List<TaskDto.Summary>> getTaskSummaries(@PathVariable Long sprintId) {
         return ResponseEntity.ok(taskService.getTaskSummariesBySprintId(sprintId));
     }

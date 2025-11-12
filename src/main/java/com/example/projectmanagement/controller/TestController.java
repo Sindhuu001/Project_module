@@ -11,8 +11,8 @@ import com.example.projectmanagement.client.UserClient;
 import com.example.projectmanagement.dto.UserDto;
 import com.example.projectmanagement.service.UserService;
 
-@RestController
-@RequestMapping("/test")
+//@RestController
+//@RequestMapping("/test")
 public class TestController {
     private UserClient userClient;
     private UserService userService;

@@ -16,9 +16,9 @@ import org.springframework.web.bind.annotation.*;
 import java.time.LocalDateTime;
 import java.util.List;
 
-@RestController
-@RequestMapping("/api/sprints")
-@CrossOrigin
+//@RestController
+//@RequestMapping("/api/sprints")
+//@CrossOrigin
 public class SprintController {
 
     @Autowired

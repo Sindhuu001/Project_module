@@ -8,9 +8,9 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-@CrossOrigin
-@RestController
-@RequestMapping("/api/epics")
+//@CrossOrigin
+//@RestController
+//@RequestMapping("/api/epics")
 
 public class EpicController {
 

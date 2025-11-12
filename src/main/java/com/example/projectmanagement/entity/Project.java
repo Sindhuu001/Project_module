@@ -64,6 +64,9 @@ public class Project {
     private List<Sprint> sprints;
 
     @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<Statuses> statuses;
+
+    @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Task> tasks;
 
     @Column(name = "start_date")

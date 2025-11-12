@@ -38,6 +38,9 @@ public class ProjectService {
     @Autowired
     private UserService userService;
 
+    @Autowired
+    private StatusService statusService;
+
     public ProjectDto createProject(ProjectDto projectDto) {
         List<String> errors = new ArrayList<>();
 
@@ -91,7 +94,13 @@ public class ProjectService {
             project.setMemberIds(new ArrayList<>());
         }
 
-        return convertToDto(projectRepository.save(project));
+        Project savedProject = projectRepository.save(project);
+
+        // ✅ Step 2: Create default statuses automatically
+        statusService.createDefaultStatuses(savedProject);
+
+        // ✅ Step 3: Convert to DTO and return
+        return convertToDto(savedProject);
     }
 
     @Transactional(readOnly = true)

@@ -3,9 +3,11 @@ package com.example.projectmanagement.service;
 import com.example.projectmanagement.ExternalDTO.ProjectIdName;
 import com.example.projectmanagement.ExternalDTO.ProjectTasksDto;
 import com.example.projectmanagement.client.UserClient;
+import com.example.projectmanagement.config.ProjectStatusProperties;
 import com.example.projectmanagement.dto.ProjectDto;
 import com.example.projectmanagement.dto.UserDto;
 import com.example.projectmanagement.entity.Project;
+import com.example.projectmanagement.entity.Status;
 import com.example.projectmanagement.exception.ValidationException;
 import com.example.projectmanagement.repository.ProjectRepository;
 import lombok.AllArgsConstructor;
@@ -37,6 +39,12 @@ public class ProjectService {
 
     @Autowired
     private UserService userService;
+
+    @Autowired
+    private ProjectStatusProperties projectStatusProperties; // New: Inject properties
+    
+    @Autowired
+    private StatusService statusService; // New: Inject StatusService
 
     public ProjectDto createProject(ProjectDto projectDto) {
         List<String> errors = new ArrayList<>();
@@ -91,7 +99,18 @@ public class ProjectService {
             project.setMemberIds(new ArrayList<>());
         }
 
-        return convertToDto(projectRepository.save(project));
+        Project savedProject = projectRepository.save(project); // Save the project first
+
+        // New: Add default statuses for the newly created project
+        projectStatusProperties.getDefaultStatuses().forEach(statusProperty -> {
+            Status defaultStatus = new Status();
+            defaultStatus.setName(statusProperty.getName());
+            defaultStatus.setSortOrder(statusProperty.getSortOrder());
+            // The addStatus method will link it to the project
+            statusService.addStatus(savedProject.getId(), defaultStatus);
+        });
+
+        return convertToDto(savedProject);
     }
 
     @Transactional(readOnly = true)
@@ -407,4 +426,3 @@ public UserDto getProjectOwner(Long projectId) {
 
 
 }
- 

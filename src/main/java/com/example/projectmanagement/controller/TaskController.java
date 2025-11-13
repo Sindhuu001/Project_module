@@ -94,7 +94,16 @@ public class TaskController {
         return ResponseEntity.noContent().build();
    }
 
-  
+    @PatchMapping("/{taskId}/status")
+    @PreAuthorize("hasAnyRole('Manager','Employee')")
+    public ResponseEntity<TaskDto> updateTaskStatus(@PathVariable Long taskId, @RequestBody Map<String, Long> payload) {
+        Long statusId = payload.get("statusId");
+        if (statusId == null) {
+            return ResponseEntity.badRequest().build();
+        }
+        TaskDto updatedTask = taskService.updateTaskStatus(taskId, statusId);
+        return ResponseEntity.ok(updatedTask);
+    }
 
     @GetMapping("/story/{storyId}/count")
    @PreAuthorize("hasAnyRole('Manager','Admin','Employee')")

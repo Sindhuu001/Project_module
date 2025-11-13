@@ -23,4 +23,5 @@ public interface TaskService {
     List<TaskDto> getBacklogTasks();
     Page<TaskDto> searchTasks(String title, Task.Priority priority, Long assigneeId, Pageable pageable);
     long countTasksByStatus(Long statusId);
+    TaskDto updateTaskStatus(Long taskId, Long statusId);
 }

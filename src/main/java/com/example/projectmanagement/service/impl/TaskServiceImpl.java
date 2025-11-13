@@ -209,6 +209,17 @@ public class TaskServiceImpl implements TaskService {
         return taskRepository.countByStatusId(statusId);
     }
 
+    @Override
+    public TaskDto updateTaskStatus(Long taskId, Long statusId) {
+        Task task = taskRepository.findById(taskId)
+                .orElseThrow(() -> new RuntimeException("Task not found with id: " + taskId));
+        Status status = statusRepository.findById(statusId)
+                .orElseThrow(() -> new RuntimeException("Status not found with id: " + statusId));
+        task.setStatus(status);
+        Task updatedTask = taskRepository.save(task);
+        return convertToDto(updatedTask);
+    }
+
     // ---------- DTO Conversion ----------
 
     private TaskDto convertToDto(Task task) {

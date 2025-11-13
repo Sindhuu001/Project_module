@@ -1,5 +1,6 @@
 package com.example.projectmanagement.dto;
 
+import com.example.projectmanagement.entity.Status;
 import com.example.projectmanagement.entity.Task;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -18,7 +19,7 @@ public class TaskDto {
     private String title;
     @Size(max = 1000, message = "Description cannot exceed 1000 characters")
     private String description;
-    private Task.TaskStatus status;
+    private Status status;
     private Task.Priority priority;
     private Integer storyPoints;
     private LocalDateTime dueDate;
@@ -54,7 +55,7 @@ public class TaskDto {
     public static class Summary {
         private Long id;
         private String title;
-        private Task.TaskStatus status;
+        private Status status;
         private Long storyId;
         private Long sprintId;
         private Task.Priority priority;
@@ -66,7 +67,7 @@ public class TaskDto {
         private boolean isBillable;
 
         // ✅ Constructor for 10-argument query (project-level)
-        public Summary(Long id, String title, Task.TaskStatus status,
+        public Summary(Long id, String title, Status status,
                     Long storyId, Long sprintId, Task.Priority priority,
                     Long reporterId, Long assigneeId,
                     LocalDateTime createdAt, boolean isBillable) {
@@ -83,7 +84,7 @@ public class TaskDto {
         }
 
         // ✅ Constructor for 5-argument query (sprint-level)
-        public Summary(Long id, String title, Task.TaskStatus status,
+        public Summary(Long id, String title, Status status,
                     Long storyId, Long sprintId) {
             this.id = id;
             this.title = title;

@@ -67,16 +67,16 @@ public class TaskController {
         return ResponseEntity.ok(tasks);
     }
     
-    @GetMapping("/status/{status}")
+    @GetMapping("/status/{statusId}")
    @PreAuthorize("hasAnyRole('Manager','Admin','Employee')")
-    public ResponseEntity<List<TaskDto>> getTasksByStatus(@PathVariable Task.TaskStatus status) {
-        List<TaskDto> tasks = taskService.getTasksByStatus(status);
+    public ResponseEntity<List<TaskDto>> getTasksByStatus(@PathVariable Long statusId) {
+        List<TaskDto> tasks = taskService.getTasksByStatus(statusId);
         return ResponseEntity.ok(tasks);
     }
     
-    @GetMapping("/status/done/count")
-    public ResponseEntity<Long> getDoneTaskCount() {
-        long count = taskService.countTasksByStatus(Task.TaskStatus.DONE);
+    @GetMapping("/status/{statusId}/count")
+    public ResponseEntity<Long> getDoneTaskCount(@PathVariable Long statusId) {
+        long count = taskService.countTasksByStatus(statusId);
         return ResponseEntity.ok(count);
     }
 

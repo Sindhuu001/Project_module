@@ -2,7 +2,6 @@ package com.example.projectmanagement.repository;
 
 import com.example.projectmanagement.dto.TaskDto;
 import com.example.projectmanagement.entity.Task;
-import com.example.projectmanagement.entity.Task.TaskStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.*;
@@ -25,17 +24,11 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
 
     List<Task> findByReporterId(Long reporterId);
 
-    List<Task> findByStatus(TaskStatus status);
-
-    @Query("SELECT t FROM Task t WHERE t.project.id = :projectId AND t.status = :status")
-    List<Task> findByProjectIdAndStatus(@Param("projectId") Long projectId, @Param("status") TaskStatus status);
+    List<Task> findByStatusId(Long statusId);
 
     // ✅ fetch tasks indirectly linked to a sprint via their story
     @Query("SELECT t FROM Task t WHERE t.story.sprint.id = :sprintId")
     List<Task> findBySprintId(@Param("sprintId") Long sprintId);
-
-    @Query("SELECT t FROM Task t WHERE t.story.sprint.id = :sprintId AND t.status = :status")
-    List<Task> findBySprintIdAndStatus(@Param("sprintId") Long sprintId, @Param("status") TaskStatus status);
 
     @Query("SELECT t FROM Task t WHERE t.assigneeId = :assigneeId")
     Page<Task> findByAssigneeId(@Param("assigneeId") Long assigneeId, Pageable pageable);
@@ -49,7 +42,7 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
     @Query("SELECT COUNT(t) FROM Task t WHERE t.story.id = :storyId")
     long countByStoryId(@Param("storyId") Long storyId);
 
-    @Query("SELECT t FROM Task t WHERE t.story.sprint IS NULL AND t.status IN ('BACKLOG', 'TODO')")
+    @Query("SELECT t FROM Task t WHERE t.story.sprint IS NULL")
     List<Task> findBacklogTasks();
 
     @Query("SELECT COUNT(t) FROM Task t WHERE t.dueDate BETWEEN CURRENT_TIMESTAMP AND :futureDate")
@@ -59,11 +52,11 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
        "FROM Task t WHERE t.story.sprint.id = :sprintId")
     List<TaskDto.Summary> findTaskSummariesBySprintId(@Param("sprintId") Long sprintId);
 
-    long countByStatus(TaskStatus status);
+    long countByStatusId(Long statusId);
 
     long countByDueDateBetween(LocalDateTime start, LocalDateTime end);
 
     long countByAssigneeId(Long userId);
 
-    Long countByAssigneeIdAndStatus(Long userId, TaskStatus status);
+    Long countByAssigneeIdAndStatusId(Long userId, Long statusId);
 }

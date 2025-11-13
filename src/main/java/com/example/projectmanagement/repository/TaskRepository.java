@@ -59,6 +59,11 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
        "FROM Task t WHERE t.story.sprint.id = :sprintId")
     List<TaskDto.Summary> findTaskSummariesBySprintId(@Param("sprintId") Long sprintId);
 
+    @Modifying
+    @Query("UPDATE Task t SET t.status = :status WHERE t.id = :id")
+    void updateStatus(@Param("id") Long id, @Param("status") Task.TaskStatus status);
+
+
     long countByStatus(TaskStatus status);
 
     long countByDueDateBetween(LocalDateTime start, LocalDateTime end);

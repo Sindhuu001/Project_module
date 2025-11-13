@@ -111,8 +111,8 @@ public class TaskService {
 
     public List<TaskDto> getAllTasks() {
         return taskRepository.findAll().stream()
-                .map(this::convertToDto)
-                .collect(Collectors.toList());
+            .map(this::convertToDto)
+            .collect(Collectors.toList());
     }
 
     public Page<TaskDto> getAllTasks(Pageable pageable) {
@@ -174,6 +174,39 @@ public class TaskService {
                 .map(this::convertToDto)
                 .collect(Collectors.toList());
     }
+
+   
+
+    @Transactional
+    public void updateTaskStatus(Long taskId, String newStatusStr) {
+        Task task = taskRepository.findById(taskId)
+                .orElseThrow(() -> new IllegalArgumentException("Task not found"));
+
+        TaskStatus current = task.getStatus();
+
+        TaskStatus next;
+        try {
+            next = TaskStatus.valueOf(newStatusStr); // parse string safely
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Invalid status: " + newStatusStr);
+        }
+
+        // Validate allowed transition
+        boolean validTransition =
+                (current == TaskStatus.BACKLOG && next == TaskStatus.TODO) ||
+                (current == TaskStatus.TODO && next == TaskStatus.IN_PROGRESS) ||
+                (current == TaskStatus.IN_PROGRESS && next == TaskStatus.DONE);
+
+        if (!validTransition) {
+            throw new IllegalArgumentException(
+                    "Invalid status transition: " + current + " → " + next
+            );
+        }
+
+        task.setStatus(next);
+        taskRepository.save(task);
+    }
+
 
     // ---------- Search & Count ----------
 

@@ -68,7 +68,7 @@ public class TaskController {
     }
     
     @GetMapping("/status/{status}")
-   @PreAuthorize("hasAnyRole('Manager','Admin','Employee')")
+    @PreAuthorize("hasAnyRole('Manager','Admin','Employee')")
     public ResponseEntity<List<TaskDto>> getTasksByStatus(@PathVariable Task.TaskStatus status) {
         List<TaskDto> tasks = taskService.getTasksByStatus(status);
         return ResponseEntity.ok(tasks);
@@ -81,29 +81,40 @@ public class TaskController {
     }
 
     @PutMapping("/{id}")
-   @PreAuthorize("hasAnyRole('Manager','Employee')")
+    @PreAuthorize("hasAnyRole('Manager','Employee')")
     public ResponseEntity<TaskDto> updateTask(@PathVariable Long id, @Valid @RequestBody TaskDto taskDto) {
         TaskDto updatedTask = taskService.updateTask(id, taskDto);
         return ResponseEntity.ok(updatedTask);
     }
     
     @DeleteMapping("/{id}")
-   @PreAuthorize("hasRole('Manager')")
+    @PreAuthorize("hasRole('Manager')")
     public ResponseEntity<Void> deleteTask(@PathVariable Long id) {
         taskService.deleteTask(id);
         return ResponseEntity.noContent().build();
-   }
+    }
 
-  
+    @PatchMapping("/{id}/status")
+    @PreAuthorize("hasAnyRole('Manager','Admin','Employee')")
+    public ResponseEntity<Void> updateTaskStatus(
+            @PathVariable Long id,
+            @RequestBody Map<String, String> body) {
+
+        String newStatus = body.get("status");
+        taskService.updateTaskStatus(id, newStatus);
+        return ResponseEntity.ok().build();
+    }
+
+
 
     @GetMapping("/story/{storyId}/count")
-   @PreAuthorize("hasAnyRole('Manager','Admin','Employee')")
+    @PreAuthorize("hasAnyRole('Manager','Admin','Employee')")
     public ResponseEntity<?> getTaskCountByStory(@PathVariable Long storyId) {
         long count = taskService.countTasksByStoryId(storyId);
         return ResponseEntity.ok(Map.of("storyId", storyId, "taskCount", count));
     }
     @GetMapping("/assignee/{assigneeId}")
-   @PreAuthorize("hasAnyRole('Manager','Admin','Employee')")
+    @PreAuthorize("hasAnyRole('Manager','Admin','Employee')")
     public ResponseEntity<List<TaskDto>> getTasksByAssignee(@PathVariable Long assigneeId) {
         List<TaskDto> tasks = taskService.getTasksByAssignee(assigneeId);
         return ResponseEntity.ok(tasks);

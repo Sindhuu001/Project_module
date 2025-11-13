@@ -70,7 +70,7 @@ public class SprintController {
     }
 
     @PostMapping("/{sprintId}/tasks")
-   @PreAuthorize("hasRole('Manager')")
+    @PreAuthorize("hasRole('Manager')")
     public ResponseEntity<TaskDto> addTaskToSprint(@PathVariable Long sprintId, @Valid @RequestBody TaskDto taskDto) {
         taskDto.setSprintId(sprintId);
         TaskDto createdTask = taskService.createTask(taskDto);

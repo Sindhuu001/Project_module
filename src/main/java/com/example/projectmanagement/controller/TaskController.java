@@ -67,54 +67,52 @@ public class TaskController {
         return ResponseEntity.ok(tasks);
     }
     
-    @GetMapping("/status/{status}")
-    @PreAuthorize("hasAnyRole('Manager','Admin','Employee')")
-    public ResponseEntity<List<TaskDto>> getTasksByStatus(@PathVariable Task.TaskStatus status) {
-        List<TaskDto> tasks = taskService.getTasksByStatus(status);
+    @GetMapping("/status/{statusId}")
+   @PreAuthorize("hasAnyRole('Manager','Admin','Employee')")
+    public ResponseEntity<List<TaskDto>> getTasksByStatus(@PathVariable Long statusId) {
+        List<TaskDto> tasks = taskService.getTasksByStatus(statusId);
         return ResponseEntity.ok(tasks);
     }
     
-    @GetMapping("/status/done/count")
-    public ResponseEntity<Long> getDoneTaskCount() {
-        long count = taskService.countTasksByStatus(Task.TaskStatus.DONE);
+    @GetMapping("/status/{statusId}/count")
+    public ResponseEntity<Long> getDoneTaskCount(@PathVariable Long statusId) {
+        long count = taskService.countTasksByStatus(statusId);
         return ResponseEntity.ok(count);
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('Manager','Employee')")
+   @PreAuthorize("hasAnyRole('Manager','Employee')")
     public ResponseEntity<TaskDto> updateTask(@PathVariable Long id, @Valid @RequestBody TaskDto taskDto) {
         TaskDto updatedTask = taskService.updateTask(id, taskDto);
         return ResponseEntity.ok(updatedTask);
     }
     
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('Manager')")
+   @PreAuthorize("hasRole('Manager')")
     public ResponseEntity<Void> deleteTask(@PathVariable Long id) {
         taskService.deleteTask(id);
         return ResponseEntity.noContent().build();
+   }
+
+    @PatchMapping("/{taskId}/status")
+    @PreAuthorize("hasAnyRole('Manager','Employee')")
+    public ResponseEntity<TaskDto> updateTaskStatus(@PathVariable Long taskId, @RequestBody Map<String, Long> payload) {
+        Long statusId = payload.get("statusId");
+        if (statusId == null) {
+            return ResponseEntity.badRequest().build();
+        }
+        TaskDto updatedTask = taskService.updateTaskStatus(taskId, statusId);
+        return ResponseEntity.ok(updatedTask);
     }
-
-    @PatchMapping("/{id}/status")
-    @PreAuthorize("hasAnyRole('Manager','Admin','Employee')")
-    public ResponseEntity<Void> updateTaskStatus(
-            @PathVariable Long id,
-            @RequestBody Map<String, String> body) {
-
-        String newStatus = body.get("status");
-        taskService.updateTaskStatus(id, newStatus);
-        return ResponseEntity.ok().build();
-    }
-
-
 
     @GetMapping("/story/{storyId}/count")
-    @PreAuthorize("hasAnyRole('Manager','Admin','Employee')")
+   @PreAuthorize("hasAnyRole('Manager','Admin','Employee')")
     public ResponseEntity<?> getTaskCountByStory(@PathVariable Long storyId) {
         long count = taskService.countTasksByStoryId(storyId);
         return ResponseEntity.ok(Map.of("storyId", storyId, "taskCount", count));
     }
     @GetMapping("/assignee/{assigneeId}")
-    @PreAuthorize("hasAnyRole('Manager','Admin','Employee')")
+   @PreAuthorize("hasAnyRole('Manager','Admin','Employee')")
     public ResponseEntity<List<TaskDto>> getTasksByAssignee(@PathVariable Long assigneeId) {
         List<TaskDto> tasks = taskService.getTasksByAssignee(assigneeId);
         return ResponseEntity.ok(tasks);

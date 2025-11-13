@@ -9,12 +9,14 @@ import com.example.projectmanagement.entity.Sprint;
 import com.example.projectmanagement.entity.Story;
 import com.example.projectmanagement.entity.Story.StoryStatus;
 import com.example.projectmanagement.entity.Task;
-import com.example.projectmanagement.entity.Task.TaskStatus;
+//import com.example.projectmanagement.entity.Task.TaskStatus;
 import com.example.projectmanagement.repository.ProjectRepository;
 import com.example.projectmanagement.repository.SprintRepository;
 import com.example.projectmanagement.repository.StoryRepository;
 import com.example.projectmanagement.repository.TaskRepository;
+import com.example.projectmanagement.repository.StatusRepository;
 import com.example.projectmanagement.entity.RolePermissionChecker;
+import com.example.projectmanagement.entity.Status;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -25,6 +27,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -53,6 +56,9 @@ public class SprintService {
     private StoryRepository storyRepository;
     @Autowired
     private UserClient userClient;
+
+    @Autowired
+    private StatusRepository statusRepository;
 
     public SprintDto createSprint(SprintDto sprintDto, Long currentUserId) {
         UserDto currentUserDto = userService.getUserWithRoles(currentUserId);
@@ -107,38 +113,41 @@ public class SprintService {
 }
 
     public SprintDto completeSprint(Long id) {
-    // 1️⃣ Fetch sprint by ID
-    Sprint sprint = sprintRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("Sprint not found with id: " + id));
+        // 1️⃣ Fetch sprint by ID
+        Sprint sprint = sprintRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Sprint not found with id: " + id));
 
-    // 2️⃣ Ensure sprint is active
-    if (sprint.getStatus() != Sprint.SprintStatus.ACTIVE) {
-        throw new RuntimeException("Only active sprints can be completed");
+        // 2️⃣ Ensure sprint is active
+        if (sprint.getStatus() != Sprint.SprintStatus.ACTIVE) {
+            throw new RuntimeException("Only active sprints can be completed");
+        }
+
+        // 3️⃣ Fetch all tasks in this sprint
+        List<Task> tasks = taskRepository.findBySprintId(sprint.getId());
+
+        // 4️⃣ Determine the "Done" status for the project
+        Optional<Status> doneStatusOpt = statusRepository.findTopByProjectIdOrderBySortOrderDesc(sprint.getProject().getId());
+        if (doneStatusOpt.isEmpty()) {
+            throw new RuntimeException("Cannot complete sprint: No statuses defined for the project.");
+        }
+        Long doneStatusId = doneStatusOpt.get().getId();
+
+        // 5️⃣ Check if any tasks are not in the "Done" status
+        boolean incompleteTasks = tasks.stream()
+                .anyMatch(t -> t.getStatus() == null || !t.getStatus().getId().equals(doneStatusId));
+
+        if (incompleteTasks) {
+            throw new RuntimeException("Cannot complete sprint: some tasks are not done.");
+        }
+
+        // 6️⃣ Mark sprint as completed
+        sprint.setStatus(Sprint.SprintStatus.COMPLETED);
+        sprint.setEndDate(LocalDateTime.now());
+        Sprint updatedSprint = sprintRepository.save(sprint);
+
+        // 7️⃣ Return DTO
+        return convertToDto(updatedSprint);
     }
-
-    // 3️⃣ Fetch all tasks/stories in this sprint
-    List<Task> tasks = taskRepository.findBySprintId(sprint.getId());
-    List<Story> stories = storyRepository.findBySprintId(sprint.getId());
-
-    // 4️⃣ Check if any tasks or stories are not done
-    boolean incompleteTasks = tasks.stream()
-    .anyMatch(t -> t.getStatus() != TaskStatus.DONE);
-
-    boolean incompleteStories = stories.stream()
-    .anyMatch(s -> s.getStatus() != StoryStatus.DONE);
-
-    if (incompleteTasks || incompleteStories) {
-        throw new RuntimeException("Cannot complete sprint: some stories or tasks are not done");
-    }
-
-    // 5️⃣ Mark sprint as completed
-    sprint.setStatus(Sprint.SprintStatus.COMPLETED);
-    sprint.setEndDate(LocalDateTime.now());
-    Sprint updatedSprint = sprintRepository.save(sprint);
-
-    // 6️⃣ Return DTO
-    return convertToDto(updatedSprint);
-}
 
 
     public SprintDto updateSprint(Long id, SprintDto sprintDto) {

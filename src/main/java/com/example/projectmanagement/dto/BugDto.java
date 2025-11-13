@@ -28,3 +28,4 @@ public class BugDto {
     private String updatedDate;
     private String resolvedDate;
 }
+

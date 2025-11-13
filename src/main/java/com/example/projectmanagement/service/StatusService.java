@@ -56,21 +56,22 @@ public class StatusService {
     }
 
     @Transactional
-    public void toggleStatus(Long statusId, boolean active) {
-        Statuses status = repo.findById(statusId)
-                .orElseThrow(() -> new NoSuchElementException("Status not found"));
-        status.setIsActive(active);
+    public List<StatusDto> getActiveBugStatusesByProject(Long projectId) {
+        List<Statuses> statuses = repo.findByProjectIdOrderBySortOrder(projectId);
 
-        if (!active && "TESTING".equalsIgnoreCase(status.getName())) {
-            List<Statuses> all = repo.findByProjectIdOrderBySortOrder(status.getProject().getId());
-            all.stream()
-                    .filter(s -> Boolean.TRUE.equals(s.getIsBug()))
-                    .forEach(s -> s.setIsActive(false));
-            repo.saveAll(all);
+        boolean isTestingActive = statuses.stream()
+                .anyMatch(s -> "TESTING".equalsIgnoreCase(s.getName()) && Boolean.TRUE.equals(s.getIsActive()));
+
+        if (!isTestingActive) {
+            return List.of(); // No active bugs if TESTING is not active
         }
 
-        repo.save(status);
+        return statuses.stream()
+                .filter(s -> Boolean.TRUE.equals(s.getIsActive()) && Boolean.TRUE.equals(s.getIsBug()))
+                .map(this::toDto)
+                .collect(Collectors.toList());
     }
+
 
     @Transactional
     public void deleteStatus(Long statusId) {
@@ -94,44 +95,69 @@ public class StatusService {
             throw new IllegalArgumentException("Project cannot be null");
         }
 
-        // Example default statuses
-        List<Statuses> defaults = List.of(
-                Statuses.builder()
-                        .name("TO DO")
-                        .sortOrder(1)
-                        .isPredefined(true)
-                        .isActive(true)
-                        .isBug(false)
-                        .project(project)
-                        .build(),
-                Statuses.builder()
-                        .name("IN PROGRESS")
-                        .sortOrder(2)
-                        .isPredefined(true)
-                        .isActive(true)
-                        .isBug(false)
-                        .project(project)
-                        .build(),
-                Statuses.builder()
-                        .name("TESTING")
-                        .sortOrder(3)
-                        .isPredefined(true)
-                        .isActive(true)
-                        .isBug(false)
-                        .project(project)
-                        .build(),
-                Statuses.builder()
-                        .name("DONE")
-                        .sortOrder(4)
-                        .isPredefined(true)
-                        .isActive(true)
-                        .isBug(false)
-                        .project(project)
-                        .build()
-        );
+        List<Statuses> statuses = new ArrayList<>();
 
-        repo.saveAll(defaults);
+        // Normal statuses
+        String[] normalStatuses = {"BACKLOG", "TODO", "IN_PROGRESS", "TESTING", "DONE"};
+        for (int i = 0; i < normalStatuses.length; i++) {
+            statuses.add(Statuses.builder()
+                    .name(normalStatuses[i])
+                    .sortOrder(i + 1)
+                    .isBug(false)
+                    .isPredefined(true)
+                    .isActive(true)
+                    .project(project)
+                    .build()
+            );
+        }
+
+        // Bug statuses
+        String[] bugStatuses = {"OPEN", "IN_PROGRESS", "RESOLVED", "REOPEN", "CLOSED"};
+        for (int i = 0; i < bugStatuses.length; i++) {
+            statuses.add(Statuses.builder()
+                    .name(bugStatuses[i])
+                    .sortOrder(i + 1)
+                    .isBug(true)
+                    .isPredefined(true)
+                    .isActive(true)
+                    .project(project)
+                    .build()
+            );
+        }
+
+        repo.saveAll(statuses);
     }
+
+    public List<StatusDto> getActiveStatusesByProject(Long projectId) {
+        return repo.findByProjectIdOrderBySortOrder(projectId)
+                .stream()
+                .filter(s -> Boolean.TRUE.equals(s.getIsActive()) && Boolean.FALSE.equals(s.getIsBug()))
+                .map(this::toDto)
+                .collect(Collectors.toList());
+    }
+
+    public List<StatusDto> getActiveBugStatusesByProject(Long projectId) {
+        // Fetch all statuses for the project
+        List<Statuses> statuses = repo.findByProjectIdOrderBySortOrder(projectId);
+
+        // Check if "TESTING" status is active
+        boolean isTestingActive = statuses.stream()
+                .anyMatch(s -> "TESTING".equalsIgnoreCase(s.getName()) && Boolean.TRUE.equals(s.getIsActive()));
+
+        System.out.println(isTestingActive);
+
+        if (!isTestingActive) {
+            // If TESTING is not active, return empty list
+            return List.of();
+        }
+
+        // Return only active bug statuses
+        return statuses.stream()
+                .filter(s -> Boolean.TRUE.equals(s.getIsActive()) && Boolean.TRUE.equals(s.getIsBug()))
+                .map(this::toDto)
+                .collect(Collectors.toList());
+    }
+
 
 
 

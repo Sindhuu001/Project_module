@@ -46,4 +46,14 @@ public class StatusController {
     public List<StatusDto> getStatuses(@PathVariable Long projectId) {
         return statusService.getAllByProjectDto(projectId);
     }
+
+    @GetMapping("/{projectId}/active")
+    public List<StatusDto> getActiveStatuses(@PathVariable Long projectId) {
+        return statusService.getActiveStatusesByProject(projectId);
+    }
+
+    @GetMapping("/{projectId}/active-bugs")
+    public List<StatusDto> getActiveBugStatuses(@PathVariable Long projectId) {
+        return statusService.getActiveBugStatusesByProject(projectId);
+    }
 }

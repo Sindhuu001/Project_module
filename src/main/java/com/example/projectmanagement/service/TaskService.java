@@ -193,9 +193,8 @@ public class TaskService {
 
         // Validate allowed transition
         boolean validTransition =
-                (current == TaskStatus.BACKLOG && next == TaskStatus.TODO) ||
-                (current == TaskStatus.TODO && next == TaskStatus.IN_PROGRESS) ||
-                (current == TaskStatus.IN_PROGRESS && next == TaskStatus.DONE);
+        ((current == TaskStatus.BACKLOG || current == TaskStatus.TODO) && next == TaskStatus.IN_PROGRESS) ||
+        (current == TaskStatus.IN_PROGRESS && next == TaskStatus.DONE);
 
         if (!validTransition) {
             throw new IllegalArgumentException(

@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -46,7 +47,8 @@ public class DashboardService {
         Map<String, Long> taskStatusCount = statusRepository.findAll().stream()
                 .collect(Collectors.toMap(
                         Status::getName,
-                        status -> taskRepository.countByStatusId(status.getId())
+                        status -> taskRepository.countByStatusId(status.getId()),
+                        (existing, replacement) -> existing + replacement // Merge duplicate status names
                 ));
 
         // Epic status counts
@@ -55,11 +57,8 @@ public class DashboardService {
             epicStatusCount.put(status.name(), (long) epicRepository.findByStatus(status).size());
         }
 
-        // Story status counts
+        // Story status counts are no longer globally meaningful, so we omit the per-status breakdown
         Map<String, Long> storyStatusCount = new HashMap<>();
-        for (Story.StoryStatus status : Story.StoryStatus.values()) {
-            storyStatusCount.put(status.name(), (long) storyRepository.findByStatus(status).size());
-        }
 
         return DashboardSummaryDto.builder()
                 .totalProjects(totalProjects)
@@ -68,7 +67,7 @@ public class DashboardService {
                 .totalEpics(totalEpics)
                 .epicStatusCount(epicStatusCount)
                 .totalStories(totalStories)
-                .storyStatusCount(storyStatusCount)
+                .storyStatusCount(storyStatusCount) // Will be empty
                 .build();
     }
 
@@ -80,7 +79,13 @@ public class DashboardService {
         reminders.put("taskDueSoonCount", taskRepository.countByDueDateBetween(now, twoDaysLater));
         reminders.put("unassignedProjectCount", projectRepository.countByOwnerIdIsNull());
         reminders.put("sprintsEndingSoonCount", sprintRepository.countByEndDateBetween(now, twoDaysLater));
-        reminders.put("todoStoryCount", storyRepository.countByStatus(Story.StoryStatus.TODO));
+
+        // Find statuses named "To Do" and count stories
+        long todoStoryCount = statusRepository.findAll().stream()
+                .filter(status -> "To Do".equalsIgnoreCase(status.getName()))
+                .mapToLong(status -> storyRepository.countByStatusId(status.getId()))
+                .sum();
+        reminders.put("todoStoryCount", todoStoryCount);
 
         return reminders;
     }
@@ -90,14 +95,17 @@ public class DashboardService {
         Map<String, Long> taskStatusMap = statusRepository.findAll().stream()
                 .collect(Collectors.toMap(
                         Status::getName,
-                        status -> taskRepository.countByAssigneeIdAndStatusId(userId, status.getId())
+                        status -> taskRepository.countByAssigneeIdAndStatusId(userId, status.getId()),
+                        (existing, replacement) -> existing + replacement
                 ));
 
         // --- Story Status Counts for a specific user ---
-        Map<String, Long> storyStatusMap = new HashMap<>();
-        for (Story.StoryStatus status : Story.StoryStatus.values()) {
-            storyStatusMap.put(status.name(), storyRepository.countByAssigneeIdAndStatus(userId, status));
-        }
+        Map<String, Long> storyStatusMap = statusRepository.findAll().stream()
+                .collect(Collectors.toMap(
+                        Status::getName,
+                        status -> storyRepository.countByAssigneeIdAndStatusId(userId, status.getId()),
+                        (existing, replacement) -> existing + replacement
+                ));
 
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("taskStatus", taskStatusMap);

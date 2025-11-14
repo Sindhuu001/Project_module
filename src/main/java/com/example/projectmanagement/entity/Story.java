@@ -34,9 +34,13 @@ public class Story {
     @Size(max = 1000, message = "Description cannot exceed 1000 characters")
     private String description;
     
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private StoryStatus status = StoryStatus.BACKLOG;
+//    @Enumerated(EnumType.STRING)
+//    @Column(nullable = false)
+//    private StoryStatus status = StoryStatus.BACKLOG;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "status_id", nullable = false)
+    private Status status;
     
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -84,9 +88,9 @@ public class Story {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
     
-    public enum StoryStatus {
-        BACKLOG, TODO, IN_PROGRESS, DONE
-    }
+//    public enum StoryStatus {
+//        BACKLOG, TODO, IN_PROGRESS, DONE
+//    }
     
     public enum Priority {
         LOW, MEDIUM, HIGH, CRITICAL

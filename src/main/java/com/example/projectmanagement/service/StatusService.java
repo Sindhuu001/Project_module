@@ -1,13 +1,13 @@
 package com.example.projectmanagement.service;
 
-import com.example.projectmanagement.entity.Status;
-
+import com.example.projectmanagement.dto.StatusDto;
 import java.util.List;
 import java.util.Map;
 
 public interface StatusService {
-    Status addStatus(Long projectId, Status status);
-    List<Status> getStatusesByProject(Long projectId);
+    StatusDto addStatus(Long projectId, StatusDto statusDto);
+    List<StatusDto> getStatusesByProject(Long projectId);
     void deleteStatus(Long statusId, Long newStatusId);
-    List<Status> reorderStatuses(Map<Long, Integer> statusOrder);
+    List<StatusDto> reorderStatuses(Map<Long, Integer> statusOrder);
+    List<StatusDto> syncStatuses(Long projectId, List<StatusDto> desiredStatuses);
 }

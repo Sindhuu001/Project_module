@@ -1,12 +1,10 @@
 package com.example.projectmanagement.service;
 
 import com.example.projectmanagement.client.UserClient;
-//import com.example.projectmanagement.client.UserClient;
 import com.example.projectmanagement.dto.StoryDto;
 import com.example.projectmanagement.dto.UserDto;
 import com.example.projectmanagement.entity.*;
 import com.example.projectmanagement.repository.*;
-
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -35,12 +33,11 @@ public class StoryService {
     @Autowired
     private ProjectRepository projectRepository;
 
-    
+    @Autowired
+    private StatusRepository statusRepository;
 
     @Autowired
     private ModelMapper modelMapper;
-
-    //private UserClient userClient;
 
     @Autowired
     private UserService userService;
@@ -48,14 +45,7 @@ public class StoryService {
     @Autowired
     private UserClient userClient;
 
-    // ✅ Create Story
     public StoryDto createStory(StoryDto storyDto) {
-        // Epic epic = epicRepository.findById(storyDto.getEpicId())
-        //         .orElseThrow(() -> new RuntimeException("Epic not found with id: " + storyDto.getEpicId()));
-
-        // Sprint sprint = sprintRepository.findById(storyDto.getSprintId())
-        //         .orElseThrow(() -> new RuntimeException("Sprint not found with id: " + storyDto.getSprintId()));
-
         Epic epic = null;
         if (storyDto.getEpicId() != null) {
             epic = epicRepository.findById(storyDto.getEpicId())
@@ -78,7 +68,6 @@ public class StoryService {
         }
 
         UserDto reporter = userService.getUserWithRoles(storyDto.getReporterId());
-                
 
         Story story = modelMapper.map(storyDto, Story.class);
         story.setEpic(epic);
@@ -88,15 +77,23 @@ public class StoryService {
 
         if (storyDto.getAssigneeId() != null) {
             UserDto assignee = userService.getUserWithRoles(storyDto.getAssigneeId());
-                
             story.setAssigneeId(assignee.getId());
+        }
+
+        if (storyDto.getStatus() != null && storyDto.getStatus().getId() != null) {
+            Status status = statusRepository.findById(storyDto.getStatus().getId())
+                    .orElseThrow(() -> new RuntimeException("Status not found with id: " + storyDto.getStatus().getId()));
+            story.setStatus(status);
+        } else {
+            Status firstStatus = statusRepository.findByProjectIdOrderBySortOrder(project.getId()).stream().findFirst()
+                    .orElseThrow(() -> new RuntimeException("No statuses found for project " + project.getId()));
+            story.setStatus(firstStatus);
         }
 
         Story savedStory = storyRepository.save(story);
         return convertToDto(savedStory);
     }
 
-    // ✅ Get Story by ID
     @Transactional(readOnly = true)
     public StoryDto getStoryById(Long id) {
         Story story = storyRepository.findById(id)
@@ -104,7 +101,6 @@ public class StoryService {
         return convertToDto(story);
     }
 
-    // ✅ Get All Stories
     @Transactional(readOnly = true)
     public List<StoryDto> getAllStories() {
         return storyRepository.findAll().stream()
@@ -114,14 +110,12 @@ public class StoryService {
 
     @Transactional(readOnly = true)
     public Page<StoryDto> getAllStories(Pageable pageable) {
-        // using convertToDto1 to include user details
         Map<Long, UserDto> userMap = userClient.findAll().stream()
                 .collect(Collectors.toMap(UserDto::getId, Function.identity()));
         return storyRepository.findAll(pageable)
                 .map(story -> convertToDto1(story, userMap));
     }
 
-    // ✅ Get Stories by Epic ID
     @Transactional(readOnly = true)
     public List<StoryDto> getStoriesByEpic(Long epicId) {
         return storyRepository.findByEpicId(epicId).stream()
@@ -129,7 +123,6 @@ public class StoryService {
                 .collect(Collectors.toList());
     }
 
-    // ✅ Get Stories by Project ID
     @Transactional(readOnly = true)
     public List<StoryDto> getStoriesByProjectId(Long projectId) {
         Map<Long, UserDto> userMap = userClient.findAll().stream()
@@ -139,15 +132,13 @@ public class StoryService {
                 .collect(Collectors.toList());
     }
 
-    // ✅ Get Stories by Status
     @Transactional(readOnly = true)
-    public List<StoryDto> getStoriesByStatus(Story.StoryStatus status) {
-        return storyRepository.findByStatus(status).stream()
+    public List<StoryDto> getStoriesByStatus(Long statusId) {
+        return storyRepository.findByStatusId(statusId).stream()
                 .map(this::convertToDto)
                 .collect(Collectors.toList());
     }
 
-    // ✅ Get Stories by Assignee
     @Transactional(readOnly = true)
     public List<StoryDto> getStoriesByAssignee(Long assigneeId) {
         return storyRepository.findByAssigneeId(assigneeId).stream()
@@ -155,7 +146,6 @@ public class StoryService {
                 .collect(Collectors.toList());
     }
 
-    // ✅ Get Stories by Sprint
     @Transactional(readOnly = true)
     public List<StoryDto> getStoriesBySprint(Long sprintId) {
         return storyRepository.findBySprintId(sprintId).stream()
@@ -163,17 +153,21 @@ public class StoryService {
                 .collect(Collectors.toList());
     }
 
-    // ✅ Update Story
     public StoryDto updateStory(Long id, StoryDto storyDto) {
         Story existingStory = storyRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Story not found with id: " + id));
 
         existingStory.setTitle(storyDto.getTitle());
         existingStory.setDescription(storyDto.getDescription());
-        existingStory.setStatus(storyDto.getStatus());
         existingStory.setPriority(storyDto.getPriority());
         existingStory.setStoryPoints(storyDto.getStoryPoints());
         existingStory.setAcceptanceCriteria(storyDto.getAcceptanceCriteria());
+
+        if (storyDto.getStatus() != null && storyDto.getStatus().getId() != null) {
+            Status status = statusRepository.findById(storyDto.getStatus().getId())
+                    .orElseThrow(() -> new RuntimeException("Status not found with id: " + storyDto.getStatus().getId()));
+            existingStory.setStatus(status);
+        }
 
         if (storyDto.getEpicId() != null &&
                 (existingStory.getEpic() == null || !storyDto.getEpicId().equals(existingStory.getEpic().getId()))) {
@@ -199,7 +193,6 @@ public class StoryService {
         if (storyDto.getAssigneeId() != null) {
             UserDto assignee = userService.getUserWithRoles(storyDto.getAssigneeId());
             existingStory.setAssigneeId(assignee.getId());
-            
         } else {
             existingStory.setAssigneeId(null);
         }
@@ -208,7 +201,16 @@ public class StoryService {
         return convertToDto(updatedStory);
     }
 
-    // ✅ Delete Story
+    public StoryDto updateStoryStatus(Long storyId, Long statusId) {
+        Story story = storyRepository.findById(storyId)
+                .orElseThrow(() -> new RuntimeException("Story not found with id: " + storyId));
+        Status status = statusRepository.findById(statusId)
+                .orElseThrow(() -> new RuntimeException("Status not found with id: " + statusId));
+        story.setStatus(status);
+        Story updatedStory = storyRepository.save(story);
+        return convertToDto(updatedStory);
+    }
+
     public void deleteStory(Long id) {
         if (!storyRepository.existsById(id)) {
             throw new RuntimeException("Story not found with id: " + id);
@@ -216,7 +218,6 @@ public class StoryService {
         storyRepository.deleteById(id);
     }
 
-    // ✅ Search Stories with filters
     @Transactional(readOnly = true)
     public Page<StoryDto> searchStories(String title, Story.Priority priority, Long epicId, Long projectId, Long sprintId, Pageable pageable) {
         List<UserDto> allUsers = userClient.findAll();
@@ -227,10 +228,8 @@ public class StoryService {
                 );
     }
 
-    // ✅ Convert Entity to DTO (null-safe)
     StoryDto convertToDto(Story story) {
         StoryDto dto = modelMapper.map(story, StoryDto.class);
-
         dto.setEpicId(story.getEpic() != null ? story.getEpic().getId() : null);
         dto.setReporterId(story.getReporterId() != null ? story.getReporterId() : null);
         dto.setSprintId(story.getSprint() != null ? story.getSprint().getId() : null);
@@ -238,15 +237,16 @@ public class StoryService {
         dto.setAssigneeId(story.getAssigneeId() != null ? story.getAssigneeId() : null);
         dto.setAssignee(story.getAssigneeId() != null ? userService.getUserWithRoles(story.getAssigneeId()) : null);
         dto.setReporter(story.getReporterId() != null ? userService.getUserWithRoles(story.getReporterId()) : null);
-
         return dto;
     }
+
     public List<StoryDto> getStoriesWithoutEpic(Long projectId) {
         return storyRepository.findByEpicIsNullAndProjectIdAndSprintIdIsNull(projectId)
                 .stream()
                 .map(story -> new StoryDto(story.getId(), story.getTitle(), story.getDescription()))
                 .collect(Collectors.toList());
     }
+
     public void assignStoryToSprint(Long storyId, Long sprintId) {
         Story story = storyRepository.findById(storyId)
                 .orElseThrow(() -> new RuntimeException("Story not found with id: " + storyId));
@@ -255,10 +255,10 @@ public class StoryService {
             Sprint sprint = sprintRepository.findById(sprintId)
                     .orElseThrow(() -> new RuntimeException("Sprint not found with id: " + sprintId));
             story.setSprint(sprint);
-            story.setProject(sprint.getProject()); // ✅ Add this line
+            story.setProject(sprint.getProject());
         } else {
             story.setSprint(null);
-            story.setProject(null); // ✅ Also clear project if unassigned
+            story.setProject(null);
         }
 
         storyRepository.save(story);
@@ -266,7 +266,6 @@ public class StoryService {
 
     public StoryDto convertToDto1(Story story, Map<Long, UserDto> userMap) {
         StoryDto dto = modelMapper.map(story, StoryDto.class);
-
         dto.setEpicId(story.getEpic() != null ? story.getEpic().getId() : null);
         dto.setReporterId(story.getReporterId() != null ? story.getReporterId() : null);
         dto.setSprintId(story.getSprint() != null ? story.getSprint().getId() : null);
@@ -274,8 +273,6 @@ public class StoryService {
         dto.setAssigneeId(story.getAssigneeId() != null ? story.getAssigneeId() : null);
         dto.setAssignee(story.getAssigneeId() != null ? userMap.get(story.getAssigneeId()) : null);
         dto.setReporter(story.getReporterId() != null ? userMap.get(story.getReporterId()) : null);
-
         return dto;
     }
-
 }

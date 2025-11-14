@@ -11,6 +11,7 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Set;
 
 @Data
 @Builder
@@ -39,7 +40,7 @@ public class ProjectDto {
     @NotNull(message = "Owner is required")
     private Long ownerId;
 
-    private List<Long> memberIds;
+    private Set<Long> memberIds;
 
     // Optional: user details from UMS or another service
     private UserDto owner;

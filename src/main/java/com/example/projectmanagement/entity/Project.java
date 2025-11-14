@@ -10,7 +10,9 @@ import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Entity
 @Table(name = "projects")
@@ -54,8 +56,8 @@ public class Project {
         name = "project_members",
         joinColumns = @JoinColumn(name = "project_id")
     )
-    @Column(name = "user_id")
-    private List<Long> memberIds = new ArrayList<>();
+    @Column(name = "user_id", nullable = false) // Added nullable = false
+    private Set<Long> memberIds = new HashSet<>();
 
     @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<Epic> epics = new ArrayList<>();

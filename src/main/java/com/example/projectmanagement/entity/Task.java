@@ -36,9 +36,9 @@ public class Task {
     @Size(max = 1000, message = "Description cannot exceed 1000 characters")
     private String description;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private TaskStatus status = TaskStatus.BACKLOG;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "status_id", nullable = false)
+    private Status status;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -78,10 +78,6 @@ public class Task {
     @JsonProperty("sprintId")
     public Long getSprintId() {
         return story != null && story.getSprint() != null ? story.getSprint().getId() : null;
-    }
-
-    public enum TaskStatus {
-        BACKLOG, TODO, IN_PROGRESS, DONE
     }
 
     public enum Priority {

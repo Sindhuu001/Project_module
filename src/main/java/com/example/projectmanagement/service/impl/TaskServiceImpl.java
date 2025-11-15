@@ -229,6 +229,13 @@ public class TaskServiceImpl implements TaskService {
     }
 
     @Override
+    public List<TaskViewDto> getTasksByStoryNew(Long storyId) {
+        return taskRepository.findByStoryId(storyId).stream()
+                .map(this::mapToViewDto)
+                .collect(Collectors.toList());
+    }
+
+    @Override
     public List<TaskDto> getTasksByAssignee(Long assigneeId) {
         return taskRepository.findByAssigneeId(assigneeId).stream()
                 .map(this::convertToDto)

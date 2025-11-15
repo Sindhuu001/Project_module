@@ -28,4 +28,5 @@ public interface TaskService {
     TaskDto updateTaskStatus(Long taskId, Long statusId);
     Page<TaskViewDto> searchTasksView(String title, Task.Priority priority, Long assigneeId, Pageable pageable);
     TaskCreateDto updateTask(Long id, TaskUpdateDto dto);
+    List<TaskViewDto> getTasksByStoryNew(Long storyId);
 }

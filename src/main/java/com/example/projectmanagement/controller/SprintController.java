@@ -69,13 +69,13 @@ public class SprintController {
         return ResponseEntity.ok(taskService.getTaskSummariesBySprintId(sprintId));
     }
 
-    @PostMapping("/{sprintId}/tasks")
-    @PreAuthorize("hasRole('Manager')")
-    public ResponseEntity<TaskDto> addTaskToSprint(@PathVariable Long sprintId, @Valid @RequestBody TaskDto taskDto) {
-        taskDto.setSprintId(sprintId);
-        TaskDto createdTask = taskService.createTask(taskDto);
-        return new ResponseEntity<>(createdTask, HttpStatus.CREATED);
-    }
+//    @PostMapping("/{sprintId}/tasks")
+//    @PreAuthorize("hasRole('Manager')")
+//    public ResponseEntity<TaskDto> addTaskToSprint(@PathVariable Long sprintId, @Valid @RequestBody TaskDto taskDto) {
+//        taskDto.setSprintId(sprintId);
+//        TaskDto createdTask = taskService.createTask(taskDto);
+//        return new ResponseEntity<>(createdTask, HttpStatus.CREATED);
+//    }
 
 //     @PostMapping("/{sprintId}/tasks/{taskId}")
 //    @PreAuthorize("hasRole('Manager')")

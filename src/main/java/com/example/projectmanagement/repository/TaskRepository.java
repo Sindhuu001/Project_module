@@ -42,8 +42,10 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
     @Query("SELECT COUNT(t) FROM Task t WHERE t.story.id = :storyId")
     long countByStoryId(@Param("storyId") Long storyId);
 
-    @Query("SELECT t FROM Task t WHERE t.story.sprint IS NULL")
+
+    @Query("SELECT t FROM Task t WHERE t.sprint IS NULL")
     List<Task> findBacklogTasks();
+
 
     @Query("SELECT COUNT(t) FROM Task t WHERE t.dueDate BETWEEN CURRENT_TIMESTAMP AND :futureDate")
     long countTasksDueSoon(@Param("futureDate") LocalDateTime futureDate);
@@ -59,4 +61,17 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
     long countByAssigneeId(Long userId);
 
     Long countByAssigneeIdAndStatusId(Long userId, Long statusId);
+
+    @Query("""
+        SELECT t FROM Task t
+        WHERE (:title IS NULL OR LOWER(t.title) LIKE LOWER(CONCAT('%', :title, '%')))
+          AND (:priority IS NULL OR t.priority = :priority)
+          AND (:assigneeId IS NULL OR t.assigneeId = :assigneeId)
+    """)
+    Page<Task> searchTasks(
+            @Param("title") String title,
+            @Param("priority") Task.Priority priority,
+            @Param("assigneeId") Long assigneeId,
+            Pageable pageable);
+
 }

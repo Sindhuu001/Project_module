@@ -13,7 +13,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 @Entity
 @Table(name = "projects")
 @Data
@@ -66,6 +66,7 @@ public class Project {
     private List<Sprint> sprints;
 
     @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JsonManagedReference
     private List<Task> tasks;
 
     @Column(name = "start_date")

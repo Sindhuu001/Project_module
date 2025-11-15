@@ -18,6 +18,7 @@ public interface StoryRepository extends JpaRepository<Story, Long> {
     List<Story> findByStatusId(Long statusId); // Replaced findByStatus
     
     List<Story> findByAssigneeId(Long assigneeId);
+
     
     List<Story> findByReporterId(Long reporterId);
     List<Story> findBySprintId(Long sprintId);

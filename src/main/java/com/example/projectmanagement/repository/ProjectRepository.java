@@ -46,4 +46,20 @@ public interface ProjectRepository extends JpaRepository<Project, Long> {
     List<Project> findByMemberIdsAndStatus(Long userId, ProjectStatus active);
 
     Long countByStatus(Project.ProjectStatus status);
+
+    @Query("SELECT CASE WHEN COUNT(p) > 0 THEN TRUE ELSE FALSE END " +
+            "FROM Project p " +
+            "WHERE p.id = :projectId AND :userId IN elements(p.memberIds)")
+    boolean isUserMemberOfProject(@Param("projectId") Long projectId,
+                                  @Param("userId") Long userId);
+
+    @Query("""
+       SELECT CASE WHEN COUNT(p) > 0 THEN TRUE ELSE FALSE END
+       FROM Project p
+       WHERE p.id = :projectId 
+         AND (p.ownerId = :userId OR :userId IN elements(p.memberIds))
+       """)
+    boolean isUserPartOfProject(@Param("projectId") Long projectId,
+                                @Param("userId") Long userId);
+
 }

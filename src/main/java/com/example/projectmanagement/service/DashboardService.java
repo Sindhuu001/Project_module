@@ -3,13 +3,13 @@ package com.example.projectmanagement.service;
 import com.example.projectmanagement.dto.DashboardSummaryDto;
 import com.example.projectmanagement.entity.Epic;
 import com.example.projectmanagement.entity.Story;
-import com.example.projectmanagement.entity.Task;
+import com.example.projectmanagement.entity.Status;
 import com.example.projectmanagement.repository.*;
 import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
-import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -20,19 +20,21 @@ public class DashboardService {
     private final TaskRepository taskRepository;
     private final EpicRepository epicRepository;
     private final SprintRepository sprintRepository;
-    
     private final StoryRepository storyRepository;
+    private final StatusRepository statusRepository;
 
     public DashboardService(ProjectRepository projectRepository,
                             TaskRepository taskRepository,
                             EpicRepository epicRepository,
                             SprintRepository sprintRepository,
-                            StoryRepository storyRepository) {
+                            StoryRepository storyRepository,
+                            StatusRepository statusRepository) {
         this.projectRepository = projectRepository;
         this.taskRepository = taskRepository;
         this.epicRepository = epicRepository;
         this.sprintRepository = sprintRepository;
         this.storyRepository = storyRepository;
+        this.statusRepository = statusRepository;
     }
 
     public DashboardSummaryDto getSummary() {
@@ -40,33 +42,23 @@ public class DashboardService {
         long totalTasks = taskRepository.count();
         long totalEpics = epicRepository.count();
         long totalStories = storyRepository.count();
-        // Task status counts
-        Map<Task.TaskStatus, Long> taskStatusMap = new EnumMap<>(Task.TaskStatus.class);
-        for (Task.TaskStatus status : Task.TaskStatus.values()) {
-            taskStatusMap.put(status, (long) taskRepository.findByStatus(status).size());
-        }
+
+        // Dynamic Task status counts
+        Map<String, Long> taskStatusCount = statusRepository.findAll().stream()
+                .collect(Collectors.toMap(
+                        Status::getName,
+                        status -> taskRepository.countByStatusId(status.getId()),
+                        (existing, replacement) -> existing + replacement // Merge duplicate status names
+                ));
 
         // Epic status counts
-        Map<Epic.EpicStatus, Long> epicStatusMap = new EnumMap<>(Epic.EpicStatus.class);
-        for (Epic.EpicStatus status : Epic.EpicStatus.values()) {
-            epicStatusMap.put(status, (long) epicRepository.findByStatus(status).size());
-        }
-
-        // Story status counts
-        Map<Story.StoryStatus, Long> storyStatusMap = new EnumMap<>(Story.StoryStatus.class);
-        for (Story.StoryStatus status : Story.StoryStatus.values()) {
-            storyStatusMap.put(status, (long) storyRepository.findByStatus(status).size());
-        }
-
-        // Convert enum maps to string-keyed maps for DTO
-        Map<String, Long> taskStatusCount = new HashMap<>();
-        taskStatusMap.forEach((key, value) -> taskStatusCount.put(key.name(), value));
-
         Map<String, Long> epicStatusCount = new HashMap<>();
-        epicStatusMap.forEach((key, value) -> epicStatusCount.put(key.name(), value));
+        for (Epic.EpicStatus status : Epic.EpicStatus.values()) {
+            epicStatusCount.put(status.name(), (long) epicRepository.findByStatus(status).size());
+        }
 
+        // Story status counts are no longer globally meaningful, so we omit the per-status breakdown
         Map<String, Long> storyStatusCount = new HashMap<>();
-        storyStatusMap.forEach((key, value) -> storyStatusCount.put(key.name(), value));
 
         return DashboardSummaryDto.builder()
                 .totalProjects(totalProjects)
@@ -75,60 +67,50 @@ public class DashboardService {
                 .totalEpics(totalEpics)
                 .epicStatusCount(epicStatusCount)
                 .totalStories(totalStories)
-                .storyStatusCount(storyStatusCount)
-                
+                .storyStatusCount(storyStatusCount) // Will be empty
                 .build();
     }
-    
 
     public Map<String, Long> getReminders() {
         Map<String, Long> reminders = new HashMap<>();
-
         LocalDateTime now = LocalDateTime.now();
         LocalDateTime twoDaysLater = now.plusDays(2);
 
-        // 🔔 Tasks due in next 2 days
         reminders.put("taskDueSoonCount", taskRepository.countByDueDateBetween(now, twoDaysLater));
-
-        // 📝 Tasks in TODO
-        reminders.put("todoTaskCount", taskRepository.countByStatus(Task.TaskStatus.TODO));
-
-        // 🚩 Projects with no owner
         reminders.put("unassignedProjectCount", projectRepository.countByOwnerIdIsNull());
-
-        // 🕒 Sprints ending within next 2 days
         reminders.put("sprintsEndingSoonCount", sprintRepository.countByEndDateBetween(now, twoDaysLater));
 
-        // 📘 Stories in TODO
-        reminders.put("todoStoryCount", storyRepository.countByStatus(Story.StoryStatus.TODO));
+        // Find statuses named "To Do" and count stories
+        long todoStoryCount = statusRepository.findAll().stream()
+                .filter(status -> "To Do".equalsIgnoreCase(status.getName()))
+                .mapToLong(status -> storyRepository.countByStatusId(status.getId()))
+                .sum();
+        reminders.put("todoStoryCount", todoStoryCount);
 
         return reminders;
     }
 
-
     public Map<String, Object> getDashboardData(Long userId) {
+        // --- Task Status Counts for a specific user ---
+        Map<String, Long> taskStatusMap = statusRepository.findAll().stream()
+                .collect(Collectors.toMap(
+                        Status::getName,
+                        status -> taskRepository.countByAssigneeIdAndStatusId(userId, status.getId()),
+                        (existing, replacement) -> existing + replacement
+                ));
 
-    // --- Task Status Counts ---
-    EnumMap<Task.TaskStatus, Long> taskStatusMap = new EnumMap<>(Task.TaskStatus.class);
-    for (Task.TaskStatus status : Task.TaskStatus.values()) {
-        taskStatusMap.put(status, taskRepository.countByAssigneeIdAndStatus(userId, status));
-    }
+        // --- Story Status Counts for a specific user ---
+        Map<String, Long> storyStatusMap = statusRepository.findAll().stream()
+                .collect(Collectors.toMap(
+                        Status::getName,
+                        status -> storyRepository.countByAssigneeIdAndStatusId(userId, status.getId()),
+                        (existing, replacement) -> existing + replacement
+                ));
 
-    // --- Story Status Counts ---
-    EnumMap<Story.StoryStatus, Long> storyStatusMap = new EnumMap<>(Story.StoryStatus.class);
-    for (Story.StoryStatus status : Story.StoryStatus.values()) {
-        storyStatusMap.put(status, storyRepository.countByAssigneeIdAndStatus(userId, status));
-    }
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("taskStatus", taskStatusMap);
+        result.put("storyStatus", storyStatusMap);
 
-    // --- Convert Enum keys to String for JSON output ---
-    Map<String, Object> result = new LinkedHashMap<>();
-    result.put("taskStatus", taskStatusMap.entrySet().stream()
-            .collect(Collectors.toMap(e -> e.getKey().name(), Map.Entry::getValue)));
-    // result.put("epicStatus", epicStatusMap.entrySet().stream()
-    //         .collect(Collectors.toMap(e -> e.getKey().name(), Map.Entry::getValue)));
-    result.put("storyStatus", storyStatusMap.entrySet().stream()
-            .collect(Collectors.toMap(e -> e.getKey().name(), Map.Entry::getValue)));
-
-    return result;
+        return result;
     }
 }

@@ -1,8 +1,7 @@
 package com.example.projectmanagement.service.impl;
 
 import com.example.projectmanagement.client.UserClient;
-import com.example.projectmanagement.dto.TaskDto;
-import com.example.projectmanagement.dto.UserDto;
+import com.example.projectmanagement.dto.*;
 import com.example.projectmanagement.entity.*;
 import com.example.projectmanagement.repository.*;
 import com.example.projectmanagement.service.*;
@@ -15,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -37,150 +37,219 @@ public class TaskServiceImpl implements TaskService {
 
     // ---------- CRUD Operations ----------
 
+    @Override
     public long countTasksByStoryId(Long storyId) {
         return taskRepository.countByStoryId(storyId);
     }
 
-    public TaskDto createTask(TaskDto taskDto) {
-        Project project = projectRepository.findById(taskDto.getProjectId())
-                .orElseThrow(() -> new RuntimeException("Project not found with id: " + taskDto.getProjectId()));
+    @Override
+    public TaskCreateDto createTask(TaskCreateDto taskCreateDto) {
+        Task task = new Task();
 
-        UserDto reporter = userService.getUserWithRoles(taskDto.getReporterId());
-
-        Task task = modelMapper.map(taskDto, Task.class);
+        // 1️⃣ Project validation (mandatory)
+        Project project = projectRepository.findById(taskCreateDto.getProjectId())
+                .orElseThrow(() -> new RuntimeException("Project not found with id: " + taskCreateDto.getProjectId()));
         task.setProject(project);
-        task.setReporterId(reporter.getId());
-        task.setBillable(taskDto.isBillable());
+        Set<Long> projectMembers = project.getMemberIds();
+        Long projectOwnerId = project.getOwnerId();
 
-        if (taskDto.getStoryId() != null) {
-            Story story = storyRepository.findById(taskDto.getStoryId())
-                    .orElseThrow(() -> new RuntimeException("Story not found with id: " + taskDto.getStoryId()));
-            task.setStory(story);
-        }
-
-        if (taskDto.getAssigneeId() != null) {
-            UserDto assignee = userService.getUserWithRoles(taskDto.getAssigneeId());
-            task.setAssigneeId(assignee.getId());
-        }
-        
-        if (taskDto.getStatus() != null && taskDto.getStatus().getId() != null) {
-            Status status = statusRepository.findById(taskDto.getStatus().getId())
-                    .orElseThrow(() -> new RuntimeException("Status not found with id: " + taskDto.getStatus().getId()));
+        // 2️⃣ Status (optional)
+        if (taskCreateDto.getStatusId() != null) {
+            Status status = statusRepository.findById(taskCreateDto.getStatusId())
+                    .orElseThrow(() -> new RuntimeException("Status not found"));
             task.setStatus(status);
         }
 
+        // 3️⃣ Basic fields
+        task.setTitle(taskCreateDto.getTitle());
+        task.setDescription(taskCreateDto.getDescription());
+        task.setPriority(taskCreateDto.getPriority());
+        task.setStoryPoints(taskCreateDto.getStoryPoints());
+        task.setDueDate(taskCreateDto.getDueDate());
+        task.setBillable(taskCreateDto.isBillable());
 
-        Task savedTask = taskRepository.save(task);
-        return convertToDto(savedTask);
+        // 4️⃣ Assignee validation
+        if (taskCreateDto.getAssigneeId() != null) {
+            Long assigneeId = taskCreateDto.getAssigneeId();
+            if (!projectMembers.contains(assigneeId) && !projectOwnerId.equals(assigneeId)) {
+                throw new RuntimeException("Assignee ID " + assigneeId + " is not a member or owner of project " + project.getId());
+            }
+            task.setAssigneeId(assigneeId);
+        }
+
+        // 5️⃣ Reporter validation
+        if (taskCreateDto.getReporterId() != null) {
+            Long reporterId = taskCreateDto.getReporterId();
+            if (!projectMembers.contains(reporterId) && !projectOwnerId.equals(reporterId)) {
+                throw new RuntimeException("Reporter ID " + reporterId + " is not a member or owner of project " + project.getId());
+            }
+            task.setReporterId(reporterId);
+        }
+
+        // 6️⃣ Story assignment (optional)
+        if (taskCreateDto.getStoryId() != null) {
+            Story story = storyRepository.findById(taskCreateDto.getStoryId())
+                    .orElseThrow(() -> new RuntimeException("Story not found with id: " + taskCreateDto.getStoryId()));
+            task.setStory(story);
+        }
+
+        // 7️⃣ Sprint assignment logic
+        if (taskCreateDto.getSprintId() != null) {
+            Sprint sprint = sprintRepository.findById(taskCreateDto.getSprintId())
+                    .orElseThrow(() -> new RuntimeException("Sprint not found with id: " + taskCreateDto.getSprintId()));
+            task.setSprint(sprint);
+        } else if (task.getStory() != null && task.getStory().getSprint() != null) {
+            task.setSprint(task.getStory().getSprint());
+        }
+
+        // 8️⃣ Save task
+        Task saved = taskRepository.save(task);
+        return mapToDto(saved);
     }
 
-    public TaskDto updateTask(Long id, TaskDto taskDto) {
+    @Override
+    public TaskViewDto getTaskById(Long id) {
+        Task task = taskRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Task not found with id: " + id));
+        return mapToViewDto(task);
+    }
+
+    @Override
+    public void deleteTask(Long id) {
+        Task task = taskRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Task not found with id: " + id));
+        taskRepository.delete(task);
+    }
+
+    @Override
+    public TaskCreateDto updateTask(Long id, TaskUpdateDto dto) {
         Task existingTask = taskRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Task not found with id: " + id));
 
-        existingTask.setTitle(taskDto.getTitle());
-        existingTask.setDescription(taskDto.getDescription());
-        if (taskDto.getStatus() != null && taskDto.getStatus().getId() != null) {
-            Status status = statusRepository.findById(taskDto.getStatus().getId())
-                    .orElseThrow(() -> new RuntimeException("Status not found with id: " + taskDto.getStatus().getId()));
+        Project project = existingTask.getProject();
+        if (project == null) throw new RuntimeException("Task does not belong to any project");
+        Set<Long> projectMembers = project.getMemberIds();
+        Long projectOwnerId = project.getOwnerId();
+
+        // Update fields
+        if (dto.getTitle() != null) existingTask.setTitle(dto.getTitle());
+        if (dto.getDescription() != null) existingTask.setDescription(dto.getDescription());
+        if (dto.getPriority() != null) existingTask.setPriority(dto.getPriority());
+        if (dto.getStoryPoints() != null) existingTask.setStoryPoints(dto.getStoryPoints());
+        if (dto.getDueDate() != null) existingTask.setDueDate(dto.getDueDate());
+        if (dto.getBillable() != null) existingTask.setBillable(dto.getBillable());
+
+        // Reporter
+        if (dto.getReporterId() != null) {
+            Long reporterId = dto.getReporterId();
+            if (!projectMembers.contains(reporterId) && !projectOwnerId.equals(reporterId)) {
+                throw new RuntimeException("Reporter ID " + reporterId + " is not a member or owner of project " + project.getId());
+            }
+            existingTask.setReporterId(reporterId);
+        }
+
+        // Status
+        if (dto.getStatusId() != null) {
+            Status status = statusRepository.findById(dto.getStatusId())
+                    .orElseThrow(() -> new RuntimeException("Status not found with id: " + dto.getStatusId()));
             existingTask.setStatus(status);
         }
-        existingTask.setPriority(taskDto.getPriority());
-        existingTask.setStoryPoints(taskDto.getStoryPoints());
-        existingTask.setDueDate(taskDto.getDueDate());
-        existingTask.setBillable(taskDto.isBillable());
 
-        if (taskDto.getStoryId() != null) {
-            Story story = storyRepository.findById(taskDto.getStoryId())
-                    .orElseThrow(() -> new RuntimeException("Story not found with id: " + taskDto.getStoryId()));
+        // Assignee
+        if (dto.getAssigneeId() != null) {
+            Long assigneeId = dto.getAssigneeId();
+            if (!projectMembers.contains(assigneeId) && !projectOwnerId.equals(assigneeId)) {
+                throw new RuntimeException("Assignee ID " + assigneeId + " is not a member or owner of project " + project.getId());
+            }
+            existingTask.setAssigneeId(assigneeId);
+        } else existingTask.setAssigneeId(null);
+
+        // Story
+        if (dto.getStoryId() != null) {
+            Story story = storyRepository.findById(dto.getStoryId())
+                    .orElseThrow(() -> new RuntimeException("Story not found with id: " + dto.getStoryId()));
             existingTask.setStory(story);
-        } else {
-            existingTask.setStory(null);
-        }
+        } else existingTask.setStory(null);
 
-        if (taskDto.getAssigneeId() != null) {
-            existingTask.setAssigneeId(taskDto.getAssigneeId());
-        } else {
-            existingTask.setAssigneeId(null);
-        }
+        // Sprint
+        if (dto.getSprintId() != null) {
+            Sprint sprint = sprintRepository.findById(dto.getSprintId())
+                    .orElseThrow(() -> new RuntimeException("Sprint not found with id: " + dto.getSprintId()));
+            existingTask.setSprint(sprint);
+        } else if (existingTask.getStory() != null && existingTask.getStory().getSprint() != null) {
+            existingTask.setSprint(existingTask.getStory().getSprint());
+        } else existingTask.setSprint(null);
 
         Task updatedTask = taskRepository.save(existingTask);
-        return convertToDto(updatedTask);
+        return mapToDto(updatedTask);
     }
 
-    public void deleteTask(Long id) {
-        if (!taskRepository.existsById(id)) {
-            throw new RuntimeException("Task not found with id: " + id);
-        }
-        taskRepository.deleteById(id);
-    }
+    // ---------- List & Summary ----------
 
-    public TaskDto getTaskById(Long id) {
-        Task task = taskRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Task not found with id: " + id));
-        return convertToDto(task);
-    }
-
+    @Override
     public List<TaskDto> getAllTasks() {
         return taskRepository.findAll().stream()
                 .map(this::convertToDto)
                 .collect(Collectors.toList());
     }
 
+    @Override
     public Page<TaskDto> getAllTasks(Pageable pageable) {
-        return taskRepository.findAll(pageable)
-                .map(this::convertToDto);
+        return taskRepository.findAll(pageable).map(this::convertToDto);
     }
 
+    @Override
     public List<TaskDto.Summary> getTaskSummariesByProject(Long projectId) {
         List<TaskDto.Summary> summaries = taskRepository.findTaskSummariesByProjectId(projectId);
-
-        // Fetch all users once instead of calling the API repeatedly
         List<UserDto> allUsers = userClient.findAll();
         Map<Long, UserDto> userMap = allUsers.stream()
                 .collect(Collectors.toMap(UserDto::getId, Function.identity()));
 
         for (TaskDto.Summary summary : summaries) {
-            // Reporter name
-            if (summary.getReporterId() != null && userMap.containsKey(summary.getReporterId())) {
-                summary.setReporterName(userMap.get(summary.getReporterId()).getName());
-            } else {
-                summary.setReporterName("Unassigned");
-            }
-
-            // Assignee name
-            if (summary.getAssigneeId() != null && userMap.containsKey(summary.getAssigneeId())) {
-                summary.setAssigneeName(userMap.get(summary.getAssigneeId()).getName());
-            } else {
-                summary.setAssigneeName("Unassigned");
-            }
+            summary.setReporterName(summary.getReporterId() != null && userMap.containsKey(summary.getReporterId())
+                    ? userMap.get(summary.getReporterId()).getName()
+                    : "Unassigned");
+            summary.setAssigneeName(summary.getAssigneeId() != null && userMap.containsKey(summary.getAssigneeId())
+                    ? userMap.get(summary.getAssigneeId()).getName()
+                    : "Unassigned");
         }
         return summaries;
     }
 
-
+    @Override
     public List<TaskDto.Summary> getTaskSummariesBySprintId(Long sprintId) {
         return taskRepository.findTaskSummariesBySprintId(sprintId);
     }
-   
+
+    @Override
     public List<TaskDto> getTasksByStory(Long storyId) {
         return taskRepository.findByStoryId(storyId).stream()
                 .map(this::convertToDto)
                 .collect(Collectors.toList());
     }
 
+    @Override
+    public List<TaskViewDto> getTasksByStoryNew(Long storyId) {
+        return taskRepository.findByStoryId(storyId).stream()
+                .map(this::mapToViewDto)
+                .collect(Collectors.toList());
+    }
+
+    @Override
     public List<TaskDto> getTasksByAssignee(Long assigneeId) {
         return taskRepository.findByAssigneeId(assigneeId).stream()
                 .map(this::convertToDto)
                 .collect(Collectors.toList());
     }
 
+    @Override
     public List<TaskDto> getTasksByStatus(Long statusId) {
         return taskRepository.findByStatusId(statusId).stream()
                 .map(this::convertToDto)
                 .collect(Collectors.toList());
     }
 
+    @Override
     public List<TaskDto> getBacklogTasks() {
         return taskRepository.findBacklogTasks().stream()
                 .map(this::convertToDto)
@@ -189,22 +258,26 @@ public class TaskServiceImpl implements TaskService {
 
     // ---------- Search & Count ----------
 
-    public Page<TaskDto> searchTasks(String title, Task.Priority priority, Long assigneeId, Pageable pageable) {
-        if (assigneeId != null) {
-            return taskRepository.findByAssigneeId(assigneeId, pageable)
-                    .map(this::convertToDto);
-        } else if (title != null) {
-            return taskRepository.findByTitleContaining(title, pageable)
-                    .map(this::convertToDto);
-        } else if (priority != null) {
-            return taskRepository.findByPriority(priority, pageable)
-                    .map(this::convertToDto);
-        } else {
-            return taskRepository.findAll(pageable)
-                    .map(this::convertToDto);
-        }
+    @Override
+    public Page<TaskViewDto> searchTasksView(String title, Task.Priority priority, Long assigneeId, Pageable pageable) {
+        Page<Task> tasks;
+        if (assigneeId != null) tasks = taskRepository.findByAssigneeId(assigneeId, pageable);
+        else if (title != null) tasks = taskRepository.findByTitleContaining(title, pageable);
+        else if (priority != null) tasks = taskRepository.findByPriority(priority, pageable);
+        else tasks = taskRepository.findAll(pageable);
+
+        return tasks.map(this::mapToViewDto);
     }
 
+    @Override
+    public Page<TaskDto> searchTasks(String title, Task.Priority priority, Long assigneeId, Pageable pageable) {
+        if (assigneeId != null) return taskRepository.findByAssigneeId(assigneeId, pageable).map(this::convertToDto);
+        else if (title != null) return taskRepository.findByTitleContaining(title, pageable).map(this::convertToDto);
+        else if (priority != null) return taskRepository.findByPriority(priority, pageable).map(this::convertToDto);
+        else return taskRepository.findAll(pageable).map(this::convertToDto);
+    }
+
+    @Override
     public long countTasksByStatus(Long statusId) {
         return taskRepository.countByStatusId(statusId);
     }
@@ -216,8 +289,7 @@ public class TaskServiceImpl implements TaskService {
         Status status = statusRepository.findById(statusId)
                 .orElseThrow(() -> new RuntimeException("Status not found with id: " + statusId));
         task.setStatus(status);
-        Task updatedTask = taskRepository.save(task);
-        return convertToDto(updatedTask);
+        return convertToDto(taskRepository.save(task));
     }
 
     // ---------- DTO Conversion ----------
@@ -225,24 +297,24 @@ public class TaskServiceImpl implements TaskService {
     private TaskDto convertToDto(Task task) {
         TaskDto dto = modelMapper.map(task, TaskDto.class);
 
-        List<UserDto> allUsers = userClient.findAll();
-        Map<Long, UserDto> userMap = allUsers.stream()
+        Map<Long, UserDto> userMap = userClient.findAll().stream()
                 .collect(Collectors.toMap(UserDto::getId, Function.identity()));
 
-        dto.setProjectId(task.getProject().getId());
-        dto.setSprintId(task.getSprintId());
-        dto.setProject(task.getProject() != null ? projectService.convertToDto1(task.getProject(), userMap) : null);
+        if (task.getProject() != null) {
+            dto.setProjectId(task.getProject().getId());
+            dto.setProject(projectService.convertToDto1(task.getProject(), userMap));
+        }
+
+        dto.setSprintId(task.getEffectiveSprintId());
 
         dto.setReporterId(task.getReporterId());
-        dto.setReporter(task.getReporterId() != null
-                ? userMap.get(task.getReporterId())
+        dto.setReporter(task.getReporterId() != null ? userMap.get(task.getReporterId())
                 : new UserDto(12345L, "Unknown User", "unknown.user@example.com", null));
 
         if (task.getStory() != null) {
             dto.setStoryId(task.getStory().getId());
             dto.setStory(storyService.convertToDto1(task.getStory(), userMap));
 
-            // ✅ derive sprint via story
             if (task.getStory().getSprint() != null) {
                 Sprint sprint = task.getStory().getSprint();
                 dto.setSprintId(sprint.getId());
@@ -256,6 +328,86 @@ public class TaskServiceImpl implements TaskService {
         }
 
         dto.setBillable(task.isBillable());
+        return dto;
+    }
+
+    private TaskCreateDto mapToDto(Task task) {
+        TaskCreateDto dto = new TaskCreateDto();
+
+        dto.setId(task.getId());
+        dto.setTitle(task.getTitle());
+        dto.setDescription(task.getDescription());
+        dto.setPriority(task.getPriority());
+        dto.setStoryPoints(task.getStoryPoints());
+        dto.setDueDate(task.getDueDate());
+        dto.setBillable(task.isBillable());
+        dto.setCreatedAt(task.getCreatedAt());
+        dto.setUpdatedAt(task.getUpdatedAt());
+
+        if (task.getStatus() != null) dto.setStatusId(task.getStatus().getId());
+        if (task.getProject() != null) dto.setProjectId(task.getProject().getId());
+
+        dto.setReporterId(task.getReporterId());
+        dto.setAssigneeId(task.getAssigneeId());
+
+        if (task.getStory() != null) dto.setStoryId(task.getStory().getId());
+        if (task.getSprint() != null) dto.setSprintId(task.getSprint().getId());
+        else if (task.getStory() != null && task.getStory().getSprint() != null)
+            dto.setSprintId(task.getStory().getSprint().getId());
+        else dto.setSprintId(null);
+
+        return dto;
+    }
+
+    private TaskViewDto mapToViewDto(Task task) {
+        TaskViewDto dto = new TaskViewDto();
+
+        dto.setId(task.getId());
+        dto.setTitle(task.getTitle());
+        dto.setDescription(task.getDescription());
+        dto.setPriority(task.getPriority());
+        dto.setStoryPoints(task.getStoryPoints());
+        dto.setDueDate(task.getDueDate());
+        dto.setBillable(task.isBillable());
+        dto.setCreatedAt(task.getCreatedAt());
+        dto.setUpdatedAt(task.getUpdatedAt());
+
+        if (task.getStatus() != null) {
+            dto.setStatusId(task.getStatus().getId());
+            dto.setStatusName(task.getStatus().getName());
+        }
+
+        if (task.getProject() != null) {
+            dto.setProjectId(task.getProject().getId());
+            dto.setProjectName(task.getProject().getName());
+        }
+
+        dto.setReporterId(task.getReporterId());
+        dto.setAssigneeId(task.getAssigneeId());
+        if (task.getReporterId() != null) {
+            try { dto.setReporterName(userService.getUserWithRoles(task.getReporterId()).getName()); }
+            catch (Exception e) { dto.setReporterName("Unknown"); }
+        }
+        if (task.getAssigneeId() != null) {
+            try { dto.setAssigneeName(userService.getUserWithRoles(task.getAssigneeId()).getName()); }
+            catch (Exception e) { dto.setAssigneeName("Unassigned"); }
+        }
+
+        if (task.getStory() != null) {
+            Story story = task.getStory();
+            dto.setStoryId(story.getId());
+            dto.setStoryTitle(story.getTitle());
+            if (story.getSprint() != null) {
+                Sprint sprint = story.getSprint();
+                dto.setSprintId(sprint.getId());
+                dto.setSprintName(sprint.getName());
+            }
+        } else if (task.getSprint() != null) {
+            Sprint sprint = task.getSprint();
+            dto.setSprintId(sprint.getId());
+            dto.setSprintName(sprint.getName());
+        }
+
         return dto;
     }
 }

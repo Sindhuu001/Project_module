@@ -1,9 +1,6 @@
 package com.example.projectmanagement.controller;
 
-import com.example.projectmanagement.dto.TaskDto;
-import com.example.projectmanagement.dto.TaskCreateDto;
-import com.example.projectmanagement.dto.TaskViewDto;
-import com.example.projectmanagement.dto.TaskUpdateDto;
+import com.example.projectmanagement.dto.*;
 import com.example.projectmanagement.entity.Task;
 import com.example.projectmanagement.service.TaskService;
 import jakarta.validation.Valid;
@@ -80,6 +77,12 @@ public class TaskController {
     public ResponseEntity<Void> deleteTask(@PathVariable Long id) {
         taskService.deleteTask(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/user/{userId}/tasks")
+    public ResponseEntity<List<TaskTimesheetDto>> getTasksByUser(
+            @PathVariable Long userId) {
+        return ResponseEntity.ok(taskService.getTimesheetsTasksByAssignee(userId));
     }
 
     // ------------------------------

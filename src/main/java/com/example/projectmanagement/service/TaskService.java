@@ -1,9 +1,6 @@
 package com.example.projectmanagement.service;
 
-import com.example.projectmanagement.dto.TaskDto;
-import com.example.projectmanagement.dto.TaskCreateDto;
-import com.example.projectmanagement.dto.TaskViewDto;
-import com.example.projectmanagement.dto.TaskUpdateDto;
+import com.example.projectmanagement.dto.*;
 import com.example.projectmanagement.entity.Task;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -29,5 +26,4 @@ public interface TaskService {
     Page<TaskViewDto> searchTasksView(String title, Task.Priority priority, Long assigneeId, Pageable pageable);
     TaskCreateDto updateTask(Long id, TaskUpdateDto dto);
     List<TaskViewDto> getTasksByStoryNew(Long storyId);
-    List<TaskViewDto> getTasksByProjectId(Long projectId); // Added method
 }

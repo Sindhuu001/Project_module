@@ -268,6 +268,15 @@ public class TaskServiceImpl implements TaskService {
                 .collect(Collectors.toList());
     }
 
+    @Override
+    public List<TaskTimesheetDto> getTimesheetsTasksByAssignee(Long assigneeId) {
+
+        return taskRepository.findByAssigneeId(assigneeId)
+                .stream()
+                .map(this::taskTimeConvertToDto)
+                .collect(Collectors.toList());
+    }
+
     // ---------- Search & Count ----------
 
     @Override
@@ -305,6 +314,18 @@ public class TaskServiceImpl implements TaskService {
     }
 
     // ---------- DTO Conversion ----------
+
+    private TaskTimesheetDto taskTimeConvertToDto(Task task) {
+        TaskTimesheetDto dto = modelMapper.map(task, TaskTimesheetDto.class);
+
+        ProjectSmallDto projectDto = new ProjectSmallDto();
+        projectDto.setId(task.getProject().getId());
+        projectDto.setName(task.getProject().getName());
+
+        dto.setProject(projectDto);
+
+        return dto;
+    }
 
     private TaskDto convertToDto(Task task) {
         TaskDto dto = modelMapper.map(task, TaskDto.class);

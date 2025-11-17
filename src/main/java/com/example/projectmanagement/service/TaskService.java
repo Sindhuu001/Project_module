@@ -26,5 +26,4 @@ public interface TaskService {
     Page<TaskViewDto> searchTasksView(String title, Task.Priority priority, Long assigneeId, Pageable pageable);
     TaskCreateDto updateTask(Long id, TaskUpdateDto dto);
     List<TaskViewDto> getTasksByStoryNew(Long storyId);
-    List<TaskTimesheetDto> getTimesheetsTasksByAssignee(Long assigneeId);
 }

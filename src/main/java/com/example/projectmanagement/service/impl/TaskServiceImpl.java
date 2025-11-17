@@ -195,8 +195,20 @@ public class TaskServiceImpl implements TaskService {
 
     @Override
     public Page<TaskDto> getAllTasks(Pageable pageable) {
-        return taskRepository.findAll(pageable).map(this::convertToDto);
+        return null;
     }
+
+    @Override
+    public List<TaskViewDto> getTasksByProjectId(Long projectId) {
+        return taskRepository.findByProjectId(projectId).stream()
+                .map(this::mapToViewDto)
+                .collect(Collectors.toList());
+    }
+
+//    @Override
+//    public Page<TaskDto> getAllTasks(Pageable pageable) {
+//        return taskRepository.findAll(pageable).map(this::convertToDto);
+//    }
 
     @Override
     public List<TaskDto.Summary> getTaskSummariesByProject(Long projectId) {

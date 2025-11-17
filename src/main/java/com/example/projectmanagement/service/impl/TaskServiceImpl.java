@@ -195,8 +195,20 @@ public class TaskServiceImpl implements TaskService {
 
     @Override
     public Page<TaskDto> getAllTasks(Pageable pageable) {
-        return taskRepository.findAll(pageable).map(this::convertToDto);
+        return null;
     }
+
+    @Override
+    public List<TaskViewDto> getTasksByProjectId(Long projectId) {
+        return taskRepository.findByProjectId(projectId).stream()
+                .map(this::mapToViewDto)
+                .collect(Collectors.toList());
+    }
+
+//    @Override
+//    public Page<TaskDto> getAllTasks(Pageable pageable) {
+//        return taskRepository.findAll(pageable).map(this::convertToDto);
+//    }
 
     @Override
     public List<TaskDto.Summary> getTaskSummariesByProject(Long projectId) {
@@ -256,6 +268,15 @@ public class TaskServiceImpl implements TaskService {
                 .collect(Collectors.toList());
     }
 
+    @Override
+    public List<TaskTimesheetDto> getTimesheetsTasksByAssignee(Long assigneeId) {
+
+        return taskRepository.findByAssigneeId(assigneeId)
+                .stream()
+                .map(this::taskTimeConvertToDto)
+                .collect(Collectors.toList());
+    }
+
     // ---------- Search & Count ----------
 
     @Override
@@ -293,6 +314,18 @@ public class TaskServiceImpl implements TaskService {
     }
 
     // ---------- DTO Conversion ----------
+
+    private TaskTimesheetDto taskTimeConvertToDto(Task task) {
+        TaskTimesheetDto dto = modelMapper.map(task, TaskTimesheetDto.class);
+
+        ProjectSmallDto projectDto = new ProjectSmallDto();
+        projectDto.setId(task.getProject().getId());
+        projectDto.setName(task.getProject().getName());
+
+        dto.setProject(projectDto);
+
+        return dto;
+    }
 
     private TaskDto convertToDto(Task task) {
         TaskDto dto = modelMapper.map(task, TaskDto.class);

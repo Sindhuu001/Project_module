@@ -1,9 +1,6 @@
 package com.example.projectmanagement.service;
 
-import com.example.projectmanagement.dto.TaskDto;
-import com.example.projectmanagement.dto.TaskCreateDto;
-import com.example.projectmanagement.dto.TaskViewDto;
-import com.example.projectmanagement.dto.TaskUpdateDto;
+import com.example.projectmanagement.dto.*;
 import com.example.projectmanagement.entity.Task;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;

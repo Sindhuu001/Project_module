@@ -26,6 +26,8 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
 
     List<Task> findByStatusId(Long statusId);
 
+    List<Task> findByProjectId(Long projectId); // Added method
+
     // ✅ fetch tasks indirectly linked to a sprint via their story
     @Query("SELECT t FROM Task t WHERE t.story.sprint.id = :sprintId")
     List<Task> findBySprintId(@Param("sprintId") Long sprintId);

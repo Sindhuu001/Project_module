@@ -6,7 +6,7 @@ import com.example.projectmanagement.dto.EpicDto;
 import com.example.projectmanagement.dto.ProjectDto;
 import com.example.projectmanagement.dto.SprintDto;
 import com.example.projectmanagement.dto.StoryDto;
-import com.example.projectmanagement.dto.TaskDto;
+import com.example.projectmanagement.dto.TaskViewDto;
 import com.example.projectmanagement.dto.UserDto;
 import com.example.projectmanagement.security.CurrentUser;
 import com.example.projectmanagement.service.EpicService;
@@ -99,25 +99,6 @@ public class ProjectController {
         return ResponseEntity.noContent().build();
     }
 
-    // ✅ GET all projects with pagination, filters
-    // @GetMapping
-    // public ResponseEntity<Page<ProjectDto>> getAllProjects(
-    // @RequestParam(defaultValue = "0") int page,
-    // @RequestParam(defaultValue = "10") int size,
-    // @RequestParam(defaultValue = "id") String sortBy,
-    // @RequestParam(defaultValue = "asc") String sortDir,
-    // @RequestParam(required = false) String name,
-    // @RequestParam(required = false) Project.ProjectStatus status) {
-
-    // Sort sort = sortDir.equalsIgnoreCase("desc") ? Sort.by(sortBy).descending() :
-    // Sort.by(sortBy).ascending();
-    // Pageable pageable = PageRequest.of(page, size, sort);
-
-    // Page<ProjectDto> projects = projectService.searchProjects(name, status,
-    // pageable);
-    // return ResponseEntity.ok(projects);
-    // }
-
     // ✅ GET Epics by project ID
     @GetMapping("/{id}/epics")
     @PreAuthorize("hasAnyRole('Manager','Admin','Employee')")
@@ -135,10 +116,10 @@ public class ProjectController {
     }
 
     // ✅ GET Tasks by project ID
-    @GetMapping("/{id}/tasks")
+    @GetMapping("/{projectId}/tasks")
     @PreAuthorize("hasAnyRole('Manager','Admin','Employee')")
-    public ResponseEntity<List<TaskDto.Summary>> getProjectTasks(@PathVariable Long id) {
-        List<TaskDto.Summary> tasks = taskService.getTaskSummariesByProject(id);
+    public ResponseEntity<List<TaskViewDto>> getProjectTasks(@PathVariable Long projectId) {
+        List<TaskViewDto> tasks = taskService.getTasksByProjectId(projectId);
         return ResponseEntity.ok(tasks);
     }
 
@@ -215,38 +196,24 @@ public class ProjectController {
     @GetMapping("{id}/members")
     public ResponseEntity<List<UserDto>> getProjectMembers(@PathVariable Long id) {
         List<UserDto> members = projectService.getProjectMembers(id);
-
-
-        // if (members.isEmpty()) {
-        // return ResponseEntity.noContent().build();
-        // }
         return ResponseEntity.ok(members);
     }
-  @GetMapping("{id}/members-with-owner")
-public ResponseEntity<List<UserDto>> getProjectMembersWithOwner(@PathVariable Long id) {
-    // Get project members
-    List<UserDto> members = projectService.getProjectMembers(id);
 
-    // Get project owner
-    UserDto owner = projectService.getProjectOwner(id);
-
-    // Combine both in a single list (owner first)
-    List<UserDto> combined = new ArrayList<>();
-    if (owner != null) {
-        combined.add(owner);
+    @GetMapping("{id}/members-with-owner")
+    public ResponseEntity<List<UserDto>> getProjectMembersWithOwner(@PathVariable Long id) {
+        List<UserDto> members = projectService.getProjectMembers(id);
+        UserDto owner = projectService.getProjectOwner(id);
+        List<UserDto> combined = new ArrayList<>();
+        if (owner != null) {
+            combined.add(owner);
+        }
+        if (members != null && !members.isEmpty()) {
+            combined.addAll(
+                members.stream()
+                       .filter(m -> !m.getId().equals(owner.getId()))
+                       .collect(Collectors.toList())
+            );
+        }
+        return ResponseEntity.ok(combined);
     }
-    if (members != null && !members.isEmpty()) {
-        // Avoid duplicate if owner is also listed as a member
-        combined.addAll(
-            members.stream()
-                   .filter(m -> !m.getId().equals(owner.getId()))
-                   .collect(Collectors.toList())
-        );
-    }
-
-    return ResponseEntity.ok(combined);
-}
-
-
-    
 }

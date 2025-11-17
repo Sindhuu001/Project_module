@@ -28,4 +28,6 @@ public interface TaskService {
     List<TaskViewDto> getTasksByStoryNew(Long storyId);
     List<TaskTimesheetDto> getTimesheetsTasksByAssignee(Long assigneeId);
 
+    List<TaskViewDto> getTasksByProjectId(Long projectId);
+
 }

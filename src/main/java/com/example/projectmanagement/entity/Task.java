@@ -12,6 +12,8 @@ import org.hibernate.annotations.UpdateTimestamp;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import com.fasterxml.jackson.annotation.JsonBackReference;
+
 
 @Entity
 @Table(
@@ -19,6 +21,7 @@ import java.util.List;
     uniqueConstraints = @UniqueConstraint(columnNames = {"title", "project_id", "story_id"})
 )
 @Data
+
 public class Task {
 
     @Id
@@ -53,12 +56,16 @@ public class Task {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "project_id", nullable = false)
-    // @JsonIgnore
+    @JsonBackReference
     private Project project;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "story_id", nullable = false)
-    private Story story; // each task belongs to a story
+    @JoinColumn(name = "story_id", nullable = true) // story optional
+    private Story story;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "sprint_id", nullable = true) // sprint optional
+    private Sprint sprint;
 
     private Long assigneeId;
     private Long reporterId;
@@ -77,9 +84,9 @@ public class Task {
 
     // Transient getter for sprintId (derived from story)
     @Transient
-    @JsonProperty("sprintId")
-    public Long getSprintId() {
-        return story != null && story.getSprint() != null ? story.getSprint().getId() : null;
+    @JsonProperty("effectiveSprintId")
+    public Long getEffectiveSprintId() {
+        return sprint != null ? sprint.getId() : (story != null && story.getSprint() != null ? story.getSprint().getId() : null);
     }
 
     public enum Priority {

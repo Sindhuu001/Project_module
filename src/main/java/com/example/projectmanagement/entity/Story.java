@@ -7,6 +7,9 @@ import jakarta.validation.constraints.Size;
 import lombok.Data;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
+
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -17,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Table(name = "stories",uniqueConstraints = {
         @UniqueConstraint(columnNames = {"title", "project_id","epic_id"})
 })
+
 @Data
 public class Story {
     

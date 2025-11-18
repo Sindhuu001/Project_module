@@ -127,10 +127,10 @@ public class ProjectController {
 
     // ✅ GET Projects by Owner
     @GetMapping("/owner")
-    public ResponseEntity<List<ProjectSummary>> getProjectsByOwner(@CurrentUser UserDto currentUser) {
+    public ResponseEntity<List<ProjectDto>> getProjectsByOwner(@CurrentUser UserDto currentUser) {
         System.out.println("******Current User:******** " + currentUser.getName() + ", Roles: " + currentUser.getRoles());
-//        List<ProjectDto> projects = projectService.getProjectsByOwner(currentUser.getId());
-        List<ProjectSummary> projects = projectService.getProjectSummariesByOwner(currentUser.getId());
+        List<ProjectDto> projects = projectService.getProjectsByOwner(currentUser.getId());
+//        List<ProjectSummary> projects = projectService.getProjectSummariesByOwner(currentUser.getId());
         return ResponseEntity.ok(projects);
     }
 

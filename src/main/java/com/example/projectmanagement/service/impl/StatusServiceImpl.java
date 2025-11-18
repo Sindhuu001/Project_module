@@ -3,9 +3,11 @@ package com.example.projectmanagement.service.impl;
 import com.example.projectmanagement.dto.StatusDto;
 import com.example.projectmanagement.entity.Project;
 import com.example.projectmanagement.entity.Status;
+import com.example.projectmanagement.entity.Story;
 import com.example.projectmanagement.entity.Task;
 import com.example.projectmanagement.repository.ProjectRepository;
 import com.example.projectmanagement.repository.StatusRepository;
+import com.example.projectmanagement.repository.StoryRepository;
 import com.example.projectmanagement.repository.TaskRepository;
 import com.example.projectmanagement.service.StatusService;
 import org.modelmapper.ModelMapper;
@@ -34,6 +36,9 @@ public class StatusServiceImpl implements StatusService {
     @Autowired
     private ModelMapper modelMapper;
 
+    @Autowired
+    private StoryRepository storyRepository;
+
     @Override
     @Transactional
     public StatusDto addStatus(Long projectId, StatusDto statusDto) {
@@ -59,32 +64,55 @@ public class StatusServiceImpl implements StatusService {
     }
 
     @Override
-    @Transactional
-    public void deleteStatus(Long statusId, Long newStatusId) {
-        Status statusToDelete = statusRepository.findById(statusId)
-                .orElseThrow(() -> new RuntimeException("Status not found"));
-        Long projectId = statusToDelete.getProject().getId();
+@Transactional
+public void deleteStatus(Long statusId, Long newStatusId) {
 
-        List<Task> tasksWithStatus = taskRepository.findByStatusId(statusId);
+    Status statusToDelete = statusRepository.findById(statusId)
+            .orElseThrow(() -> new RuntimeException("Status not found"));
 
-        if (!tasksWithStatus.isEmpty()) {
-            if (newStatusId == null) {
-                throw new RuntimeException("Cannot delete status with tasks without providing a new status");
-            }
-            Status newStatus = statusRepository.findById(newStatusId)
-                    .orElseThrow(() -> new RuntimeException("New status not found"));
-            tasksWithStatus.forEach(task -> task.setStatus(newStatus));
-            taskRepository.saveAll(tasksWithStatus);
-        }
+    Long projectId = statusToDelete.getProject().getId();
 
-        statusRepository.delete(statusToDelete);
+    // 1️⃣ Fetch tasks using this status
+    List<Task> tasksWithStatus = taskRepository.findByStatusId(statusId);
 
-        List<Status> remainingStatuses = statusRepository.findByProjectIdOrderBySortOrder(projectId);
-        for (int i = 0; i < remainingStatuses.size(); i++) {
-            remainingStatuses.get(i).setSortOrder(i + 1);
-        }
-        statusRepository.saveAll(remainingStatuses);
+    // 2️⃣ Fetch stories using this status
+    List<Story> storiesWithStatus = storyRepository.findByStatusId(statusId);
+
+    // 3️⃣ If tasks OR stories exist but newStatusId is missing → block deletion
+    if (( !tasksWithStatus.isEmpty() || !storiesWithStatus.isEmpty() ) && newStatusId == null) {
+        throw new RuntimeException(
+                "Cannot delete status because it is used by tasks or stories. Provide a new status to move them."
+        );
     }
+
+    // 4️⃣ If newStatusId provided → move tasks + stories to new status
+    if (newStatusId != null) {
+        Status newStatus = statusRepository.findById(newStatusId)
+                .orElseThrow(() -> new RuntimeException("New status not found"));
+
+        // Move tasks
+        tasksWithStatus.forEach(task -> task.setStatus(newStatus));
+        taskRepository.saveAll(tasksWithStatus);
+
+        // Move stories
+        storiesWithStatus.forEach(story -> story.setStatus(newStatus));
+        storyRepository.saveAll(storiesWithStatus);
+    }
+
+    // 5️⃣ Delete the status
+    statusRepository.delete(statusToDelete);
+
+    // 6️⃣ Reorder remaining statuses
+    List<Status> remainingStatuses =
+            statusRepository.findByProjectIdOrderBySortOrder(projectId);
+
+    for (int i = 0; i < remainingStatuses.size(); i++) {
+        remainingStatuses.get(i).setSortOrder(i + 1);
+    }
+
+    statusRepository.saveAll(remainingStatuses);
+}
+
 
     @Override
     @Transactional

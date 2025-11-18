@@ -53,8 +53,7 @@ public class TaskController {
             @RequestParam(required = false) Task.Priority priority,
             @RequestParam(required = false) Long assigneeId) {
 
-        Sort sort = sortDir.equalsIgnoreCase("desc") ?
-                Sort.by(sortBy).descending() : Sort.by(sortBy).ascending();
+        Sort sort = sortDir.equalsIgnoreCase("desc") ? Sort.by(sortBy).descending() : Sort.by(sortBy).ascending();
         Pageable pageable = PageRequest.of(page, size, sort);
 
         Page<TaskViewDto> tasks = taskService.searchTasksView(title, priority, assigneeId, pageable);
@@ -114,15 +113,17 @@ public class TaskController {
     }
 
     @PatchMapping("/{taskId}/status")
-    @PreAuthorize("hasAnyRole('Manager','Employee')")
-    public ResponseEntity<TaskViewDto> updateTaskStatus(@PathVariable Long taskId, @RequestBody Map<String, Long> payload) {
+    public ResponseEntity<TaskStatusUpdateDto> updateTaskStatus(
+            @PathVariable Long taskId,
+            @RequestBody Map<String, Long> payload) {
+
         Long statusId = payload.get("statusId");
         if (statusId == null) {
             return ResponseEntity.badRequest().build();
         }
-        TaskDto updatedTask = taskService.updateTaskStatus(taskId, statusId);
-        TaskViewDto viewDto = taskService.getTaskById(taskId);
-        return ResponseEntity.ok(viewDto);
+
+        TaskStatusUpdateDto updated = taskService.updateTaskStatus(taskId, statusId);
+        return ResponseEntity.ok(updated);
     }
 
     @GetMapping("/story/{storyId}/count")

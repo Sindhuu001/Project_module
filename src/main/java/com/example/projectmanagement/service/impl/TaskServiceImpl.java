@@ -205,6 +205,13 @@ public class TaskServiceImpl implements TaskService {
                 .collect(Collectors.toList());
     }
 
+    @Override
+    public List<TaskViewDto> getTasksBySprintId(Long projectId) {
+        return taskRepository.findBySprintId(projectId).stream()
+                .map(this::mapToViewDto)
+                .collect(Collectors.toList());
+    }
+
 //    @Override
 //    public Page<TaskDto> getAllTasks(Pageable pageable) {
 //        return taskRepository.findAll(pageable).map(this::convertToDto);

@@ -12,4 +12,7 @@ public interface StatusRepository extends JpaRepository<Status, Long> {
     List<Status> findByProjectIdOrderBySortOrder(Long projectId);
 
     Optional<Status> findTopByProjectIdOrderBySortOrderDesc(Long projectId);
+
+    void deleteByProjectId(Long projectId);
+
 }

@@ -123,6 +123,13 @@ public class ProjectController {
         return ResponseEntity.ok(tasks);
     }
 
+    @GetMapping("sprint/{sprintId}/tasks")
+    @PreAuthorize("hasAnyRole('Manager','Admin','Employee')")
+    public ResponseEntity<List<TaskViewDto>> getSprintTasks(@PathVariable Long projectId) {
+        List<TaskViewDto> tasks = taskService.getTasksBySprintId(projectId);
+        return ResponseEntity.ok(tasks);
+    }
+
     // ✅ GET Projects by Owner
     @GetMapping("/owner")
     public ResponseEntity<List<ProjectDto>> getProjectsByOwner(@CurrentUser UserDto currentUser) {

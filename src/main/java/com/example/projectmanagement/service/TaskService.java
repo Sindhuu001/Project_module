@@ -30,4 +30,5 @@ public interface TaskService {
 
     List<TaskViewDto> getTasksByProjectId(Long projectId);
 
+    List<TaskViewDto> getTasksBySprintId(Long projectId);
 }

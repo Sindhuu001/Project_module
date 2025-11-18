@@ -10,6 +10,7 @@ import com.example.projectmanagement.dto.UserDto;
 import com.example.projectmanagement.entity.Project;
 import com.example.projectmanagement.exception.ValidationException;
 import com.example.projectmanagement.repository.ProjectRepository;
+import com.example.projectmanagement.repository.StatusRepository;
 import lombok.AllArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -44,6 +45,9 @@ public class ProjectService {
 
     @Autowired
     private StatusService statusService;
+
+    @Autowired
+    private StatusRepository statusRepository;
 
     public ProjectDto createProject(ProjectDto projectDto) {
         List<String> errors = new ArrayList<>();
@@ -258,6 +262,7 @@ public class ProjectService {
         if (!projectRepository.existsById(id)) {
             throw new RuntimeException("Project not found with id: " + id);
         }
+        statusRepository.deleteByProjectId(id);
         projectRepository.deleteById(id);
     }
 

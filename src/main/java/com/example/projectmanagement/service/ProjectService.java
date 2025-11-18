@@ -5,6 +5,7 @@ import com.example.projectmanagement.ExternalDTO.ProjectTasksDto;
 import com.example.projectmanagement.client.UserClient;
 import com.example.projectmanagement.config.ProjectStatusProperties;
 import com.example.projectmanagement.dto.ProjectDto;
+import com.example.projectmanagement.dto.ProjectSummary;
 import com.example.projectmanagement.dto.StatusDto;
 import com.example.projectmanagement.dto.UserDto;
 import com.example.projectmanagement.entity.Project;
@@ -401,4 +402,14 @@ public class ProjectService {
         }
         return userService.getUserWithRoles(ownerId);
     }
+
+    public List<ProjectSummary> getProjectSummariesByOwner(Long ownerId) {
+        return projectRepository.findProjectSummariesByOwnerId(ownerId);
+    }
+
+    @Transactional(readOnly = true)
+    public List<ProjectSummary> getAccessibleProjects(Long userId) {
+        return projectRepository.findAccessibleProjectSummaries(userId);
+    }
+
 }

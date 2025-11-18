@@ -1,5 +1,6 @@
 package com.example.projectmanagement.repository;
 
+import com.example.projectmanagement.dto.ProjectSummary;
 import com.example.projectmanagement.entity.Project;
 import com.example.projectmanagement.entity.Project.ProjectStatus;
 
@@ -61,5 +62,14 @@ public interface ProjectRepository extends JpaRepository<Project, Long> {
        """)
     boolean isUserPartOfProject(@Param("projectId") Long projectId,
                                 @Param("userId") Long userId);
+
+    @Query("SELECT p.id AS id, p.name AS name, p.projectKey AS projectKey, p.description AS description, p.status AS status " +
+            "FROM Project p WHERE p.ownerId = :ownerId")
+    List<ProjectSummary> findProjectSummariesByOwnerId(@Param("ownerId") Long ownerId);
+
+    @Query("SELECT DISTINCT p.id AS id, p.name AS name, p.projectKey AS projectKey, " +
+            "p.description AS description, p.status AS status " +
+            "FROM Project p WHERE p.ownerId = :userId OR :userId MEMBER OF p.memberIds")
+    List<ProjectSummary> findAccessibleProjectSummaries(@Param("userId") Long userId);
 
 }

@@ -2,12 +2,7 @@ package com.example.projectmanagement.controller;
 
 import com.example.projectmanagement.ExternalDTO.ProjectIdName;
 import com.example.projectmanagement.ExternalDTO.ProjectTasksDto;
-import com.example.projectmanagement.dto.EpicDto;
-import com.example.projectmanagement.dto.ProjectDto;
-import com.example.projectmanagement.dto.SprintDto;
-import com.example.projectmanagement.dto.StoryDto;
-import com.example.projectmanagement.dto.TaskViewDto;
-import com.example.projectmanagement.dto.UserDto;
+import com.example.projectmanagement.dto.*;
 import com.example.projectmanagement.security.CurrentUser;
 import com.example.projectmanagement.service.EpicService;
 import com.example.projectmanagement.service.ProjectService;
@@ -135,8 +130,16 @@ public class ProjectController {
     public ResponseEntity<List<ProjectDto>> getProjectsByOwner(@CurrentUser UserDto currentUser) {
         System.out.println("******Current User:******** " + currentUser.getName() + ", Roles: " + currentUser.getRoles());
         List<ProjectDto> projects = projectService.getProjectsByOwner(currentUser.getId());
+//        List<ProjectSummary> projects = projectService.getProjectSummariesByOwner(currentUser.getId());
         return ResponseEntity.ok(projects);
     }
+
+    @GetMapping("/access")
+    public ResponseEntity<List<ProjectSummary>> getAccessibleProjects(@CurrentUser UserDto user) {
+        List<ProjectSummary> projects = projectService.getAccessibleProjects(user.getId());
+        return ResponseEntity.ok(projects);
+    }
+
 
     @GetMapping("/owner/{ownerId}")
    @PreAuthorize("hasAnyRole('Manager','Admin','Employee')")

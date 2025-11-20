@@ -1,14 +1,8 @@
 package com.example.projectmanagement.service.impl;
 
 import com.example.projectmanagement.dto.StatusDto;
-import com.example.projectmanagement.entity.Project;
-import com.example.projectmanagement.entity.Status;
-import com.example.projectmanagement.entity.Story;
-import com.example.projectmanagement.entity.Task;
-import com.example.projectmanagement.repository.ProjectRepository;
-import com.example.projectmanagement.repository.StatusRepository;
-import com.example.projectmanagement.repository.StoryRepository;
-import com.example.projectmanagement.repository.TaskRepository;
+import com.example.projectmanagement.entity.*;
+import com.example.projectmanagement.repository.*;
 import com.example.projectmanagement.service.StatusService;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,6 +32,10 @@ public class StatusServiceImpl implements StatusService {
 
     @Autowired
     private StoryRepository storyRepository;
+
+    @Autowired
+    private EpicRepository epicRepository;
+
 
     @Override
     @Transactional
@@ -78,10 +76,13 @@ public void deleteStatus(Long statusId, Long newStatusId) {
     // 2️⃣ Fetch stories using this status
     List<Story> storiesWithStatus = storyRepository.findByStatusId(statusId);
 
+        // 3️⃣ Fetch epics using this status (NEW)
+        List<Epic> epicsWithStatus = epicRepository.findByStatusId(statusId);
+
     // 3️⃣ If tasks OR stories exist but newStatusId is missing → block deletion
-    if (( !tasksWithStatus.isEmpty() || !storiesWithStatus.isEmpty() ) && newStatusId == null) {
+    if (( !tasksWithStatus.isEmpty() || !storiesWithStatus.isEmpty()  || !epicsWithStatus.isEmpty() ) && newStatusId == null) {
         throw new RuntimeException(
-                "Cannot delete status because it is used by tasks or stories. Provide a new status to move them."
+                "Cannot delete status because it is used by tasks or stories or epics. Provide a new status to move them."
         );
     }
 
@@ -97,6 +98,9 @@ public void deleteStatus(Long statusId, Long newStatusId) {
         // Move stories
         storiesWithStatus.forEach(story -> story.setStatus(newStatus));
         storyRepository.saveAll(storiesWithStatus);
+
+        epicsWithStatus.forEach(e -> e.setStatus(newStatus));
+        epicRepository.saveAll(epicsWithStatus);
     }
 
     // 5️⃣ Delete the status

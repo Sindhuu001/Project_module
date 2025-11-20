@@ -30,13 +30,18 @@ public class Epic {
     @Column(length = 1000)
     private String description;
 
-    @Enumerated(EnumType.STRING)
-    private EpicStatus status;
+//    @Enumerated(EnumType.STRING)
+//    private EpicStatus status;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "status_id", nullable = false)
+    private Status status;
 
     @Enumerated(EnumType.STRING)
     private Priority priority;
     @Builder.Default
     private Integer progressPercentage=0;
+
 
     private LocalDate dueDate;
 
@@ -55,12 +60,12 @@ public class Epic {
 
     // Enums
     
-    public enum EpicStatus {
-        OPEN,
-        IN_PROGRESS,
-        COMPLETED,
-        ON_HOLD
-    }
+//    public enum EpicStatus {
+//        OPEN,
+//        IN_PROGRESS,
+//        COMPLETED,
+//        ON_HOLD
+//    }
 
     public enum Priority {
         LOW,

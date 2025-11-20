@@ -118,10 +118,10 @@ public class ProjectController {
         return ResponseEntity.ok(tasks);
     }
 
-    @GetMapping("sprint/{sprintId}/tasks")
+    @GetMapping("/sprint/{sprintId}/tasks")
     @PreAuthorize("hasAnyRole('Manager','Admin','Employee')")
-    public ResponseEntity<List<TaskViewDto>> getSprintTasks(@PathVariable Long projectId) {
-        List<TaskViewDto> tasks = taskService.getTasksBySprintId(projectId);
+    public ResponseEntity<List<TaskViewDto>> getSprintTasks(@PathVariable Long sprintId) {
+        List<TaskViewDto> tasks = taskService.getTasksBySprintId(sprintId);
         return ResponseEntity.ok(tasks);
     }
 

@@ -15,4 +15,5 @@ public interface StatusRepository extends JpaRepository<Status, Long> {
 
     void deleteByProjectId(Long projectId);
 
+
 }

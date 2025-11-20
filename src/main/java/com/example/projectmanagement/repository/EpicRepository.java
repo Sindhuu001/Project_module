@@ -1,6 +1,7 @@
 package com.example.projectmanagement.repository;
 
 import com.example.projectmanagement.entity.Epic;
+import com.example.projectmanagement.entity.Status;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -15,10 +16,15 @@ public interface EpicRepository extends JpaRepository<Epic, Long> {
 
     List<Epic> findByProjectId(Long projectId);
 
-    List<Epic> findByStatus(Epic.EpicStatus status);
+    List<Epic> findByStatus(Status status);
 
-    @Query("SELECT e FROM Epic e WHERE e.project.id = :projectId AND e.status = :status")
-    List<Epic> findByProjectIdAndStatus(@Param("projectId") Long projectId, @Param("status") Epic.EpicStatus status);
+    @Query("SELECT e FROM Epic e WHERE e.project.id = :projectId AND e.status.id = :statusId")
+    List<Epic> findByProjectIdAndStatusId(
+            @Param("projectId") Long projectId,
+            @Param("statusId") Long statusId
+    );
+
+    List<Epic> findByStatusId(Long StatusId);
 
     @Query("SELECT e FROM Epic e WHERE e.project.id = :projectId")
     Page<Epic> findByProjectId(@Param("projectId") Long projectId, Pageable pageable);

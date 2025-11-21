@@ -18,15 +18,10 @@ public interface StatusRepository extends JpaRepository<Status, Long> {
 
     void deleteByProjectId(Long projectId);
 
-<<<<<<< HEAD
     @Query("SELECT MAX(s.sortOrder) FROM Status s WHERE s.project.id = :projectId")
     Integer findMaxSortOrderByProject(@Param("projectId") Long projectId);
 
     Status findFirstByProjectIdOrderBySortOrderDesc(Long projectId);
 
-
-
-=======
->>>>>>> 12a2891e1e3f02da3a61c615fc855f25f78bdaee
 
 }

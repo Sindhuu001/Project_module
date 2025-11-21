@@ -1,5 +1,6 @@
 package com.example.projectmanagement.controller;
 import com.example.projectmanagement.dto.SprintDto;
+import com.example.projectmanagement.dto.SprintPopupResponse;
 import com.example.projectmanagement.dto.TaskDto;
 import com.example.projectmanagement.dto.UserDto;
 import com.example.projectmanagement.entity.Sprint;
@@ -23,6 +24,7 @@ public class SprintController {
 
     @Autowired
     private SprintService sprintService;
+
 
     @Autowired
     private TaskService taskService;
@@ -143,5 +145,22 @@ public class SprintController {
                 
         sprintService.deleteSprint(id, currentUserId.getId());
         return ResponseEntity.noContent().build();
+    }
+
+    // Frontend calls to know whether to popup
+    @GetMapping("/{id}/popup-status")
+    public ResponseEntity<SprintPopupResponse> getPopupStatus(@PathVariable("id") Long sprintId) {
+        SprintPopupResponse resp = sprintService.checkSprintPopup(sprintId);
+        return ResponseEntity.ok(resp);
+    }
+
+    // Frontend calls after user chooses an option
+    @PostMapping("/{id}/finish")
+    public ResponseEntity<String> finishSprint(
+            @PathVariable("id") Long sprintId,
+            @RequestParam("option") String option // NEXT_SPRINT or BACKLOG
+    ) {
+        sprintService.finishSprintWithOption(sprintId, option);
+        return ResponseEntity.ok("Sprint finished with option: " + option);
     }
 }

@@ -76,4 +76,25 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
             @Param("assigneeId") Long assigneeId,
             Pageable pageable);
 
+    // Checks whether there exists at least one task in sprint where task.status.sortOrder != maxSortOrder
+    boolean existsBySprintIdAndStatus_SortOrderNot(Long sprintId, Integer sortOrder);
+
+    // Get list of tasks in sprint which are NOT in final status (i.e., need transfer)
+    @Query("SELECT t FROM Task t WHERE t.sprint.id = :sprintId AND t.status.sortOrder <> :finalSortOrder")
+    List<Task> findIncompleteTasksBySprintId(Long sprintId, Integer finalSortOrder);
+
+    boolean existsBySprintIdAndStatus_SortOrderLessThan(Long sprintId, Integer finalSortOrder);
+
+    boolean existsBySprintIdAndStatusSortOrderNot(Long sprintId, Integer sortOrder);
+
+    @Query("SELECT CASE WHEN COUNT(t) > 0 THEN true ELSE false END " +
+            "FROM Task t " +
+            "JOIN t.status s " +
+            "WHERE t.sprint.id = :sprintId " +
+            "AND s.sortOrder <> :sortOrder")
+    boolean existsTaskWithSprintIdAndStatusSortOrderNot(@Param("sprintId") Long sprintId,
+                                                        @Param("sortOrder") Integer sortOrder);
 }
+
+
+

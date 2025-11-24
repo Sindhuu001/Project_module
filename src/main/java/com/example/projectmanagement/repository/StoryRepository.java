@@ -52,4 +52,23 @@ public interface StoryRepository extends JpaRepository<Story, Long> {
     );
     boolean existsByTitleAndProjectIdAndEpicId(String title, Long projectId, Long epicId);
     Long countByAssigneeIdAndStatusId(Long userId, Long statusId); // Replaced countByAssigneeIdAndStatus
+
+    @Query("""
+        SELECT s FROM Story s
+        WHERE s.sprint.id = :sprintId
+          AND s.status.sortOrder <> :finalSortOrder
+    """)
+    List<Story> findIncompleteStoriesBySprintId(
+            @Param("sprintId") Long sprintId,
+            @Param("finalSortOrder") Integer finalSortOrder);
+
+    @Query("""
+        SELECT CASE WHEN COUNT(s) > 0 THEN true ELSE false END
+        FROM Story s
+        WHERE s.sprint.id = :sprintId
+          AND s.status.sortOrder <> :finalSortOrder
+       """)
+    boolean existsBySprintIdAndStatus_SortOrderNot(@Param("sprintId") Long sprintId,
+                                                   @Param("finalSortOrder") Integer finalSortOrder);
+
 }

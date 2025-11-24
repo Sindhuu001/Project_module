@@ -45,6 +45,7 @@ public class ProjectController {
     @PostMapping
     @PreAuthorize("hasRole('Manager')")
     public ResponseEntity<ProjectDto> createProject(@Valid @RequestBody ProjectDto projectDto) {
+        System.out.println("*********Entering Create Project *****");
         ProjectDto createdProject = projectService.createProject(projectDto);
         return ResponseEntity.status(HttpStatus.CREATED).body(createdProject);
     }
@@ -226,4 +227,14 @@ public class ProjectController {
         }
         return ResponseEntity.ok(combined);
     }
+
+    @GetMapping("/owner/period")
+    public ResponseEntity<List<ProjectDto>> getProjectsByOwner(@CurrentUser UserDto currentUser,@RequestParam String month, @RequestParam int year) {
+        System.out.println("******Current User:******** " + currentUser.getName() + ", Roles: " + currentUser.getRoles());
+        String period = month + "-" + year;
+        List<ProjectDto> projects = projectService.getProjectsByOwner(currentUser.getId(), period);
+//        List<ProjectSummary> projects = projectService.getProjectSummariesByOwner(currentUser.getId());
+        return ResponseEntity.ok(projects);
+    }
+    
 }

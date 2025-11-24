@@ -11,6 +11,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -71,5 +72,14 @@ public interface ProjectRepository extends JpaRepository<Project, Long> {
             "p.description AS description, p.status AS status " +
             "FROM Project p WHERE p.ownerId = :userId OR :userId MEMBER OF p.memberIds")
     List<ProjectSummary> findAccessibleProjectSummaries(@Param("userId") Long userId);
+    @Query("SELECT p FROM Project p " +
+        "WHERE p.ownerId = :ownerId " +
+        "AND p.startDate <= :monthEnd " +
+        "AND (p.endDate IS NULL OR p.endDate >= :monthStart)")
+    List<Project> findActiveProjectsByPeriod(Long ownerId,
+                                                LocalDateTime monthStart,
+                                                LocalDateTime monthEnd);
+
+
 
 }

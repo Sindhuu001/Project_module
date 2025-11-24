@@ -20,6 +20,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
+import java.time.YearMonth;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -52,6 +55,7 @@ public class ProjectService {
 
     public ProjectDto createProject(ProjectDto projectDto) {
         List<String> errors = new ArrayList<>();
+        System.out.println("********Entering Create Service file ********");
 
         if (projectDto.getName() == null || projectDto.getName().trim().isEmpty()) {
             errors.add("Project name must not be empty.");
@@ -100,7 +104,9 @@ public class ProjectService {
             project.setMemberIds(new HashSet<>());
         }
 
+        System.out.println("****************Created project: " + project);
         Project savedProject = projectRepository.save(project);
+        System.out.println("**************Saved Projects" + savedProject);
 
         projectStatusProperties.getDefaultStatuses().forEach(statusProperty -> {
             StatusDto defaultStatusDto = new StatusDto();
@@ -411,5 +417,23 @@ public class ProjectService {
     public List<ProjectSummary> getAccessibleProjects(Long userId) {
         return projectRepository.findAccessibleProjectSummaries(userId);
     }
+
+    
+    @Transactional(readOnly = true)
+    public List<ProjectDto> getProjectsByOwner(Long ownerId, String period) {
+
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MM-yyyy");
+        YearMonth ym = YearMonth.parse(period, formatter);
+
+        LocalDateTime monthStart = ym.atDay(1).atStartOfDay();
+        LocalDateTime monthEnd = ym.atEndOfMonth().atTime(23, 59, 59, 999999999);
+
+        return projectRepository.findActiveProjectsByPeriod(ownerId, monthStart, monthEnd)
+                .stream()
+                .map(this::convertToDto)
+                .collect(Collectors.toList());
+    }
+
+
 
 }

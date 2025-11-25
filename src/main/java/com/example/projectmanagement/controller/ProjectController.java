@@ -230,7 +230,6 @@ public class ProjectController {
 
     @GetMapping("/owner/period")
     public ResponseEntity<List<ProjectDto>> getProjectsByOwner(@CurrentUser UserDto currentUser,@RequestParam String month, @RequestParam int year) {
-        System.out.println("******Current User:******** " + currentUser.getName() + ", Roles: " + currentUser.getRoles());
         String period = month + "-" + year;
         List<ProjectDto> projects = projectService.getProjectsByOwner(currentUser.getId(), period);
 //        List<ProjectSummary> projects = projectService.getProjectSummariesByOwner(currentUser.getId());

@@ -128,6 +128,7 @@ public class EpicService {
         dto.setId(epic.getId());
         dto.setName(epic.getName());
         dto.setDescription(epic.getDescription());
+        dto.setStartDate(epic.getStartDate());
 
         // Convert enum to String
         if (epic.getStatus() != null) {
@@ -160,6 +161,7 @@ public class EpicService {
         Epic epic = new Epic();
         epic.setName(dto.getName());
         epic.setDescription(dto.getDescription());
+        epic.setStartDate(dto.getStartDate());
 
         // Convert String to Enum safely
         if (epic.getStatus() != null) {

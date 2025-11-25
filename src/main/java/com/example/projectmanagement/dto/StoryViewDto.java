@@ -2,8 +2,13 @@ package com.example.projectmanagement.dto;
 
 import lombok.Data;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+
+import org.springframework.cglib.core.Local;
+
+import jakarta.persistence.Column;
 
 @Data
 public class StoryViewDto {
@@ -42,7 +47,9 @@ public class StoryViewDto {
 
     // Associated tasks
     private List<Long> taskIds;
-
+   
+    private LocalDateTime startDate;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private LocalDateTime dueDate;
 }

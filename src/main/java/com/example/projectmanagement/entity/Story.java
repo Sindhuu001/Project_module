@@ -10,6 +10,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -70,7 +71,10 @@ public class Story {
 
     private Long assigneeId;
     private Long reporterId;
-
+    @Column(name = "start_date")
+private LocalDateTime startDate;
+@Column(name = "due_date")
+private LocalDateTime dueDate;
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "project_id", nullable = false)
     private Project project;

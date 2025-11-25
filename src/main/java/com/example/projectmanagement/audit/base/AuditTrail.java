@@ -1,4 +1,4 @@
-package com.example.projectmanagement.entity;
+package com.example.projectmanagement.audit.base;
 
 import jakarta.persistence.*;
 import lombok.*;

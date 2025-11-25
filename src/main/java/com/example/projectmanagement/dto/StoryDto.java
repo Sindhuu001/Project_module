@@ -1,11 +1,14 @@
 package com.example.projectmanagement.dto;
 
 import com.example.projectmanagement.entity.Story;
+
+import jakarta.persistence.Column;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Data
@@ -43,7 +46,9 @@ public class StoryDto {
     private EpicDto epic;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
-    
+   
+    private LocalDateTime startDate;
+    private LocalDateTime dueDate;
     // Constructors
     public StoryDto() {}
     
@@ -52,6 +57,7 @@ public class StoryDto {
         this.description = description;
         this.epicId = epicId;
         this.reporterId = reporterId;
+
     }
 
     public StoryDto(Long id, String title, String description) {

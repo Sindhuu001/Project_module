@@ -53,6 +53,8 @@ public class ProjectService {
     @Autowired
     private StatusRepository statusRepository;
 
+    private final RiskStatusService riskStatusService;
+
     public ProjectDto createProject(ProjectDto projectDto) {
         List<String> errors = new ArrayList<>();
         System.out.println("********Entering Create Service file ********");
@@ -114,6 +116,8 @@ public class ProjectService {
             // The sortOrder will be calculated by the addStatus method
             statusService.addStatus(savedProject.getId(), defaultStatusDto);
         });
+
+        riskStatusService.createDefaultStatusesForProject(savedProject.getId());
 
         return convertToDto(savedProject);
     }

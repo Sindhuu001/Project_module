@@ -1,13 +1,23 @@
 package com.example.projectmanagement.entity;
 
+import com.example.projectmanagement.entity.Project;
+import com.example.projectmanagement.entity.Story;
+import com.example.projectmanagement.entity.Sprint;
+import com.example.projectmanagement.entity.Task;
+import com.example.projectmanagement.entity.testing.*;
+import com.example.projectmanagement.enums.BugPriority;
+import com.example.projectmanagement.enums.BugSeverity;
+import com.example.projectmanagement.enums.BugStatus;
+import com.example.projectmanagement.enums.BugType;
 import jakarta.persistence.*;
-import jakarta.validation.constraints.NotNull;
 import lombok.*;
+
 import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "bugs")
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
@@ -16,60 +26,123 @@ public class Bug {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    
-    @NotNull
+
+    /* ==============================
+       PROJECT / AGILE LINKS
+       ============================== */
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "project_id")
+    private Project project;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "story_id")
+    private Story story;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "task_id")
+    private Task task;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "sprint_id")
+    private Sprint sprint;
+
+    /* =================================================
+       TESTING EXECUTION LINKS
+       ================================================= */
+
+    // Entire test case execution that failed and produced this bug
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "run_case_id")
+    private TestRunCase runCase;
+
+    // Specific failing step (optional)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "run_case_step_id")
+    private TestRunCaseStep runCaseStep;
+
+    // These provide traceability for Test Reports (Run → Cycle → Plan)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "run_id")
+    private TestRun testRun;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "cycle_id")
+    private TestCycle testCycle;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "test_case_id")
+    private TestCase testCase;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "test_scenario_id")
+    private TestScenario testScenario;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "test_story_id")
+    private TestStory testStory;
+
+    /* ==============================
+       BUG DETAILS
+       ============================== */
+
+    @Column(nullable = false)
     private String title;
-    @Column(length = 2000)
-    private String description;
-    @NotNull
+
     @Enumerated(EnumType.STRING)
-    private Priority priority;
-    @NotNull
+    @Column(nullable = false)
+    private BugType type;
+
     @Enumerated(EnumType.STRING)
-    private Status status;
-    @NotNull
+    @Column(nullable = false)
+    private BugPriority priority;
+
     @Enumerated(EnumType.STRING)
-    private Severity severity;
+    @Column(nullable = false)
+    private BugSeverity severity;
 
-    private String type;
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private BugStatus status;
 
-    private Long assignedTo; 
-    @NotNull // userId
-    private Long reporter; 
-    @NotNull   // userId
-    private Long projectId;
+    /* ==============================
+       DESCRIPTION FIELDS
+       ============================== */
 
-    private Long sprintId;
-
-    private Long epicId;
-    private Long taskId;
-
-
-    @Column(length = 2000)
-    private String stepsToReproduce;
-
-    @Column(length = 1000)
-    private String expectedResult;
-
-    @Column(length = 1000)
+    @Column(name = "actual_result", columnDefinition = "text")
     private String actualResult;
 
-    private String attachments; // could store file path or URL
-    @NotNull
-    private LocalDateTime createdDate;
-    private LocalDateTime updatedDate;
+    @Column(name = "expected_result", columnDefinition = "text")
+    private String expectedResult;
+
+    @Column(columnDefinition = "text")
+    private String description;
+
+    @Column(name = "reproduction_steps", columnDefinition = "text")
+    private String reproductionSteps;
+
+    /* ==============================
+       USERS
+       ============================== */
+
+    // reporter = created_by
+    @Column(name = "created_by", nullable = false)
+    private Long reporter;
+
+    // assigned developer
+    @Column(name = "assigned_to")
+    private Long assignedTo;
+
+    /* ==============================
+       TIMESTAMPS
+       ============================== */
+
+    @Column(name = "created_at")
+    private LocalDateTime createdAt;
+
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
+
+    @Column(name = "resolved_date")
     private LocalDateTime resolvedDate;
-
-    // Enums for Status, Priority, and Severity
-    public enum Status {
-        OPEN, IN_PROGRESS, RESOLVED, CLOSED, REOPENED
-    }
-
-    public enum Priority {
-        LOW, MEDIUM, HIGH, CRITICAL
-    }
-
-    public enum Severity {
-        MINOR, MAJOR, BLOCKER
-    }
 }

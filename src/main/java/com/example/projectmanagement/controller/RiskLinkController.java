@@ -1,5 +1,6 @@
 package com.example.projectmanagement.controller;
 
+import com.example.projectmanagement.dto.IssueTypeRiskCountDTO;
 import com.example.projectmanagement.dto.RiskLinkRequest;
 import com.example.projectmanagement.dto.RiskLinkResponse;
 import com.example.projectmanagement.service.RiskLinkService;
@@ -36,4 +37,14 @@ public class RiskLinkController {
         linkService.deleteLink(id);
         return ResponseEntity.noContent().build();
     }
+
+    @GetMapping("/{projectId}/risk-summary/by-issue-type")
+    public ResponseEntity<List<IssueTypeRiskCountDTO>> getRiskSummaryByIssueType(
+            @PathVariable Long projectId
+    ) {
+        return ResponseEntity.ok(
+                linkService.getRiskCountByIssueType(projectId)
+        );
+    }
+
 }

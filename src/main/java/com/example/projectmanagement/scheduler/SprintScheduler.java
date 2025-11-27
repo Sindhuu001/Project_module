@@ -13,6 +13,10 @@ public class SprintScheduler {
 
     private final SprintService sprintService;
 
+    public SprintScheduler(SprintService sprintService) {
+        this.sprintService = sprintService;
+    }
+
 
     // configured in properties by default "0 0 * * * *" (= every hour at minute 0)
     @Scheduled(cron = "${sprint.scheduler.cron:0 0 * * * *}")

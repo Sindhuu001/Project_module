@@ -1,5 +1,6 @@
 package com.example.projectmanagement.service.impl;
 
+import com.example.projectmanagement.dto.IssueTypeRiskCountDTO;
 import com.example.projectmanagement.dto.RiskLinkRequest;
 import com.example.projectmanagement.dto.RiskLinkResponse;
 import com.example.projectmanagement.entity.Risk;
@@ -112,5 +113,9 @@ public class RiskLinkServiceImpl implements RiskLinkService {
         response.setLinkedType(link.getLinkedType());
         response.setLinkedId(link.getLinkedId());
         return response;
+    }
+
+    public List<IssueTypeRiskCountDTO> getRiskCountByIssueType(Long projectId) {
+        return linkRepository.countRisksByIssueType(projectId);
     }
 }

@@ -11,19 +11,18 @@ import java.security.Principal;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/test-design/plans")
+@RequestMapping("/api/test-design")
 @RequiredArgsConstructor
 public class TestPlanController {
 
     private final TestPlanService testPlanService;
 
     // Create test plan
-    @PostMapping
+    @PostMapping("/create-plans")
     public ResponseEntity<TestPlanSummaryResponse> createPlan(
-            @Valid @RequestBody TestPlanCreateRequest request,
-            Principal principal
+            @Valid @RequestBody TestPlanCreateRequest request
     ) {
-        Long currentUserId = Long.parseLong(principal.getName()); // or your own userId resolution
+        Long currentUserId = request.createdBy(); // or your own userId resolution
         TestPlanSummaryResponse response = testPlanService.createPlan(request, currentUserId);
         return ResponseEntity.ok(response);
     }

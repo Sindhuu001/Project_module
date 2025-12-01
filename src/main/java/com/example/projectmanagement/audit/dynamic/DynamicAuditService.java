@@ -1,11 +1,15 @@
 package com.example.projectmanagement.audit.dynamic;
 
+import com.example.projectmanagement.audit.base.AuditHistoryDto;
 import com.example.projectmanagement.entity.Epic;
 import com.example.projectmanagement.repository.EpicRepository;
 import com.example.projectmanagement.repository.StoryRepository;
 import com.example.projectmanagement.repository.TaskRepository;
 import com.example.projectmanagement.repository.ProjectRepository;
 
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 import org.springframework.stereotype.Service;
@@ -34,8 +38,29 @@ public class DynamicAuditService {
         this.projectRepository = projectRepository;
     }
 
-     public Map<String, Object> getRawRow(String tableName, Long id) {
+    public Map<String, Object> getRawRow(String tableName, Long id) {
         return repository.getRawRow(tableName, id);
+    }
+
+    public List<AuditHistoryDto> getHistoryById(String entityName, Long entityId) {
+
+        String tableName = "audit_" + entityName.toLowerCase();
+
+        List<Map<String, Object>> rows =
+                repository.getHistoryRows(tableName, entityId);
+
+        List<AuditHistoryDto> result = new ArrayList<>();
+
+        for (Map<String, Object> row : rows) {
+            AuditHistoryDto dto = new AuditHistoryDto();
+            dto.setTimestamp((LocalDateTime) row.get("timestamp"));
+            dto.setOperation((String) row.get("operation"));
+            dto.setOldData((String) row.get("old_data"));
+            dto.setNewData((String) row.get("new_data"));
+            result.add(dto);
+        }
+
+        return result;
     }
 
     // ===================================================

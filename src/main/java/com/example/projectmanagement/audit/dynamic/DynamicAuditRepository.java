@@ -1,5 +1,6 @@
 package com.example.projectmanagement.audit.dynamic;
 
+import java.util.List;
 import java.util.Map;
 
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -41,4 +42,10 @@ public class DynamicAuditRepository {
         String sql = "SELECT * FROM " + tableName + " WHERE id = ?";
         return jdbc.queryForMap(sql, id);
     }
+
+    public List<Map<String, Object>> getHistoryRows(String tableName, Long entityId) {
+        String sql = "SELECT * FROM " + tableName + " WHERE entity_id = ? ORDER BY timestamp DESC";
+        return jdbc.queryForList(sql, entityId);
+    }
+
 }

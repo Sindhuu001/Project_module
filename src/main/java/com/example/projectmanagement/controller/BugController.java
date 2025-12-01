@@ -1,15 +1,15 @@
 package com.example.projectmanagement.controller;
 
+import com.example.projectmanagement.dto.UserDto;
 import com.example.projectmanagement.dto.testing.BugCreateRequest;
 import com.example.projectmanagement.dto.testing.BugResponse;
 import com.example.projectmanagement.dto.testing.BugStatusUpdateRequest;
+import com.example.projectmanagement.security.CurrentUser;
 import com.example.projectmanagement.service.BugService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.security.Principal;
 
 @RestController
 @RequestMapping("/api/testing/bugs")
@@ -21,10 +21,9 @@ public class BugController {
     @PostMapping
     public ResponseEntity<BugResponse> createBug(
             @Valid @RequestBody BugCreateRequest req,
-            Principal principal
+            @CurrentUser UserDto currentUser
     ) {
-        Long reporter = principal == null ? null : Long.parseLong(principal.getName());
-        BugResponse resp = bugService.createBug(req, reporter);
+        BugResponse resp = bugService.createBug(req, currentUser.getId());
         return ResponseEntity.ok(resp);
     }
 
@@ -32,10 +31,9 @@ public class BugController {
     public ResponseEntity<BugResponse> updateStatus(
             @PathVariable Long bugId,
             @Valid @RequestBody BugStatusUpdateRequest req,
-            Principal principal
+            @CurrentUser UserDto currentUser
     ) {
-        Long userId = principal == null ? null : Long.parseLong(principal.getName());
-        BugResponse resp = bugService.updateBugStatus(bugId, req, userId);
+        BugResponse resp = bugService.updateBugStatus(bugId, req, currentUser.getId());
         return ResponseEntity.ok(resp);
     }
 }

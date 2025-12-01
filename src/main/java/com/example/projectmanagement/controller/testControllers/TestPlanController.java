@@ -1,29 +1,31 @@
 package com.example.projectmanagement.controller.testControllers;
+
+import com.example.projectmanagement.dto.UserDto;
 import com.example.projectmanagement.dto.testing.TestPlanCreateRequest;
 import com.example.projectmanagement.dto.testing.TestPlanSummaryResponse;
+import com.example.projectmanagement.security.CurrentUser;
 import com.example.projectmanagement.service.TestPlanService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.security.Principal;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/test-design")
+@RequestMapping("/api/test-design/plans")
 @RequiredArgsConstructor
 public class TestPlanController {
 
     private final TestPlanService testPlanService;
 
     // Create test plan
-    @PostMapping("/create-plans")
+    @PostMapping
     public ResponseEntity<TestPlanSummaryResponse> createPlan(
-            @Valid @RequestBody TestPlanCreateRequest request
+            @Valid @RequestBody TestPlanCreateRequest request,
+            @CurrentUser UserDto currentUser
     ) {
-        Long currentUserId = request.createdBy(); // or your own userId resolution
-        TestPlanSummaryResponse response = testPlanService.createPlan(request, currentUserId);
+        TestPlanSummaryResponse response = testPlanService.createPlan(request, currentUser.getId());
         return ResponseEntity.ok(response);
     }
 
@@ -45,4 +47,3 @@ public class TestPlanController {
         return ResponseEntity.ok(plan);
     }
 }
-

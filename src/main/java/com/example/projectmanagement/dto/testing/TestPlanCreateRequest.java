@@ -6,6 +6,5 @@ import jakarta.validation.constraints.NotNull;
 public record TestPlanCreateRequest(
         @NotNull Long projectId,
         @NotBlank String name,
-        @NotNull Long createdBy,
         String objective
 ) {}

@@ -1,14 +1,15 @@
 package com.example.projectmanagement.controller.testControllers;
 
+import com.example.projectmanagement.dto.UserDto;
 import com.example.projectmanagement.dto.testing.TestScenarioCreateRequest;
 import com.example.projectmanagement.dto.testing.TestScenarioSummaryResponse;
+import com.example.projectmanagement.security.CurrentUser;
 import com.example.projectmanagement.service.TestScenarioService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.security.Principal;
 import java.util.List;
 
 @RestController
@@ -21,11 +22,10 @@ public class TestScenarioController {
     @PostMapping
     public ResponseEntity<TestScenarioSummaryResponse> createScenario(
             @Valid @RequestBody TestScenarioCreateRequest request,
-            Principal principal
+            @CurrentUser UserDto currentUser
     ) {
-        Long currentUserId = Long.parseLong(principal.getName());
         return ResponseEntity.ok(
-                scenarioService.createScenario(request, currentUserId)
+                scenarioService.createScenario(request, currentUser.getId())
         );
     }
 
@@ -56,4 +56,3 @@ public class TestScenarioController {
         );
     }
 }
-

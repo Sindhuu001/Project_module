@@ -16,4 +16,13 @@ public interface BugService {
      * and are linked to this run-case or its steps.
      */
     void handleCasePassed(Long runCaseId, Long currentUserId);
+    /**
+     * Called when a TestRunCase fails during execution / retest.
+     * Will auto-reopen bugs that are in FIXED/READY_FOR_RETEST states and are linked to this run-case.
+     *
+     * @param runCaseId run-case that failed (execution context)
+     * @param runCaseStepId optional, the specific step id that failed (nullable)
+     * @param currentUserId user who executed the test (tester)
+     */
+    void handleCaseFailed(Long runCaseId, Long runCaseStepId, Long currentUserId);
 }

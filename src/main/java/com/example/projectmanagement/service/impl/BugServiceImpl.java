@@ -1,14 +1,14 @@
 package com.example.projectmanagement.service.impl;
 
-
 import com.example.projectmanagement.dto.testing.BugCreateRequest;
 import com.example.projectmanagement.dto.testing.BugResponse;
 import com.example.projectmanagement.dto.testing.BugStatusUpdateRequest;
 import com.example.projectmanagement.entity.Bug;
 import com.example.projectmanagement.entity.testing.TestRunCase;
 import com.example.projectmanagement.entity.testing.TestRunCaseStep;
-import com.example.projectmanagement.enums.BugStatus;
+import com.example.projectmanagement.enums.BugPriority;
 import com.example.projectmanagement.enums.BugSeverity;
+import com.example.projectmanagement.enums.BugStatus;
 import com.example.projectmanagement.repository.BugRepository;
 import com.example.projectmanagement.repository.TestRunCaseRepository;
 import com.example.projectmanagement.repository.TestRunCaseStepRepository;
@@ -21,6 +21,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Locale;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -51,14 +53,26 @@ public class BugServiceImpl implements BugService {
         bug.setExpectedResult(req.expected());
         bug.setActualResult(req.actual());
 
-        // Enums – convert strings safely
-        try {
-            bug.setSeverity(BugSeverity.valueOf(req.severity()));
-        } catch (Exception ex) {
-            // fallback
+        // Enums – convert strings safely (null-safe, case-insensitive)
+        if (req.severity() != null) {
+            try {
+                bug.setSeverity(BugSeverity.valueOf(req.severity().trim().toUpperCase(Locale.ROOT)));
+            } catch (Exception ex) {
+                bug.setSeverity(BugSeverity.MINOR);
+            }
+        } else {
             bug.setSeverity(BugSeverity.MINOR);
         }
-        bug.setPriority(req.priority());
+
+        if (req.priority() != null) {
+            try {
+                bug.setPriority(BugPriority.valueOf(req.priority().name().trim().toUpperCase(Locale.ROOT)));
+            } catch (Exception ex) {
+                bug.setPriority(BugPriority.MEDIUM);
+            }
+        } else {
+            bug.setPriority(BugPriority.MEDIUM);
+        }
 
         bug.setReporter(reporterId);
         bug.setAssignedTo(req.assignedTo());
@@ -73,7 +87,9 @@ public class BugServiceImpl implements BugService {
         }
         // convenience links for quick queries in UI
         bug.setTestRun(runCase.getRun());
-        bug.setTestCycle(runCase.getRun().getCycle());
+        if (runCase.getRun() != null) {
+            bug.setTestCycle(runCase.getRun().getCycle());
+        }
         bug.setTestCase(runCase.getTestCase());
         // If these navigation methods exist on your entities:
         if (runCase.getTestCase() != null && runCase.getTestCase().getScenario() != null) {
@@ -94,7 +110,6 @@ public class BugServiceImpl implements BugService {
                             .getProject()
             );
         }
-
 
         Bug saved = bugRepository.save(bug);
 
@@ -122,7 +137,7 @@ public class BugServiceImpl implements BugService {
             bug.setStatus(newStatus);
         }
 
-        bug.setAssignedTo(bug.getAssignedTo()); // keep assignedTo unchanged here; front-end can update separately
+        // keep assignedTo unchanged here; frontend can update separately
         bug.setUpdatedAt(LocalDateTime.now());
 
         Bug saved = bugRepository.save(bug);
@@ -132,26 +147,47 @@ public class BugServiceImpl implements BugService {
     @Override
     @Transactional
     public void handleCasePassed(Long runCaseId, Long currentUserId) {
-        // find bugs linked to this runCase that are READY_FOR_RETEST
-        List<Bug> bugs = bugRepository.findByRunCaseIdAndStatusIn(runCaseId, List.of(BugStatus.READY_FOR_RETEST));
+        // find bugs linked to this runCase that are READY_FOR_RETEST or REOPENED
+        List<Bug> bugs = bugRepository.findByRunCaseIdAndStatusIn(runCaseId, List.of(BugStatus.READY_FOR_RETEST, BugStatus.REOPENED));
 
+        if (bugs == null || bugs.isEmpty()) return;
+
+        LocalDateTime now = LocalDateTime.now();
         for (Bug bug : bugs) {
             bug.setStatus(BugStatus.CLOSED);
-            bug.setUpdatedAt(LocalDateTime.now());
-            bugRepository.save(bug);
-            // optional: add an audit note linking currentUserId that it was auto-closed
+            bug.setUpdatedAt(now);
+            bug.setResolvedDate(now); // if your entity has resolvedDate; if not, remove
+            // optional: create bug comment: "Auto-closed because test case passed"
         }
+        bugRepository.saveAll(bugs);
+    }
 
-        // Additionally, close bugs linked to run-case steps that are READY_FOR_RETEST
-        // (rare if you link to the step not to the runCase)
-        // we can also search by runCaseStepId if needed.
+    @Override
+    @Transactional
+    public void handleCaseFailed(Long runCaseId, Long runCaseStepId, Long currentUserId) {
+        // find bugs linked to this runCase which are in FIXED or READY_FOR_RETEST
+        List<Bug> bugs = bugRepository.findByRunCaseIdAndStatusIn(runCaseId, List.of(BugStatus.FIXED, BugStatus.READY_FOR_RETEST));
+
+        if (bugs == null || bugs.isEmpty()) return;
+
+        LocalDateTime now = LocalDateTime.now();
+
+        // Reopen each relevant bug
+        List<Bug> reopened = bugs.stream().map(bug -> {
+            bug.setStatus(BugStatus.REOPENED);
+            bug.setUpdatedAt(now);
+            // optional: add comment "Auto-reopened during retest (runCaseId: X, stepId: Y) by user Z"
+            return bug;
+        }).collect(Collectors.toList());
+
+        bugRepository.saveAll(reopened);
     }
 
     private BugResponse toResponse(Bug b) {
         return new BugResponse(
                 b.getId(),
                 b.getTitle(),
-                b.getStatus(),
+                b.getStatus(),                 // if your DTO expects enum or string; adjust if needed
                 b.getSeverity() != null ? b.getSeverity() : null,
                 b.getPriority(),
                 b.getReporter(),

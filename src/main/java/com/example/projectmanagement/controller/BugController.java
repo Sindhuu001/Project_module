@@ -1,5 +1,6 @@
 package com.example.projectmanagement.controller;
 
+import com.example.projectmanagement.audit.annotation.AuditLog;
 import com.example.projectmanagement.dto.BugDto;
 import com.example.projectmanagement.entity.Bug;
 import com.example.projectmanagement.service.BugService;
@@ -10,6 +11,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/bugs")
+@AuditLog(entity = "Bug")
 @CrossOrigin
 public class BugController {
 

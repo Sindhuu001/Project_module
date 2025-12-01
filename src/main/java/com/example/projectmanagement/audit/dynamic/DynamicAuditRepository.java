@@ -1,5 +1,7 @@
 package com.example.projectmanagement.audit.dynamic;
 
+import java.util.Map;
+
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
@@ -33,5 +35,10 @@ public class DynamicAuditRepository {
                 " (entity_id, old_data, new_data, operation, timestamp) VALUES (?, ?, ?, ?, NOW())";
 
         jdbc.update(sql, entityId, oldData, newData, operation);
+    }
+
+    public Map<String, Object> getRawRow(String tableName, Long id) {
+        String sql = "SELECT * FROM " + tableName + " WHERE id = ?";
+        return jdbc.queryForMap(sql, id);
     }
 }

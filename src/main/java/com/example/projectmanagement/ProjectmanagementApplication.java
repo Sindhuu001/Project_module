@@ -11,7 +11,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @EnableFeignClients(basePackages = "com.example.projectmanagement.client")
 @EnableCaching
 @EnableScheduling
-@EnableAspectJAutoProxy
+@EnableAspectJAutoProxy(proxyTargetClass = true)
 public class ProjectmanagementApplication {
 
     public static void main(String[] args) {

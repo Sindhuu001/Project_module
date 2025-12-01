@@ -72,6 +72,7 @@ public class TaskServiceImpl implements TaskService {
         }
 
         // 3️⃣ Basic fields
+        task.setId(taskCreateDto.getId());
         task.setTitle(taskCreateDto.getTitle());
         task.setDescription(taskCreateDto.getDescription());
         task.setPriority(taskCreateDto.getPriority());

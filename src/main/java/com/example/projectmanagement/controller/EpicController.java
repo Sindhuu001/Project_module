@@ -11,8 +11,9 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 @CrossOrigin
 @RestController
-@RequestMapping("/api/epics")
 @AuditLog(entity = "Epic")
+@RequestMapping("/api/epics")
+
 
 public class EpicController {
 

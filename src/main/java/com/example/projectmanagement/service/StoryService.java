@@ -124,6 +124,7 @@ public class StoryService {
         // RETURN DTO
         // -----------------------------
         StoryCreateDto createdDto = new StoryCreateDto();
+        createdDto.setId(saved.getId());
         createdDto.setTitle(saved.getTitle());
         createdDto.setDescription(saved.getDescription());
         createdDto.setAcceptanceCriteria(saved.getAcceptanceCriteria());

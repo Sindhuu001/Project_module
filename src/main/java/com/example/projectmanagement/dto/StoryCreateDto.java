@@ -9,6 +9,8 @@ import lombok.Data;
 @Data
 public class StoryCreateDto {
 
+    private Long id;
+
     @NotBlank(message = "Title is required")
     @Size(min = 2, max = 200)
     private String title;

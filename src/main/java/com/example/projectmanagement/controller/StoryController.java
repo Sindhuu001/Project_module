@@ -1,5 +1,6 @@
 package com.example.projectmanagement.controller;
 import com.example.projectmanagement.dto.StoryDto;
+import com.example.projectmanagement.audit.annotation.AuditLog;
 import com.example.projectmanagement.dto.StoryCreateDto;
 import com.example.projectmanagement.dto.StoryViewDto;
 import com.example.projectmanagement.dto.TaskDto;
@@ -18,6 +19,7 @@ import java.util.List;
 import java.util.Map;
  
 @RestController
+@AuditLog(entity = "Story")
 @RequestMapping("/api/stories")
 @CrossOrigin 
 public class StoryController {

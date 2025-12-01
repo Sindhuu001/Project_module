@@ -45,6 +45,7 @@ public class Securityconfig {
         converter.setJwtGrantedAuthoritiesConverter(jwt -> {
             List<GrantedAuthority> authorities = new ArrayList<>();
             List<String> roles = jwt.getClaimAsStringList("roles");
+            System.out.println("roles:" + roles);
             if (roles != null) {
                 for (String role : roles) {
                     authorities.add(new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_" + role.replace(" ", "_").toUpperCase()));

@@ -14,8 +14,11 @@ import com.example.projectmanagement.repository.TestRunCaseStepRepository;
 import com.example.projectmanagement.repository.TestRunRepository;
 import com.example.projectmanagement.repository.TestStepRepository;
 import com.example.projectmanagement.service.TestStepExecutionService;
+import com.example.projectmanagement.service.BugService;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,10 +31,13 @@ import java.util.List;
 @Transactional(readOnly = true)
 public class TestStepExecutionServiceImpl implements TestStepExecutionService {
 
+    private static final Logger log = LoggerFactory.getLogger(TestStepExecutionServiceImpl.class);
+
     private final TestRunCaseRepository testRunCaseRepository;
     private final TestRunCaseStepRepository testRunCaseStepRepository;
     private final TestStepRepository testStepRepository;
     private final TestRunRepository testRunRepository;
+    private final BugService bugService;
 
     @Override
     @Transactional
@@ -79,6 +85,29 @@ public class TestStepExecutionServiceImpl implements TestStepExecutionService {
 
         // Update run-case and run statuses based on all step results
         recalcRunCaseStatus(runCase);
+
+        // After recalculation, react to runCase status for bug workflow
+        try {
+            TestRunCaseStatus currentCaseStatus = runCase.getStatus();
+            if (currentCaseStatus == TestRunCaseStatus.FAILED) {
+                // Auto-reopen any FIXED/READY_FOR_RETEST bugs linked to this run-case
+                try {
+                    bugService.handleCaseFailed(runCase.getId(), request.stepId(), currentUserId);
+                } catch (Exception ex) {
+                    log.error("Error while auto-reopening bugs for runCase {}: {}", runCase.getId(), ex.getMessage(), ex);
+                }
+            } else if (currentCaseStatus == TestRunCaseStatus.PASSED) {
+                // Auto-close READY_FOR_RETEST/REOPENED bugs linked to this run-case
+                try {
+                    bugService.handleCasePassed(runCase.getId(), currentUserId);
+                } catch (Exception ex) {
+                    log.error("Error while auto-closing bugs for runCase {}: {}", runCase.getId(), ex.getMessage(), ex);
+                }
+            }
+        } catch (Exception ex) {
+            // Defensive: ensure execution doesn't fail due to bug handling
+            log.error("Unexpected error in post-step bug handling for runCase {}: {}", runCase.getId(), ex.getMessage(), ex);
+        }
 
         return toDto(savedStep);
     }

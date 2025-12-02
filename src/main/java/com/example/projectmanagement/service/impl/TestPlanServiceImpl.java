@@ -13,7 +13,6 @@ import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -91,4 +90,38 @@ public class TestPlanServiceImpl implements TestPlanService {
                 coveredStoryCount
         );
     }
+    @Override
+    @Transactional
+    public void deleteTestPlan(Long planId) {
+        if (!testPlanRepository.existsById(planId)) {
+            throw new EntityNotFoundException("Test Plan not found: " + planId);
+        }
+        testPlanRepository.deleteById(planId);
+    }
+        @Override      
+        @Transactional
+        public TestPlanSummaryResponse updatePlan(Long planId, TestPlanCreateRequest request) {
+            TestPlan plan = testPlanRepository.findById(planId)
+                    .orElseThrow(() -> new EntityNotFoundException("Test Plan not found: " + planId));
+ 
+            plan.setName(request.name());
+            plan.setObjective(request.objective());
+            // Assuming you might want to update other fields as well
+ 
+            TestPlan updatedPlan = testPlanRepository.save(plan);
+ 
+            int scenarioCount = testScenarioRepository.countByTestPlanId(planId);
+            int caseCount = testCaseRepository.countByScenarioTestPlanId(planId);
+            int coveredStoryCount = testScenarioRepository.countDistinctStoriesByTestPlanId(planId);
+ 
+            return new TestPlanSummaryResponse(
+                    updatedPlan.getId(),
+                    updatedPlan.getName(),
+                    updatedPlan.getObjective(),
+                    updatedPlan.getCreatedAt(),
+                    scenarioCount,
+                    caseCount,
+                    coveredStoryCount
+            );
+        }
 }

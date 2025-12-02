@@ -1,14 +1,15 @@
 package com.example.projectmanagement.controller.testControllers;
 
+import com.example.projectmanagement.dto.UserDto;
 import com.example.projectmanagement.dto.testing.TestCycleCreateRequest;
 import com.example.projectmanagement.dto.testing.TestCycleSummaryResponse;
+import com.example.projectmanagement.security.CurrentUser;
 import com.example.projectmanagement.service.TestCycleService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.security.Principal;
 import java.util.List;
 
 @RestController
@@ -21,10 +22,9 @@ public class TestCycleController {
     @PostMapping
     public ResponseEntity<TestCycleSummaryResponse> createCycle(
             @Valid @RequestBody TestCycleCreateRequest request,
-            Principal principal
+            @CurrentUser UserDto currentUser
     ) {
-        Long currentUserId = Long.parseLong(principal.getName());
-        TestCycleSummaryResponse response = testCycleService.createCycle(request, currentUserId);
+        TestCycleSummaryResponse response = testCycleService.createCycle(request, currentUser.getId());
         return ResponseEntity.ok(response);
     }
 

@@ -1,14 +1,15 @@
 package com.example.projectmanagement.controller.testControllers;
 
+import com.example.projectmanagement.dto.UserDto;
 import com.example.projectmanagement.dto.testing.TestRunCreateRequest;
 import com.example.projectmanagement.dto.testing.TestRunSummaryResponse;
+import com.example.projectmanagement.security.CurrentUser;
 import com.example.projectmanagement.service.TestRunService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.security.Principal;
 import java.util.List;
 
 @RestController
@@ -21,11 +22,10 @@ public class TestRunController {
     @PostMapping
     public ResponseEntity<TestRunSummaryResponse> createRun(
             @Valid @RequestBody TestRunCreateRequest request,
-            Principal principal
+            @CurrentUser UserDto currentUser
     ) {
-        Long currentUserId = Long.parseLong(principal.getName());
         return ResponseEntity.ok(
-                testRunService.createRun(request, currentUserId)
+                testRunService.createRun(request, currentUser.getId())
         );
     }
 

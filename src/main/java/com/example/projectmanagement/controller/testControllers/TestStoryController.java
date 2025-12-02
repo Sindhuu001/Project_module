@@ -1,7 +1,9 @@
 package com.example.projectmanagement.controller.testControllers;
 
+import com.example.projectmanagement.dto.UserDto;
 import com.example.projectmanagement.dto.testing.TestStoryCreateRequest;
 import com.example.projectmanagement.dto.testing.TestStorySummaryResponse;
+import com.example.projectmanagement.security.CurrentUser;
 import com.example.projectmanagement.service.TestStoryService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -21,9 +23,9 @@ public class TestStoryController {
     @PostMapping
     public ResponseEntity<TestStorySummaryResponse> createTestStory(
             @Valid @RequestBody TestStoryCreateRequest request,
-            Principal principal
+            @CurrentUser UserDto currentUser
     ) {
-        Long currentUserId = Long.parseLong(principal.getName());
+        Long currentUserId = currentUser.getId();
         TestStorySummaryResponse response = testStoryService.createTestStory(request, currentUserId);
         return ResponseEntity.ok(response);
     }

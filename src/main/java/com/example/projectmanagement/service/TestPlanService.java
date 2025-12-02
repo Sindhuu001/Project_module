@@ -12,4 +12,6 @@ public interface TestPlanService {
     List<TestPlanSummaryResponse> getPlansForProject(Long projectId);
 
     TestPlanSummaryResponse getPlanDetail(Long planId);
+    void deleteTestPlan(Long planId);
+    TestPlanSummaryResponse updatePlan(Long planId, TestPlanCreateRequest request);
 }

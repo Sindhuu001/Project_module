@@ -2,6 +2,8 @@ package com.example.projectmanagement.dto.testing;
 
 public record CloneRunRequest(
         Boolean includeFailedOnly,   // default true
-        Boolean copyAssignee         // default false
+        Boolean copyAssignee,         // default false
+        String assignmentStrategy,
+        Long assignToId
 ) {}
 

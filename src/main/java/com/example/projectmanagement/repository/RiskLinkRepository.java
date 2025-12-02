@@ -29,4 +29,5 @@ public interface RiskLinkRepository extends JpaRepository<RiskLink, Long> {
             @Param("projectId") Long projectId
     );
 
+
 }

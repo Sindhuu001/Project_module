@@ -1,8 +1,11 @@
 package com.example.projectmanagement.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Data;
+
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity
 @Table(
@@ -21,8 +24,21 @@ public class Risk {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    /* ========= PROJECT ========= */
+
     @Column(name = "project_id", nullable = false)
     private Long projectId;
+
+    /**
+     * Read-only relation for navigation / joins.
+     * Actual FK value is controlled by projectId field.
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "project_id", insertable = false, updatable = false)
+    @JsonIgnore
+    private Project project;
+
+    /* ========= OTHER IDS ========= */
 
     @Column(name = "owner_id")
     private Long ownerId;
@@ -35,6 +51,8 @@ public class Risk {
 
     @Column(name = "status_id", nullable = false)
     private Long statusId;
+
+    /* ========= BUSINESS DATA ========= */
 
     @Column(nullable = false)
     private String title;
@@ -54,6 +72,8 @@ public class Risk {
     @Column(length = 2000)
     private String triggers;
 
+    /* ========= AUDIT ========= */
+
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 
@@ -62,4 +82,10 @@ public class Risk {
 
     @Column(name = "closed_at")
     private LocalDateTime closedAt;
+
+    /* ========= LINKS ========= */
+
+    @OneToMany(mappedBy = "risk", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
+    private List<RiskLink> riskLinks;
 }

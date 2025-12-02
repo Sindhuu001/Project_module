@@ -46,4 +46,18 @@ public class TestPlanController {
         TestPlanSummaryResponse plan = testPlanService.getPlanDetail(planId);
         return ResponseEntity.ok(plan);
     }
+     @DeleteMapping("/{planId}")
+    public ResponseEntity<Void> deleteTestPlan(@PathVariable Long planId) {
+        testPlanService.deleteTestPlan(planId);
+        return ResponseEntity.noContent().build();
+    }
+    @PutMapping("/update/{planId}")
+    public ResponseEntity<TestPlanSummaryResponse> updateTestPlan(
+            @PathVariable Long planId,
+            @Valid @RequestBody TestPlanCreateRequest request
+    ) {
+        // Assuming you have an updatePlan method in your service
+        TestPlanSummaryResponse updatedPlan = testPlanService.updatePlan(planId, request);
+        return ResponseEntity.ok(updatedPlan);
+    }
 }

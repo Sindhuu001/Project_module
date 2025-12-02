@@ -17,6 +17,9 @@ public interface EpicRepository extends JpaRepository<Epic, Long> {
     List<Epic> findByProjectId(Long projectId);
 
     List<Epic> findByStatus(Status status);
+    
+    @Query("SELECT e FROM Epic e WHERE e.id = :epicId")
+    Epic findEpicBasicById(@Param("epicId") Long epicId);
 
     @Query("SELECT e FROM Epic e WHERE e.project.id = :projectId AND e.status.id = :statusId")
     List<Epic> findByProjectIdAndStatusId(

@@ -51,59 +51,94 @@ public class StoryService {
     @Autowired
     private UserClient userClient;
 
-   @Transactional
-public StoryCreateDto createStory(StoryCreateDto dto) {
+    @Transactional
+    public StoryCreateDto createStory(StoryCreateDto dto) {
 
-    Long projectId = dto.getProjectId();
+        Long projectId = dto.getProjectId();
 
-    Project project = projectRepository.findById(projectId)
-            .orElseThrow(() -> new RuntimeException("Project not found"));
+        // Fetch Project (to get ownerId)
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() -> new RuntimeException("Project not found"));
 
-    Story story = new Story();
-    story.setTitle(dto.getTitle());
-    story.setDescription(dto.getDescription());
-    story.setAcceptanceCriteria(dto.getAcceptanceCriteria());
-    story.setStoryPoints(dto.getStoryPoints());
-    story.setAssigneeId(dto.getAssigneeId());
-    story.setReporterId(dto.getReporterId());
-    story.setPriority(dto.getPriority());
-    story.setStartDate(dto.getStartDate());
-    story.setDueDate(dto.getDueDate()); // 🔥 added
+        Long ownerId = project.getOwnerId();
 
-    story.setProject(project);
+        // -----------------------------
+        // VALIDATE REPORTER
+        // -----------------------------
+        if (dto.getReporterId() != null) {
+            boolean isReporterValid = projectRepository.isUserPartOfProject(projectId, dto.getReporterId());
+            if (!isReporterValid) {
+                throw new RuntimeException("Reporter is not a member/owner of the project");
+            }
+        }
 
-    if (dto.getEpicId() != null) {
-        story.setEpic(epicRepository.findById(dto.getEpicId())
-                .orElseThrow(() -> new RuntimeException("Epic not found")));
+        // -----------------------------
+        // VALIDATE ASSIGNEE
+        // -----------------------------
+        if (dto.getAssigneeId() != null) {
+            boolean isAssigneeValid = projectRepository.isUserPartOfProject(projectId, dto.getAssigneeId());
+            if (!isAssigneeValid) {
+                throw new RuntimeException("Assignee is not a member/owner of the project");
+            }
+        }
+
+        // -----------------------------
+        // STORY CREATION
+        // -----------------------------
+        Story story = new Story();
+        story.setTitle(dto.getTitle());
+        story.setDescription(dto.getDescription());
+        story.setAcceptanceCriteria(dto.getAcceptanceCriteria());
+        story.setStoryPoints(dto.getStoryPoints());
+        story.setAssigneeId(dto.getAssigneeId());
+        story.setReporterId(dto.getReporterId());
+        story.setPriority(dto.getPriority());
+
+        story.setProject(
+                projectRepository.findById(projectId)
+                        .orElseThrow(() -> new RuntimeException("Project not found"))
+        );
+
+        if (dto.getEpicId() != null) {
+            story.setEpic(
+                    epicRepository.findById(dto.getEpicId())
+                            .orElseThrow(() -> new RuntimeException("Epic not found"))
+            );
+        }
+
+        if (dto.getSprintId() != null) {
+            story.setSprint(
+                    sprintRepository.findById(dto.getSprintId())
+                            .orElseThrow(() -> new RuntimeException("Sprint not found"))
+            );
+        }
+
+        story.setStatus(
+                statusRepository.findById(dto.getStatusId())
+                        .orElseThrow(() -> new RuntimeException("Status not found"))
+        );
+
+        Story saved = storyRepository.save(story);
+
+        // -----------------------------
+        // RETURN DTO
+        // -----------------------------
+        StoryCreateDto createdDto = new StoryCreateDto();
+        createdDto.setId(saved.getId());
+        createdDto.setTitle(saved.getTitle());
+        createdDto.setDescription(saved.getDescription());
+        createdDto.setAcceptanceCriteria(saved.getAcceptanceCriteria());
+        createdDto.setStoryPoints(saved.getStoryPoints());
+        createdDto.setAssigneeId(saved.getAssigneeId());
+        createdDto.setReporterId(saved.getReporterId());
+        createdDto.setProjectId(saved.getProject().getId());
+        createdDto.setEpicId(saved.getEpic() != null ? saved.getEpic().getId() : null);
+        createdDto.setSprintId(saved.getSprint() != null ? saved.getSprint().getId() : null);
+        createdDto.setStatusId(saved.getStatus().getId());
+        createdDto.setPriority(saved.getPriority());
+
+        return createdDto;
     }
-
-    if (dto.getSprintId() != null) {
-        story.setSprint(sprintRepository.findById(dto.getSprintId())
-                .orElseThrow(() -> new RuntimeException("Sprint not found")));
-    }
-
-    story.setStatus(statusRepository.findById(dto.getStatusId())
-            .orElseThrow(() -> new RuntimeException("Status not found")));
-
-    Story saved = storyRepository.save(story);
-
-    StoryCreateDto createdDto = new StoryCreateDto();
-    createdDto.setTitle(saved.getTitle());
-    createdDto.setDescription(saved.getDescription());
-    createdDto.setAcceptanceCriteria(saved.getAcceptanceCriteria());
-    createdDto.setStoryPoints(saved.getStoryPoints());
-    createdDto.setAssigneeId(saved.getAssigneeId());
-    createdDto.setReporterId(saved.getReporterId());
-    createdDto.setProjectId(saved.getProject().getId());
-    createdDto.setEpicId(saved.getEpic() != null ? saved.getEpic().getId() : null);
-    createdDto.setSprintId(saved.getSprint() != null ? saved.getSprint().getId() : null);
-    createdDto.setStatusId(saved.getStatus().getId());
-    createdDto.setPriority(saved.getPriority());
-    createdDto.setStartDate(saved.getStartDate());
-    createdDto.setDueDate(saved.getDueDate()); // 🔥 added
-
-    return createdDto;
-}
 
     @Transactional(readOnly = true)
     public Page<StoryViewDto> searchStoriesView(
@@ -225,8 +260,7 @@ public StoryCreateDto createStory(StoryCreateDto dto) {
         story.setStoryPoints(dto.getStoryPoints());
         story.setReporterId(dto.getReporterId());
         story.setPriority(dto.getPriority());
-        story.setStartDate(dto.getStartDate());
-        story.setDueDate(dto.getDueDate());
+
         // -----------------------------------------
         // STATUS UPDATE
         // -----------------------------------------
@@ -315,7 +349,6 @@ public StoryCreateDto createStory(StoryCreateDto dto) {
         dto.setAssigneeId(story.getAssigneeId() != null ? story.getAssigneeId() : null);
         dto.setAssignee(story.getAssigneeId() != null ? userService.getUserWithRoles(story.getAssigneeId()) : null);
         dto.setReporter(story.getReporterId() != null ? userService.getUserWithRoles(story.getReporterId()) : null);
-        dto.setDueDate(story.getDueDate());
         return dto;
     }
 
@@ -364,8 +397,8 @@ public StoryCreateDto createStory(StoryCreateDto dto) {
         dto.setAcceptanceCriteria(story.getAcceptanceCriteria());
         dto.setStoryPoints(story.getStoryPoints());
         dto.setPriority(story.getPriority().name());
-        dto.setStartDate(story.getStartDate());
-        dto.setDueDate(story.getDueDate());
+
+        // Status
         if (story.getStatus() != null) {
             dto.setStatusId(story.getStatus().getId());
             dto.setStatusName(story.getStatus().getName());

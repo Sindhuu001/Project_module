@@ -2,6 +2,7 @@ package com.example.projectmanagement.controller;
 
 import com.example.projectmanagement.ExternalDTO.ProjectIdName;
 import com.example.projectmanagement.ExternalDTO.ProjectTasksDto;
+import com.example.projectmanagement.audit.annotation.AuditLog;
 import com.example.projectmanagement.dto.*;
 import com.example.projectmanagement.security.CurrentUser;
 import com.example.projectmanagement.service.EpicService;
@@ -21,6 +22,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 @RestController
+@AuditLog(entity = "project")
 @RequestMapping("/api/projects")
 @CrossOrigin
 public class ProjectController {

@@ -19,6 +19,9 @@ public interface StoryRepository extends JpaRepository<Story, Long> {
     
     List<Story> findByAssigneeId(Long assigneeId);
 
+    @Query("SELECT s from Story s WHERE s.id = :storyId")
+    Story findStorybyStoryId(@Param("storyId")Long storyId);
+
     
     List<Story> findByReporterId(Long reporterId);
     List<Story> findBySprintId(Long sprintId);

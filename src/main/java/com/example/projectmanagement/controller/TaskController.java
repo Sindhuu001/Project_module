@@ -1,5 +1,6 @@
 package com.example.projectmanagement.controller;
 
+import com.example.projectmanagement.audit.annotation.AuditLog;
 import com.example.projectmanagement.dto.*;
 import com.example.projectmanagement.entity.Task;
 import com.example.projectmanagement.service.TaskService;
@@ -20,6 +21,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/tasks")
 @CrossOrigin
+@AuditLog(entity = "Task")
 public class TaskController {
 
     @Autowired

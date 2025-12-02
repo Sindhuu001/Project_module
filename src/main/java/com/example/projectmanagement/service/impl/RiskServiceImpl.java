@@ -1,13 +1,17 @@
 package com.example.projectmanagement.service.impl;
 
-import com.example.projectmanagement.dto.RiskRequest;
-import com.example.projectmanagement.dto.RiskResponse;
-import com.example.projectmanagement.dto.RiskStatusUpdateRequest;
+import com.example.projectmanagement.dto.*;
 import com.example.projectmanagement.entity.Risk;
+import com.example.projectmanagement.entity.RiskLink;
 import com.example.projectmanagement.repository.*;
 import com.example.projectmanagement.service.RiskService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import com.example.projectmanagement.service.UserService;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -27,6 +31,9 @@ public class RiskServiceImpl implements RiskService {
 
     @Autowired
     private RiskStatusRepository statusRepository;
+
+    @Autowired
+    private UserService userService;
 
     @Override
     public RiskResponse createRisk(RiskRequest request) {
@@ -120,7 +127,94 @@ public class RiskServiceImpl implements RiskService {
         return toResponse(riskRepository.save(risk));
     }
 
+    @Override
+    public RiskResponseDTO getRisksWithPagination(
+            Long projectId,
+            RiskLink.LinkedType linkedType,
+            Long linkedId,
+            int page,
+            int size,
+            String severityFilter
+    ) {
+
+        Pageable pageable = PageRequest.of(page - 1, size, Sort.by("id").descending());
+
+        Page<Risk> risksPage =
+                riskRepository.findByRiskLinks_LinkedTypeAndRiskLinks_LinkedId(
+                        linkedType,
+                        linkedId,
+                        pageable
+                );
+
+        List<RiskItemDTO> items = risksPage.getContent().stream()
+                .map(risk -> {
+
+                    int riskScore = risk.getProbability() * risk.getImpact();
+                    String severity = calculateSeverity(riskScore);
+
+                    if (severityFilter != null &&
+                            !severity.equalsIgnoreCase(severityFilter)) {
+                        return null;
+                    }
+
+                    String status = statusRepository.findById(risk.getStatusId())
+                            .map(s -> s.getName())
+                            .orElse("Unknown");
+
+                    String owner =
+                            risk.getOwnerId() == null ? "Unknown"
+                                    : userService.getUserById(risk.getOwnerId()).getName();
+
+                    String reporter =
+                            risk.getReporterId() == null ? "Unknown"
+                                    : userService.getUserById(risk.getReporterId()).getName();
+
+                    return new RiskItemDTO(
+                            risk.getId(),
+                            risk.getTitle(),
+                            risk.getProbability(),
+                            risk.getImpact(),
+                            riskScore,
+                            severity,
+                            status,
+                            owner,
+                            reporter,
+                            risk.getOwnerId() != null ? risk.getOwnerId() : null,
+                            risk.getReporterId() != null ? risk.getReporterId(): null
+                    );
+                })
+                .filter(r -> r != null)
+                .toList();
+
+        RiskSummaryDTO summary = new RiskSummaryDTO(
+                (int) risksPage.getTotalElements(),
+                (int) items.stream().filter(i -> "High".equalsIgnoreCase(i.getSeverity())).count(),
+                items.stream().mapToInt(RiskItemDTO::getRiskScore).average().orElse(0.0)
+        );
+
+        PaginationDTO pagination = new PaginationDTO(
+                page,
+                size,
+                risksPage.getTotalPages(),
+                risksPage.getTotalElements()
+        );
+
+        return new RiskResponseDTO(
+                linkedId,
+                summary,
+                pagination,
+                items
+        );
+    }
+
+
     // --- Helpers ---
+
+    private String calculateSeverity(int score) {
+        if (score <= 6) return "Low";
+        if (score <= 14) return "Medium";
+        return "High";
+    }
 
     private void validateRequest(RiskRequest request) {
         projectRepository.findById(request.getProjectId())

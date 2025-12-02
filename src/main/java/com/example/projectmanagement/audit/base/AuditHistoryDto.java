@@ -17,9 +17,6 @@ public class AuditHistoryDto {
     private String newValue;
     private LocalDateTime timestamp;
     private String operation;
-    private String oldData;
-    private String newData;
-    
-
-    
+    // private String oldData;
+    // private String newData;
 }

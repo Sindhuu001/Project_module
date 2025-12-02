@@ -1,4 +1,5 @@
 package com.example.projectmanagement.controller;
+import com.example.projectmanagement.audit.annotation.AuditLog;
 import com.example.projectmanagement.dto.SprintDto;
 import com.example.projectmanagement.dto.SprintPopupResponse;
 import com.example.projectmanagement.dto.TaskDto;
@@ -18,6 +19,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @RestController
+@AuditLog(entity = "Sprint")
 @RequestMapping("/api/sprints")
 @CrossOrigin
 public class SprintController {

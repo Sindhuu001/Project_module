@@ -134,27 +134,17 @@ public class AuditAspect {
         ServletRequestAttributes attrs = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
         HttpServletRequest req = (attrs != null) ? attrs.getRequest() : null;
 
-        AuditTrail log = AuditTrail.builder()
-                .entityName(normalizedEntity)
-                .entityId(entityId)
-                .operation(operation)
-                .userId(getUserIdFromJwt())
-                .oldData(oldDataJson)
-                .newData(newDataJson)
-                .endpoint(req != null ? req.getRequestURI() : null)
-                .ipAddress(req != null ? req.getRemoteAddr() : null)
-                .host(req != null ? req.getRemoteHost() : null)
-                .timestamp(LocalDateTime.now())
-                .build();
-
-        auditTrailRepository.save(log);
-
         dynamicAuditService.saveEntityAudit(
                 normalizedEntity,
                 String.valueOf(entityId),
-                log.getOldData(),
-                log.getNewData(),
-                operation
+                req != null ? req.getRemoteAddr() : null,        // ipAddress
+                LocalDateTime.now(),                              // timestamp
+                operation,
+                oldDataJson,
+                newDataJson,
+                req != null ? req.getRemoteHost() : null,        // host
+                getUserIdFromJwt(),                               // userId
+                req != null ? req.getRequestURI() : null         // endpoint
         );
 
         System.out.println("======= AUDIT ASPECT END =======");

@@ -22,6 +22,8 @@ public interface StatusRepository extends JpaRepository<Status, Long> {
     Integer findMaxSortOrderByProject(@Param("projectId") Long projectId);
 
     Status findFirstByProjectIdOrderBySortOrderDesc(Long projectId);
+    @Query("SELECT s FROM Status s WHERE s.id=:statusId")
+    Status findStatusById(@Param("statusId") Long statusId);
 
 
 }

@@ -17,8 +17,18 @@ public class AuditTrail {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "entity_name", nullable = false, length = 150)
-    private String entityName;
+    private AuditEntityType entityName;
+
+    public enum AuditEntityType {
+        TASK,
+        EPIC,
+        STORY,
+        BUG,
+        SPRINT
+    }
+
 
     @Column(name = "entity_id", nullable = false)
     private Long entityId;

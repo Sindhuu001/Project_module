@@ -3,6 +3,7 @@ package com.example.projectmanagement.service.impl;
 import com.example.projectmanagement.dto.testing.BugCreateRequest;
 import com.example.projectmanagement.dto.testing.BugResponse;
 import com.example.projectmanagement.dto.testing.BugStatusUpdateRequest;
+import com.example.projectmanagement.dto.testing.BugSummaryResponse;
 import com.example.projectmanagement.entity.Bug;
 import com.example.projectmanagement.entity.testing.TestRunCase;
 import com.example.projectmanagement.entity.testing.TestRunCaseStep;
@@ -16,6 +17,10 @@ import com.example.projectmanagement.repository.TestRunRepository;
 import com.example.projectmanagement.service.BugService;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -145,6 +150,21 @@ public class BugServiceImpl implements BugService {
     }
 
     @Override
+    public Page<BugResponse> findBugsByProjectId(Long projectId, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+        Page<Bug> bugPage = bugRepository.findByProjectId(projectId, pageable);
+        return bugPage.map(this::toResponse);
+    }
+
+    @Override
+    public List<BugSummaryResponse> findBugSummariesByProjectId(Long projectId) {
+        List<Bug> bugs = bugRepository.findByProjectId(projectId);
+        return bugs.stream()
+                .map(this::toSummaryResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Override
     @Transactional
     public void handleCasePassed(Long runCaseId, Long currentUserId) {
         // find bugs linked to this runCase that are READY_FOR_RETEST or REOPENED
@@ -183,7 +203,7 @@ public class BugServiceImpl implements BugService {
         bugRepository.saveAll(reopened);
     }
 
-    private BugResponse toResponse(Bug b) {
+    public BugResponse toResponse(Bug b) {
         return new BugResponse(
                 b.getId(),
                 b.getTitle(),
@@ -201,6 +221,26 @@ public class BugServiceImpl implements BugService {
                 b.getProject() != null ? b.getProject().getId() : null,
                 b.getCreatedAt(),
                 b.getUpdatedAt()
+        );
+    }
+
+    private BugSummaryResponse toSummaryResponse(Bug bug) {
+        BugSummaryResponse.StatusDto statusDto = new BugSummaryResponse.StatusDto(
+                bug.getStatus().name(), // Using enum name as ID, adjust if you have a separate ID
+                bug.getStatus().getDisplayName() // Assuming you add a getDisplayName() method to your enum
+        );
+
+        Long epicId = null;
+        if (bug.getTestStory() != null && bug.getTestStory().getLinkedUserStory() != null && bug.getTestStory().getLinkedUserStory().getEpic() != null) {
+            epicId = bug.getTestStory().getLinkedUserStory().getEpic().getId();
+        }
+
+        return new BugSummaryResponse(
+                bug.getId(),
+                bug.getTitle(),
+                bug.getPriority(),
+                statusDto,
+                epicId
         );
     }
 }

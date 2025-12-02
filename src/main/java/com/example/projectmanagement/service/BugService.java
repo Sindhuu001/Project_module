@@ -3,12 +3,20 @@ package com.example.projectmanagement.service;
 import com.example.projectmanagement.dto.testing.BugCreateRequest;
 import com.example.projectmanagement.dto.testing.BugResponse;
 import com.example.projectmanagement.dto.testing.BugStatusUpdateRequest;
+import com.example.projectmanagement.dto.testing.BugSummaryResponse;
+import org.springframework.data.domain.Page;
+
+import java.util.List;
 
 public interface BugService {
 
     BugResponse createBug(BugCreateRequest req, Long reporterId);
 
     BugResponse updateBugStatus(Long bugId, BugStatusUpdateRequest req, Long userId);
+
+    Page<BugResponse> findBugsByProjectId(Long projectId, int page, int size);
+
+    List<BugSummaryResponse> findBugSummariesByProjectId(Long projectId);
 
     /**
      * Called when a TestRunCase is passed successfully (retest passed).
@@ -25,4 +33,6 @@ public interface BugService {
      * @param currentUserId user who executed the test (tester)
      */
     void handleCaseFailed(Long runCaseId, Long runCaseStepId, Long currentUserId);
+
+    BugResponse toResponse(com.example.projectmanagement.entity.Bug bug);
 }

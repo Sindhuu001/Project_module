@@ -12,6 +12,10 @@ import java.util.List;
 
 public interface BugRepository extends JpaRepository<Bug, Long> , JpaSpecificationExecutor<Bug> {
 
+    Page<Bug> findByProjectId(Long projectId, Pageable pageable);
+
+    List<Bug> findByProjectId(Long projectId);
+
     List<Bug> findByRunCaseId(Long runCaseId);
 
     List<Bug> findByRunCaseStepId(Long runCaseStepId);
@@ -25,5 +29,3 @@ public interface BugRepository extends JpaRepository<Bug, Long> , JpaSpecificati
     Page<Bug> findAll(Specification<Bug> spec, Pageable pageable); // extends JpaSpecificationExecutor<Bug>
 
 }
-
-

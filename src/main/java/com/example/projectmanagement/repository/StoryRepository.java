@@ -1,8 +1,6 @@
 package com.example.projectmanagement.repository;
 
 import com.example.projectmanagement.entity.Story;
-import com.example.projectmanagement.entity.Story.StoryStatus;
-
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -16,20 +14,20 @@ import java.util.List;
 public interface StoryRepository extends JpaRepository<Story, Long> {
     
     List<Story> findByEpicId(Long epicId);
-     List<Story> findByProjectId(Long epicId);
-    List<Story> findByStatus(Story.StoryStatus status);
+    List<Story> findByProjectId(Long projectId);
+    List<Story> findByStatusId(Long statusId); // Replaced findByStatus
     
     List<Story> findByAssigneeId(Long assigneeId);
+
+    @Query("SELECT s from Story s WHERE s.id = :storyId")
+    Story findStorybyStoryId(@Param("storyId")Long storyId);
+
     
     List<Story> findByReporterId(Long reporterId);
     List<Story> findBySprintId(Long sprintId);
 
     List<Story> findByEpicIsNullAndProjectIdAndSprintIdIsNull(Long projectId);
 
-    
-    @Query("SELECT s FROM Story s WHERE s.epic.id = :epicId AND s.status = :status")
-    List<Story> findByEpicIdAndStatus(@Param("epicId") Long epicId, @Param("status") Story.StoryStatus status);
-    
     @Query("SELECT s FROM Story s WHERE s.epic.id = :epicId")
     Page<Story> findByEpicId(@Param("epicId") Long epicId, Pageable pageable);
     
@@ -39,7 +37,7 @@ public interface StoryRepository extends JpaRepository<Story, Long> {
     @Query("SELECT s FROM Story s WHERE s.priority = :priority")
     Page<Story> findByPriority(@Param("priority") Story.Priority priority, Pageable pageable);
     
-    long countByStatus(Story.StoryStatus status);
+    long countByStatusId(Long statusId); // Replaced countByStatus
 
     @Query("SELECT s FROM Story s " +
             "WHERE (:title IS NULL OR LOWER(s.title) LIKE LOWER(CONCAT('%', :title, '%'))) " +
@@ -56,5 +54,24 @@ public interface StoryRepository extends JpaRepository<Story, Long> {
         Pageable pageable
     );
     boolean existsByTitleAndProjectIdAndEpicId(String title, Long projectId, Long epicId);
-    Long countByAssigneeIdAndStatus(Long userId, StoryStatus status);
+    Long countByAssigneeIdAndStatusId(Long userId, Long statusId); // Replaced countByAssigneeIdAndStatus
+
+    @Query("""
+        SELECT s FROM Story s
+        WHERE s.sprint.id = :sprintId
+          AND s.status.sortOrder <> :finalSortOrder
+    """)
+    List<Story> findIncompleteStoriesBySprintId(
+            @Param("sprintId") Long sprintId,
+            @Param("finalSortOrder") Integer finalSortOrder);
+
+    @Query("""
+        SELECT CASE WHEN COUNT(s) > 0 THEN true ELSE false END
+        FROM Story s
+        WHERE s.sprint.id = :sprintId
+          AND s.status.sortOrder <> :finalSortOrder
+       """)
+    boolean existsBySprintIdAndStatus_SortOrderNot(@Param("sprintId") Long sprintId,
+                                                   @Param("finalSortOrder") Integer finalSortOrder);
+
 }

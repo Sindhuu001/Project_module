@@ -17,22 +17,17 @@ import java.util.stream.Collectors;
 @Service
 public class PerformanceService {
 
-    
-
     @Autowired
     private TaskRepository taskRepository;
 
     @Autowired
     private ProjectRepository projectRepository;
 
-    // @Autowired
-    // private EpicRepository epicRepository;
-
-    // @Autowired
-    // private StoryRepository storyRepository;
     @Autowired
     private UserClient userClient;
-   
+
+    // No need to inject StatusRepository as we will check by name
+
     public List<EmployeePerformanceDto> getAllEmployeePerformance() {
         List<UserDto> users = userClient.findAll();
         List<EmployeePerformanceDto> performanceList = new ArrayList<>();
@@ -42,13 +37,27 @@ public class PerformanceService {
             List<Task> tasks = taskRepository.findByAssigneeId(user.getId());
 
             int totalTasks = tasks.size();
-            int inProgress = (int) tasks.stream().filter(t -> t.getStatus() == Task.TaskStatus.IN_PROGRESS).count();
-            int completed = (int) tasks.stream().filter(t -> t.getStatus() == Task.TaskStatus.DONE).count();
-            int overdue = (int) tasks.stream().filter(t ->
-                t.getDueDate() != null &&
-                t.getDueDate().isBefore(LocalDateTime.now()) &&
-                t.getStatus() != Task.TaskStatus.DONE
-            ).count();
+
+            // Updated logic using dynamic statuses by name
+            int completed = (int) tasks.stream()
+                    .filter(t -> t.getStatus() != null && "Done".equalsIgnoreCase(t.getStatus().getName()))
+                    .count();
+
+            int inProgress = (int) tasks.stream()
+                    .filter(t -> {
+                        if (t.getStatus() == null) return false;
+                        String statusName = t.getStatus().getName();
+                        return !"Done".equalsIgnoreCase(statusName) &&
+                               !"To Do".equalsIgnoreCase(statusName) &&
+                               !"Backlog".equalsIgnoreCase(statusName);
+                    })
+                    .count();
+
+            int overdue = (int) tasks.stream()
+                    .filter(t -> t.getDueDate() != null &&
+                                 t.getDueDate().isBefore(LocalDateTime.now()) &&
+                                 (t.getStatus() != null && !"Done".equalsIgnoreCase(t.getStatus().getName())))
+                    .count();
 
             // Grouping tasks -> stories -> epics
             Map<Epic, Map<Story, List<Task>>> epicStoryTaskMap = new HashMap<>();

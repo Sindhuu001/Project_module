@@ -2,7 +2,6 @@ package com.example.projectmanagement.repository;
 
 import com.example.projectmanagement.dto.TaskDto;
 import com.example.projectmanagement.entity.Task;
-import com.example.projectmanagement.entity.Task.TaskStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.*;
@@ -25,17 +24,13 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
 
     List<Task> findByReporterId(Long reporterId);
 
-    List<Task> findByStatus(TaskStatus status);
+    List<Task> findByStatusId(Long statusId);
 
-    @Query("SELECT t FROM Task t WHERE t.project.id = :projectId AND t.status = :status")
-    List<Task> findByProjectIdAndStatus(@Param("projectId") Long projectId, @Param("status") TaskStatus status);
+    List<Task> findByProjectId(Long projectId); // Added method
 
     // ✅ fetch tasks indirectly linked to a sprint via their story
     @Query("SELECT t FROM Task t WHERE t.story.sprint.id = :sprintId")
     List<Task> findBySprintId(@Param("sprintId") Long sprintId);
-
-    @Query("SELECT t FROM Task t WHERE t.story.sprint.id = :sprintId AND t.status = :status")
-    List<Task> findBySprintIdAndStatus(@Param("sprintId") Long sprintId, @Param("status") TaskStatus status);
 
     @Query("SELECT t FROM Task t WHERE t.assigneeId = :assigneeId")
     Page<Task> findByAssigneeId(@Param("assigneeId") Long assigneeId, Pageable pageable);
@@ -49,8 +44,10 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
     @Query("SELECT COUNT(t) FROM Task t WHERE t.story.id = :storyId")
     long countByStoryId(@Param("storyId") Long storyId);
 
-    @Query("SELECT t FROM Task t WHERE t.story.sprint IS NULL AND t.status IN ('BACKLOG', 'TODO')")
+
+    @Query("SELECT t FROM Task t WHERE t.sprint IS NULL")
     List<Task> findBacklogTasks();
+
 
     @Query("SELECT COUNT(t) FROM Task t WHERE t.dueDate BETWEEN CURRENT_TIMESTAMP AND :futureDate")
     long countTasksDueSoon(@Param("futureDate") LocalDateTime futureDate);
@@ -59,16 +56,45 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
        "FROM Task t WHERE t.story.sprint.id = :sprintId")
     List<TaskDto.Summary> findTaskSummariesBySprintId(@Param("sprintId") Long sprintId);
 
-    @Modifying
-    @Query("UPDATE Task t SET t.status = :status WHERE t.id = :id")
-    void updateStatus(@Param("id") Long id, @Param("status") Task.TaskStatus status);
-
-
-    long countByStatus(TaskStatus status);
+    long countByStatusId(Long statusId);
 
     long countByDueDateBetween(LocalDateTime start, LocalDateTime end);
 
     long countByAssigneeId(Long userId);
 
-    Long countByAssigneeIdAndStatus(Long userId, TaskStatus status);
+    Long countByAssigneeIdAndStatusId(Long userId, Long statusId);
+
+    @Query("""
+        SELECT t FROM Task t
+        WHERE (:title IS NULL OR LOWER(t.title) LIKE LOWER(CONCAT('%', :title, '%')))
+          AND (:priority IS NULL OR t.priority = :priority)
+          AND (:assigneeId IS NULL OR t.assigneeId = :assigneeId)
+    """)
+    Page<Task> searchTasks(
+            @Param("title") String title,
+            @Param("priority") Task.Priority priority,
+            @Param("assigneeId") Long assigneeId,
+            Pageable pageable);
+
+    // Checks whether there exists at least one task in sprint where task.status.sortOrder != maxSortOrder
+    boolean existsBySprintIdAndStatus_SortOrderNot(Long sprintId, Integer sortOrder);
+
+    // Get list of tasks in sprint which are NOT in final status (i.e., need transfer)
+    @Query("SELECT t FROM Task t WHERE t.sprint.id = :sprintId AND t.status.sortOrder <> :finalSortOrder")
+    List<Task> findIncompleteTasksBySprintId(Long sprintId, Integer finalSortOrder);
+
+    boolean existsBySprintIdAndStatus_SortOrderLessThan(Long sprintId, Integer finalSortOrder);
+
+    boolean existsBySprintIdAndStatusSortOrderNot(Long sprintId, Integer sortOrder);
+
+    @Query("SELECT CASE WHEN COUNT(t) > 0 THEN true ELSE false END " +
+            "FROM Task t " +
+            "JOIN t.status s " +
+            "WHERE t.sprint.id = :sprintId " +
+            "AND s.sortOrder <> :sortOrder")
+    boolean existsTaskWithSprintIdAndStatusSortOrderNot(@Param("sprintId") Long sprintId,
+                                                        @Param("sortOrder") Integer sortOrder);
 }
+
+
+

@@ -1,6 +1,7 @@
 package com.example.projectmanagement.controller;
 
-import com.example.projectmanagement.dto.TaskDto;
+import com.example.projectmanagement.audit.annotation.AuditLog;
+import com.example.projectmanagement.dto.*;
 import com.example.projectmanagement.entity.Task;
 import com.example.projectmanagement.service.TaskService;
 import jakarta.validation.Valid;
@@ -20,28 +21,32 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/tasks")
 @CrossOrigin
+@AuditLog(entity = "Task")
 public class TaskController {
-    
+
     @Autowired
     private TaskService taskService;
-    
+
+    // ------------------------------
+    // Existing CRUD endpoints (untouched)
+    // ------------------------------
     @PostMapping
-   @PreAuthorize("hasRole('Manager')")
-    public ResponseEntity<TaskDto> createTask(@Valid @RequestBody TaskDto taskDto) {
-        TaskDto createdTask = taskService.createTask(taskDto);
+    @PreAuthorize("hasRole('Manager')")
+    public ResponseEntity<TaskCreateDto> createTask(@Valid @RequestBody TaskCreateDto taskCreateDto) {
+        TaskCreateDto createdTask = taskService.createTask(taskCreateDto);
         return new ResponseEntity<>(createdTask, HttpStatus.CREATED);
     }
-    
+
     @GetMapping("/{id}")
-   @PreAuthorize("hasAnyRole('Manager','Admin','Employee')")
-    public ResponseEntity<TaskDto> getTaskById(@PathVariable Long id) {
-        TaskDto task = taskService.getTaskById(id);
+    @PreAuthorize("hasAnyRole('Manager','Admin','Employee')")
+    public ResponseEntity<TaskViewDto> getTaskById(@PathVariable Long id) {
+        TaskViewDto task = taskService.getTaskById(id);
         return ResponseEntity.ok(task);
     }
-    
+
     @GetMapping
     @PreAuthorize("hasAnyRole('Manager','Admin','Employee')")
-    public ResponseEntity<Page<TaskDto>> getAllTasks(
+    public ResponseEntity<Page<TaskViewDto>> getAllTasks(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "id") String sortBy,
@@ -49,44 +54,25 @@ public class TaskController {
             @RequestParam(required = false) String title,
             @RequestParam(required = false) Task.Priority priority,
             @RequestParam(required = false) Long assigneeId) {
-        long start = System.currentTimeMillis();
-        
-        Sort sort = sortDir.equalsIgnoreCase("desc") ? 
-                Sort.by(sortBy).descending() : Sort.by(sortBy).ascending();
+
+        Sort sort = sortDir.equalsIgnoreCase("desc") ? Sort.by(sortBy).descending() : Sort.by(sortBy).ascending();
         Pageable pageable = PageRequest.of(page, size, sort);
-        
-        Page<TaskDto> tasks = taskService.searchTasks(title, priority, assigneeId, pageable);
-        System.out.println("**************Time taken to search tasks: " + (System.currentTimeMillis() - start) + " ms");
+
+        Page<TaskViewDto> tasks = taskService.searchTasksView(title, priority, assigneeId, pageable);
+
         return ResponseEntity.ok(tasks);
-    }
-    
-    @GetMapping("/backlog")
-   @PreAuthorize("hasAnyRole('Manager','Admin','Employee')")
-    public ResponseEntity<List<TaskDto>> getBacklogTasks() {
-        List<TaskDto> tasks = taskService.getBacklogTasks();
-        return ResponseEntity.ok(tasks);
-    }
-    
-    @GetMapping("/status/{status}")
-    @PreAuthorize("hasAnyRole('Manager','Admin','Employee')")
-    public ResponseEntity<List<TaskDto>> getTasksByStatus(@PathVariable Task.TaskStatus status) {
-        List<TaskDto> tasks = taskService.getTasksByStatus(status);
-        return ResponseEntity.ok(tasks);
-    }
-    
-    @GetMapping("/status/done/count")
-    public ResponseEntity<Long> getDoneTaskCount() {
-        long count = taskService.countTasksByStatus(Task.TaskStatus.DONE);
-        return ResponseEntity.ok(count);
     }
 
     @PutMapping("/{id}")
     @PreAuthorize("hasAnyRole('Manager','Employee')")
-    public ResponseEntity<TaskDto> updateTask(@PathVariable Long id, @Valid @RequestBody TaskDto taskDto) {
-        TaskDto updatedTask = taskService.updateTask(id, taskDto);
+    public ResponseEntity<TaskCreateDto> updateTask(
+            @PathVariable Long id,
+            @Valid @RequestBody TaskUpdateDto taskUpdateDto) {
+
+        TaskCreateDto updatedTask = taskService.updateTask(id, taskUpdateDto);
         return ResponseEntity.ok(updatedTask);
     }
-    
+
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('Manager')")
     public ResponseEntity<Void> deleteTask(@PathVariable Long id) {
@@ -94,18 +80,53 @@ public class TaskController {
         return ResponseEntity.noContent().build();
     }
 
-    @PatchMapping("/{id}/status")
-    @PreAuthorize("hasAnyRole('Manager','Admin','Employee')")
-    public ResponseEntity<Void> updateTaskStatus(
-            @PathVariable Long id,
-            @RequestBody Map<String, String> body) {
-
-        String newStatus = body.get("status");
-        taskService.updateTaskStatus(id, newStatus);
-        return ResponseEntity.ok().build();
+    @GetMapping("/user/{userId}/tasks")
+    public ResponseEntity<List<TaskTimesheetDto>> getTasksByUser(
+            @PathVariable Long userId) {
+        return ResponseEntity.ok(taskService.getTimesheetsTasksByAssignee(userId));
     }
 
+    // ------------------------------
+    // Refactored endpoints using TaskViewDto or TaskCreateDto
+    // ------------------------------
 
+    @GetMapping("/backlog")
+    @PreAuthorize("hasAnyRole('Manager','Admin','Employee')")
+    public ResponseEntity<List<TaskViewDto>> getBacklogTasks() {
+        List<TaskViewDto> tasks = taskService.getBacklogTasks().stream()
+                .map(task -> taskService.getTaskById(task.getId()))
+                .toList();
+        return ResponseEntity.ok(tasks);
+    }
+
+    @GetMapping("/status/{statusId}")
+    @PreAuthorize("hasAnyRole('Manager','Admin','Employee')")
+    public ResponseEntity<List<TaskViewDto>> getTasksByStatus(@PathVariable Long statusId) {
+        List<TaskViewDto> tasks = taskService.getTasksByStatus(statusId).stream()
+                .map(task -> taskService.getTaskById(task.getId()))
+                .toList();
+        return ResponseEntity.ok(tasks);
+    }
+
+    @GetMapping("/status/{statusId}/count")
+    public ResponseEntity<Long> getDoneTaskCount(@PathVariable Long statusId) {
+        long count = taskService.countTasksByStatus(statusId);
+        return ResponseEntity.ok(count);
+    }
+
+    @PatchMapping("/{taskId}/status")
+    public ResponseEntity<TaskStatusUpdateDto> updateTaskStatus(
+            @PathVariable Long taskId,
+            @RequestBody Map<String, Long> payload) {
+
+        Long statusId = payload.get("statusId");
+        if (statusId == null) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        TaskStatusUpdateDto updated = taskService.updateTaskStatus(taskId, statusId);
+        return ResponseEntity.ok(updated);
+    }
 
     @GetMapping("/story/{storyId}/count")
     @PreAuthorize("hasAnyRole('Manager','Admin','Employee')")
@@ -113,10 +134,14 @@ public class TaskController {
         long count = taskService.countTasksByStoryId(storyId);
         return ResponseEntity.ok(Map.of("storyId", storyId, "taskCount", count));
     }
+
     @GetMapping("/assignee/{assigneeId}")
     @PreAuthorize("hasAnyRole('Manager','Admin','Employee')")
-    public ResponseEntity<List<TaskDto>> getTasksByAssignee(@PathVariable Long assigneeId) {
-        List<TaskDto> tasks = taskService.getTasksByAssignee(assigneeId);
+    public ResponseEntity<List<TaskViewDto>> getTasksByAssignee(@PathVariable Long assigneeId) {
+        List<TaskViewDto> tasks = taskService.getTasksByAssignee(assigneeId).stream()
+                .map(task -> taskService.getTaskById(task.getId()))
+                .toList();
         return ResponseEntity.ok(tasks);
     }
+
 }

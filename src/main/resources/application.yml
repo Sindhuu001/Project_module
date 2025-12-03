@@ -1,0 +1,22 @@
+risk:
+  categories:
+    - name: Technical
+      description: Technical-related risks
+    - name: Requirements
+      description: Risks arising from unclear or changing requirements
+    - name: People
+      description: Risks related to team, skills, availability, communication
+    - name: Dependencies
+      description: Risks related to external/internal dependencies
+    - name: Security
+      description: Security vulnerabilities or compliance risks
+    - name: Performance
+      description: Performance-related risks
+
+  default-statuses:
+    - IDENTIFIED
+    - ANALYZED
+    - MITIGATION_PLANNED
+    - MONITORING
+    - MITIGATED
+    - CLOSED

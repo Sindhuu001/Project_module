@@ -1,5 +1,8 @@
 package com.example.projectmanagement.controller;
+import com.example.projectmanagement.audit.annotation.AuditLog;
+import com.example.projectmanagement.dto.SprintBurndownResponse;
 import com.example.projectmanagement.dto.SprintDto;
+import com.example.projectmanagement.dto.SprintPopupResponse;
 import com.example.projectmanagement.dto.TaskDto;
 import com.example.projectmanagement.dto.UserDto;
 import com.example.projectmanagement.entity.Sprint;
@@ -17,12 +20,14 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @RestController
+@AuditLog(entity = "Sprint")
 @RequestMapping("/api/sprints")
 @CrossOrigin
 public class SprintController {
 
     @Autowired
     private SprintService sprintService;
+
 
     @Autowired
     private TaskService taskService;
@@ -69,13 +74,13 @@ public class SprintController {
         return ResponseEntity.ok(taskService.getTaskSummariesBySprintId(sprintId));
     }
 
-    @PostMapping("/{sprintId}/tasks")
-    @PreAuthorize("hasRole('Manager')")
-    public ResponseEntity<TaskDto> addTaskToSprint(@PathVariable Long sprintId, @Valid @RequestBody TaskDto taskDto) {
-        taskDto.setSprintId(sprintId);
-        TaskDto createdTask = taskService.createTask(taskDto);
-        return new ResponseEntity<>(createdTask, HttpStatus.CREATED);
-    }
+//    @PostMapping("/{sprintId}/tasks")
+//    @PreAuthorize("hasRole('Manager')")
+//    public ResponseEntity<TaskDto> addTaskToSprint(@PathVariable Long sprintId, @Valid @RequestBody TaskDto taskDto) {
+//        taskDto.setSprintId(sprintId);
+//        TaskDto createdTask = taskService.createTask(taskDto);
+//        return new ResponseEntity<>(createdTask, HttpStatus.CREATED);
+//    }
 
 //     @PostMapping("/{sprintId}/tasks/{taskId}")
 //    @PreAuthorize("hasRole('Manager')")
@@ -144,4 +149,26 @@ public class SprintController {
         sprintService.deleteSprint(id, currentUserId.getId());
         return ResponseEntity.noContent().build();
     }
+
+    // Frontend calls to know whether to popup
+    @GetMapping("/{id}/popup-status")
+    public ResponseEntity<SprintPopupResponse> getPopupStatus(@PathVariable("id") Long sprintId) {
+        SprintPopupResponse resp = sprintService.checkSprintPopup(sprintId);
+        return ResponseEntity.ok(resp);
+    }
+
+    // Frontend calls after user chooses an option
+    @PostMapping("/{id}/finish")
+    public ResponseEntity<String> finishSprint(
+            @PathVariable("id") Long sprintId,
+            @RequestParam("option") String option // NEXT_SPRINT or BACKLOG
+    ) {
+        sprintService.finishSprintWithOption(sprintId, option);
+        return ResponseEntity.ok("Sprint finished with option: " + option);
+    }
+    @GetMapping("/{sprintId}/burndown")
+public SprintBurndownResponse getBurndownChart(@PathVariable Long sprintId) {
+    return sprintService.getSprintBurndown(sprintId);
+}
+
 }

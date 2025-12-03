@@ -1,109 +1,60 @@
 package com.example.projectmanagement.controller;
 
-import com.example.projectmanagement.dto.BugDto;
-import com.example.projectmanagement.entity.Bug;
+import com.example.projectmanagement.dto.UserDto;
+import com.example.projectmanagement.dto.testing.BugCreateRequest;
+import com.example.projectmanagement.dto.testing.BugResponse;
+import com.example.projectmanagement.dto.testing.BugStatusUpdateRequest;
+import com.example.projectmanagement.dto.testing.BugSummaryResponse;
+import com.example.projectmanagement.security.CurrentUser;
 import com.example.projectmanagement.service.BugService;
-import org.springframework.beans.factory.annotation.Autowired;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
 import java.util.List;
 
+
 @RestController
-@RequestMapping("/api/bugs")
-@CrossOrigin
+@RequestMapping("/api/testing/bugs")
+@RequiredArgsConstructor
 public class BugController {
 
-    @Autowired
-    private BugService bugService;
+    private final BugService bugService;
 
-    // ✅ Create new Bug
     @PostMapping
-    public ResponseEntity<BugDto> createBug(@RequestBody BugDto bugDto) {
-        BugDto createdBug = bugService.createBug(bugDto);
-        return ResponseEntity.ok(createdBug);
+    public ResponseEntity<BugResponse> createBug(
+            @Valid @RequestBody BugCreateRequest req,
+            @CurrentUser UserDto currentUser
+    ) {
+        BugResponse resp = bugService.createBug(req, currentUser.getId());
+        return ResponseEntity.ok(resp);
     }
 
-    // ✅ Get all Bugs
-    @GetMapping
-    public ResponseEntity<List<BugDto>> getAllBugs() {
-        List<BugDto> bugs = bugService.getAllBugs();
+    @PutMapping("/{bugId}/status")
+    public ResponseEntity<BugResponse> updateStatus(
+            @PathVariable Long bugId,
+            @Valid @RequestBody BugStatusUpdateRequest req,
+            @CurrentUser UserDto currentUser
+    ) {
+        BugResponse resp = bugService.updateBugStatus(bugId, req, currentUser.getId());
+        return ResponseEntity.ok(resp);
+    }
+
+    @GetMapping("/projects/{projectId}")
+    public ResponseEntity<Page<BugResponse>> getBugsByProject(
+            @PathVariable Long projectId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        Page<BugResponse> bugs = bugService.findBugsByProjectId(projectId, page, size);
         return ResponseEntity.ok(bugs);
     }
 
-    // ✅ Get Bug by ID
-    @GetMapping("/{id}")
-    public ResponseEntity<BugDto> getBugById(@PathVariable Long id) {
-        BugDto bug = bugService.getBugById(id);
-        return ResponseEntity.ok(bug);
-    }
-
-    // ✅ Get Bugs by Project
-    @GetMapping("/project/{projectId}")
-    public ResponseEntity<List<BugDto>> getBugsByProject(@PathVariable Long projectId) {
-        List<BugDto> bugs = bugService.getBugsByProject(projectId);
-        return ResponseEntity.ok(bugs);
-    }
-
-    // ✅ Get Bugs by Assignee
-    @GetMapping("/assignee/{userId}")
-    public ResponseEntity<List<BugDto>> getBugsByAssignee(@PathVariable Long userId) {
-        List<BugDto> bugs = bugService.getBugsByAssignee(userId);
-        return ResponseEntity.ok(bugs);
-    }
-
-    // ✅ Get Bugs by Sprint
-    @GetMapping("/sprint/{sprintId}")
-    public ResponseEntity<List<BugDto>> getBugsBySprint(@PathVariable Long sprintId) {
-        List<BugDto> bugs = bugService.getBugsBySprint(sprintId);
-        return ResponseEntity.ok(bugs);
-    }
-
-    // ✅ Get Bugs by Status
-    @GetMapping("/status/{status}")
-    public ResponseEntity<List<BugDto>> getBugsByStatus(@PathVariable Bug.Status status) {
-        List<BugDto> bugs = bugService.getBugsByStatus(status);
-        return ResponseEntity.ok(bugs);
-    }
-
-    // ✅ Get Bugs by Severity
-    @GetMapping("/severity/{severity}")
-    public ResponseEntity<List<BugDto>> getBugsBySeverity(@PathVariable Bug.Severity severity) {
-        List<BugDto> bugs = bugService.getBugsBySeverity(severity);
-        return ResponseEntity.ok(bugs);
-    }
-
-    // ✅ Update Bug (full update)
-    @PutMapping("/{id}")
-    public ResponseEntity<BugDto> updateBug(@PathVariable Long id, @RequestBody BugDto bugDto) {
-        BugDto updatedBug = bugService.updateBug(id, bugDto);
-        return ResponseEntity.ok(updatedBug);
-    }
-
-    // ✅ Partial update for Status only
-    @PatchMapping("/{id}/status")
-    public ResponseEntity<BugDto> updateBugStatus(@PathVariable Long id, @RequestParam Bug.Status status) {
-        BugDto updatedBug = bugService.updateBugStatus(id, status);
-        return ResponseEntity.ok(updatedBug);
-    }
-
-    // ✅ Delete Bug
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteBug(@PathVariable Long id) {
-        bugService.deleteBug(id);
-        return ResponseEntity.noContent().build();
-    }
-
-    // ✅ Get Bugs by Epic
-    @GetMapping("/epic/{epicId}")
-    public ResponseEntity<List<BugDto>> getBugsByEpic(@PathVariable Long epicId) {
-        List<BugDto> bugs = bugService.getBugsByEpic(epicId);
-        return ResponseEntity.ok(bugs);
-    }
-
-    // ✅ Get Bugs by Task
-    @GetMapping("/task/{taskId}")
-    public ResponseEntity<List<BugDto>> getBugsByTask(@PathVariable Long taskId) {
-        List<BugDto> bugs = bugService.getBugsByTask(taskId);
+    @GetMapping("/projects/{projectId}/summaries")
+    public ResponseEntity<List<BugSummaryResponse>> getBugSummariesByProject(
+            @PathVariable Long projectId) {
+        List<BugSummaryResponse> bugs = bugService.findBugSummariesByProjectId(projectId);
         return ResponseEntity.ok(bugs);
     }
 }

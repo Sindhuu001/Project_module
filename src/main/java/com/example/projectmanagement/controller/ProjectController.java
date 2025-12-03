@@ -2,12 +2,8 @@ package com.example.projectmanagement.controller;
 
 import com.example.projectmanagement.ExternalDTO.ProjectIdName;
 import com.example.projectmanagement.ExternalDTO.ProjectTasksDto;
-import com.example.projectmanagement.dto.EpicDto;
-import com.example.projectmanagement.dto.ProjectDto;
-import com.example.projectmanagement.dto.SprintDto;
-import com.example.projectmanagement.dto.StoryDto;
-import com.example.projectmanagement.dto.TaskDto;
-import com.example.projectmanagement.dto.UserDto;
+import com.example.projectmanagement.audit.annotation.AuditLog;
+import com.example.projectmanagement.dto.*;
 import com.example.projectmanagement.security.CurrentUser;
 import com.example.projectmanagement.service.EpicService;
 import com.example.projectmanagement.service.ProjectService;
@@ -26,6 +22,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 @RestController
+@AuditLog(entity = "project")
 @RequestMapping("/api/projects")
 @CrossOrigin
 public class ProjectController {
@@ -50,6 +47,7 @@ public class ProjectController {
     @PostMapping
     @PreAuthorize("hasRole('Manager')")
     public ResponseEntity<ProjectDto> createProject(@Valid @RequestBody ProjectDto projectDto) {
+        System.out.println("*********Entering Create Project *****");
         ProjectDto createdProject = projectService.createProject(projectDto);
         return ResponseEntity.status(HttpStatus.CREATED).body(createdProject);
     }
@@ -99,25 +97,6 @@ public class ProjectController {
         return ResponseEntity.noContent().build();
     }
 
-    // ✅ GET all projects with pagination, filters
-    // @GetMapping
-    // public ResponseEntity<Page<ProjectDto>> getAllProjects(
-    // @RequestParam(defaultValue = "0") int page,
-    // @RequestParam(defaultValue = "10") int size,
-    // @RequestParam(defaultValue = "id") String sortBy,
-    // @RequestParam(defaultValue = "asc") String sortDir,
-    // @RequestParam(required = false) String name,
-    // @RequestParam(required = false) Project.ProjectStatus status) {
-
-    // Sort sort = sortDir.equalsIgnoreCase("desc") ? Sort.by(sortBy).descending() :
-    // Sort.by(sortBy).ascending();
-    // Pageable pageable = PageRequest.of(page, size, sort);
-
-    // Page<ProjectDto> projects = projectService.searchProjects(name, status,
-    // pageable);
-    // return ResponseEntity.ok(projects);
-    // }
-
     // ✅ GET Epics by project ID
     @GetMapping("/{id}/epics")
     @PreAuthorize("hasAnyRole('Manager','Admin','Employee')")
@@ -135,10 +114,17 @@ public class ProjectController {
     }
 
     // ✅ GET Tasks by project ID
-    @GetMapping("/{id}/tasks")
+    @GetMapping("/{projectId}/tasks")
     @PreAuthorize("hasAnyRole('Manager','Admin','Employee')")
-    public ResponseEntity<List<TaskDto.Summary>> getProjectTasks(@PathVariable Long id) {
-        List<TaskDto.Summary> tasks = taskService.getTaskSummariesByProject(id);
+    public ResponseEntity<List<TaskViewDto>> getProjectTasks(@PathVariable Long projectId) {
+        List<TaskViewDto> tasks = taskService.getTasksByProjectId(projectId);
+        return ResponseEntity.ok(tasks);
+    }
+
+    @GetMapping("/sprint/{sprintId}/tasks")
+    @PreAuthorize("hasAnyRole('Manager','Admin','Employee')")
+    public ResponseEntity<List<TaskViewDto>> getSprintTasks(@PathVariable Long sprintId) {
+        List<TaskViewDto> tasks = taskService.getTasksBySprintId(sprintId);
         return ResponseEntity.ok(tasks);
     }
 
@@ -147,8 +133,16 @@ public class ProjectController {
     public ResponseEntity<List<ProjectDto>> getProjectsByOwner(@CurrentUser UserDto currentUser) {
         System.out.println("******Current User:******** " + currentUser.getName() + ", Roles: " + currentUser.getRoles());
         List<ProjectDto> projects = projectService.getProjectsByOwner(currentUser.getId());
+//        List<ProjectSummary> projects = projectService.getProjectSummariesByOwner(currentUser.getId());
         return ResponseEntity.ok(projects);
     }
+
+    @GetMapping("/access")
+    public ResponseEntity<List<ProjectSummary>> getAccessibleProjects(@CurrentUser UserDto user) {
+        List<ProjectSummary> projects = projectService.getAccessibleProjects(user.getId());
+        return ResponseEntity.ok(projects);
+    }
+
 
     @GetMapping("/owner/{ownerId}")
    @PreAuthorize("hasAnyRole('Manager','Admin','Employee')")
@@ -215,38 +209,33 @@ public class ProjectController {
     @GetMapping("{id}/members")
     public ResponseEntity<List<UserDto>> getProjectMembers(@PathVariable Long id) {
         List<UserDto> members = projectService.getProjectMembers(id);
-
-
-        // if (members.isEmpty()) {
-        // return ResponseEntity.noContent().build();
-        // }
         return ResponseEntity.ok(members);
     }
-  @GetMapping("{id}/members-with-owner")
-public ResponseEntity<List<UserDto>> getProjectMembersWithOwner(@PathVariable Long id) {
-    // Get project members
-    List<UserDto> members = projectService.getProjectMembers(id);
 
-    // Get project owner
-    UserDto owner = projectService.getProjectOwner(id);
-
-    // Combine both in a single list (owner first)
-    List<UserDto> combined = new ArrayList<>();
-    if (owner != null) {
-        combined.add(owner);
-    }
-    if (members != null && !members.isEmpty()) {
-        // Avoid duplicate if owner is also listed as a member
-        combined.addAll(
-            members.stream()
-                   .filter(m -> !m.getId().equals(owner.getId()))
-                   .collect(Collectors.toList())
-        );
+    @GetMapping("{id}/members-with-owner")
+    public ResponseEntity<List<UserDto>> getProjectMembersWithOwner(@PathVariable Long id) {
+        List<UserDto> members = projectService.getProjectMembers(id);
+        UserDto owner = projectService.getProjectOwner(id);
+        List<UserDto> combined = new ArrayList<>();
+        if (owner != null) {
+            combined.add(owner);
+        }
+        if (members != null && !members.isEmpty()) {
+            combined.addAll(
+                members.stream()
+                       .filter(m -> !m.getId().equals(owner.getId()))
+                       .collect(Collectors.toList())
+            );
+        }
+        return ResponseEntity.ok(combined);
     }
 
-    return ResponseEntity.ok(combined);
-}
-
-
+    @GetMapping("/owner/period")
+    public ResponseEntity<List<ProjectDto>> getProjectsByOwner(@CurrentUser UserDto currentUser,@RequestParam String month, @RequestParam int year) {
+        String period = month + "-" + year;
+        List<ProjectDto> projects = projectService.getProjectsByOwner(currentUser.getId(), period);
+//        List<ProjectSummary> projects = projectService.getProjectSummariesByOwner(currentUser.getId());
+        return ResponseEntity.ok(projects);
+    }
     
 }

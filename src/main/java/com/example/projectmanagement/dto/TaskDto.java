@@ -1,5 +1,6 @@
 package com.example.projectmanagement.dto;
 
+import com.example.projectmanagement.entity.Status;
 import com.example.projectmanagement.entity.Task;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -27,18 +28,10 @@ public class TaskDto {
 
     @Size(max = 1000, message = "Description cannot exceed 1000 characters")
     private String description;
-
-    private Task.TaskStatus status;   // BACKLOG, TODO, IN_PROGRESS, REVIEW, DONE, CLOSED, etc.
-    private Task.Priority priority;   // LOW, MEDIUM, HIGH, CRITICAL
-
-    private Integer storyPoints;      // Agile estimation points
-    private boolean billable;         // true / false
-
-    private LocalDateTime dueDate;    // Task due date
-    private LocalDateTime createdAt;  // Created timestamp
-    private LocalDateTime updatedAt;  // Updated timestamp
-
-    // === Foreign Keys (for lightweight payloads) ===
+    private Status status;
+    private Task.Priority priority;
+    private Integer storyPoints;
+    private LocalDateTime dueDate;
     @NotNull(message = "Project ID is required")
     private Long projectId;
 
@@ -78,7 +71,7 @@ public class TaskDto {
     public static class Summary {
         private Long id;
         private String title;
-        private Task.TaskStatus status;
+        private Status status;
         private Long storyId;
         private Long sprintId;
         private Task.Priority priority;
@@ -91,7 +84,7 @@ public class TaskDto {
         private LocalDateTime dueDate;
 
         // ✅ Constructor for 10-argument query (project-level)
-        public Summary(Long id, String title, Task.TaskStatus status,
+        public Summary(Long id, String title, Status status,
                     Long storyId, Long sprintId, Task.Priority priority,
                     Long reporterId, Long assigneeId,
                     LocalDateTime createdAt, boolean isBillable) {
@@ -108,7 +101,7 @@ public class TaskDto {
         }
 
         // ✅ Constructor for 5-argument query (sprint-level)
-        public Summary(Long id, String title, Task.TaskStatus status,
+        public Summary(Long id, String title, Status status,
                     Long storyId, Long sprintId) {
             this.id = id;
             this.title = title;
@@ -116,6 +109,16 @@ public class TaskDto {
             this.storyId = storyId;
             this.sprintId = sprintId;
         }
+    }
+
+    public void setBillable(boolean billable) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'setBillable'");
+    }
+
+    public void setStartDate(LocalDateTime startDate) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'setStartDate'");
     }
 
 }

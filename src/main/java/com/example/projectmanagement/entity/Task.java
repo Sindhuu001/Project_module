@@ -1,5 +1,6 @@
 package com.example.projectmanagement.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
@@ -11,6 +12,8 @@ import org.hibernate.annotations.UpdateTimestamp;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import com.fasterxml.jackson.annotation.JsonBackReference;
+
 
 @Entity
 @Table(
@@ -18,6 +21,7 @@ import java.util.List;
     uniqueConstraints = @UniqueConstraint(columnNames = {"title", "project_id", "story_id"})
 )
 @Data
+
 public class Task {
 
     @Id
@@ -36,9 +40,9 @@ public class Task {
     @Size(max = 1000, message = "Description cannot exceed 1000 characters")
     private String description;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private TaskStatus status = TaskStatus.BACKLOG;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "status_id", nullable = false)
+    private Status status;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -46,17 +50,24 @@ public class Task {
 
     @Column(name = "story_points")
     private Integer storyPoints;
+     @Column(name = "start_date")
+    private LocalDateTime startDate;
 
     @Column(name = "due_date")
     private LocalDateTime dueDate;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "project_id", nullable = false)
+    @JsonBackReference
     private Project project;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "story_id", nullable = false)
-    private Story story; // each task belongs to a story
+    @JoinColumn(name = "story_id", nullable = true) // story optional
+    private Story story;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "sprint_id", nullable = true) // sprint optional
+    private Sprint sprint;
 
     private Long assigneeId;
     private Long reporterId;
@@ -75,13 +86,9 @@ public class Task {
 
     // Transient getter for sprintId (derived from story)
     @Transient
-    @JsonProperty("sprintId")
-    public Long getSprintId() {
-        return story != null && story.getSprint() != null ? story.getSprint().getId() : null;
-    }
-
-    public enum TaskStatus {
-        BACKLOG, TODO, IN_PROGRESS, DONE
+    @JsonProperty("effectiveSprintId")
+    public Long getEffectiveSprintId() {
+        return sprint != null ? sprint.getId() : (story != null && story.getSprint() != null ? story.getSprint().getId() : null);
     }
 
     public enum Priority {

@@ -1,5 +1,6 @@
 package com.example.projectmanagement.repository;
 
+import com.example.projectmanagement.dto.ProjectSummary;
 import com.example.projectmanagement.entity.Project;
 import com.example.projectmanagement.entity.Project.ProjectStatus;
 
@@ -10,6 +11,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -46,4 +48,38 @@ public interface ProjectRepository extends JpaRepository<Project, Long> {
     List<Project> findByMemberIdsAndStatus(Long userId, ProjectStatus active);
 
     Long countByStatus(Project.ProjectStatus status);
+
+    @Query("SELECT CASE WHEN COUNT(p) > 0 THEN TRUE ELSE FALSE END " +
+            "FROM Project p " +
+            "WHERE p.id = :projectId AND :userId IN elements(p.memberIds)")
+    boolean isUserMemberOfProject(@Param("projectId") Long projectId,
+                                  @Param("userId") Long userId);
+
+    @Query("""
+       SELECT CASE WHEN COUNT(p) > 0 THEN TRUE ELSE FALSE END
+       FROM Project p
+       WHERE p.id = :projectId 
+         AND (p.ownerId = :userId OR :userId IN elements(p.memberIds))
+       """)
+    boolean isUserPartOfProject(@Param("projectId") Long projectId,
+                                @Param("userId") Long userId);
+
+    @Query("SELECT p.id AS id, p.name AS name, p.projectKey AS projectKey, p.description AS description, p.status AS status " +
+            "FROM Project p WHERE p.ownerId = :ownerId")
+    List<ProjectSummary> findProjectSummariesByOwnerId(@Param("ownerId") Long ownerId);
+
+    @Query("SELECT DISTINCT p.id AS id, p.name AS name, p.projectKey AS projectKey, " +
+            "p.description AS description, p.status AS status " +
+            "FROM Project p WHERE p.ownerId = :userId OR :userId MEMBER OF p.memberIds")
+    List<ProjectSummary> findAccessibleProjectSummaries(@Param("userId") Long userId);
+    @Query("SELECT p FROM Project p " +
+        "WHERE p.ownerId = :ownerId " +
+        "AND p.startDate <= :monthEnd " +
+        "AND (p.endDate IS NULL OR p.endDate >= :monthStart)")
+    List<Project> findActiveProjectsByPeriod(Long ownerId,
+                                                LocalDateTime monthStart,
+                                                LocalDateTime monthEnd);
+
+
+
 }

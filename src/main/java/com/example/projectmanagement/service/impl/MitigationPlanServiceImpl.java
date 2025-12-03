@@ -53,12 +53,13 @@ public class MitigationPlanServiceImpl implements MitigationPlanService {
                 .orElseThrow(() -> new IllegalArgumentException("Risk not found"));
 
         List<MitigationPlan> plans = planRepository.findByRisk(risk);
-        if (plans.isEmpty()) {
-            throw new IllegalArgumentException("No mitigation plans found for this risk");
-        }
 
-        return plans.stream().map(this::toResponse).collect(Collectors.toList());
+        // ✅ RETURN EMPTY LIST (NOT ERROR)
+        return plans.stream()
+                .map(this::toResponse)
+                .collect(Collectors.toList());
     }
+
 
     @Override
     public MitigationPlanResponse updateStatus(Long id, MitigationPlanStatusPatchRequest request) {

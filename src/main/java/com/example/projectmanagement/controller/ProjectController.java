@@ -4,6 +4,7 @@ import com.example.projectmanagement.ExternalDTO.ProjectIdName;
 import com.example.projectmanagement.ExternalDTO.ProjectTasksDto;
 import com.example.projectmanagement.audit.annotation.AuditLog;
 import com.example.projectmanagement.dto.*;
+import com.example.projectmanagement.dto.TaskDto.Summary;
 import com.example.projectmanagement.security.CurrentUser;
 import com.example.projectmanagement.service.EpicService;
 import com.example.projectmanagement.service.ProjectService;
@@ -236,6 +237,12 @@ public class ProjectController {
         List<ProjectDto> projects = projectService.getProjectsByOwner(currentUser.getId(), period);
 //        List<ProjectSummary> projects = projectService.getProjectSummariesByOwner(currentUser.getId());
         return ResponseEntity.ok(projects);
+    }
+
+    @GetMapping("/{id}/status-report/summary")
+    public ResponseEntity<StatusReportSummaryDto> getSummary(@PathVariable Long id){
+        StatusReportSummaryDto summary = projectService.getSummary(id);
+        return ResponseEntity.ok(summary);
     }
     
 }

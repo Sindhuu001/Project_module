@@ -65,6 +65,10 @@ public class Project {
     @JsonIgnore
     private List<Epic> epics = new ArrayList<>();
 
+    @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @JsonIgnore
+    private List<Story> stories = new ArrayList<>();
+
     @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @JsonIgnore
     private List<Sprint> sprints;

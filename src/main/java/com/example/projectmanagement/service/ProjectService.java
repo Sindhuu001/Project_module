@@ -7,8 +7,10 @@ import com.example.projectmanagement.config.ProjectStatusProperties;
 import com.example.projectmanagement.dto.ProjectDto;
 import com.example.projectmanagement.dto.ProjectSummary;
 import com.example.projectmanagement.dto.StatusDto;
+import com.example.projectmanagement.dto.StatusReportSummaryDto;
 import com.example.projectmanagement.dto.UserDto;
 import com.example.projectmanagement.entity.Project;
+import com.example.projectmanagement.entity.Task;
 import com.example.projectmanagement.exception.ValidationException;
 import com.example.projectmanagement.repository.ProjectRepository;
 import com.example.projectmanagement.repository.StatusRepository;
@@ -438,6 +440,43 @@ public class ProjectService {
                 .collect(Collectors.toList());
     }
 
+    public StatusReportSummaryDto getSummary(Long id) {
+        Project project = projectRepository.findById(id)
+            .orElseThrow(() -> new RuntimeException("Project not found"));
+        
+        List<UserDto> allUsers = userClient.findAll();
+        Map<Long, UserDto> userMap = allUsers.stream().collect(Collectors.toMap(UserDto::getId, Function.identity()));
+        StatusReportSummaryDto dto = new StatusReportSummaryDto();
+        dto.setProjectName(project.getName());
+        dto.setOwner(userMap.containsKey(project.getOwnerId())?userMap.get(project.getOwnerId()).getName():null);
+        dto.setStatus(project.getStatus());
+        dto.setCurrenStage(project.getCurrentStage());
+        dto.setMembers(project.getMemberIds().stream().map(memberId -> userMap.get(memberId).getName()).collect(Collectors.toList()));
+        dto.setStartDate(project.getStartDate());
+        dto.setEndDate(project.getEndDate());
+        
+        dto.setTotalEpics(project.getEpics().size());
+        dto.setTotalStories(project.getStories().size());
+        dto.setTotalTasks(project.getTasks().size());
 
+        // Example calculation
+        dto.setOverallPercentage(calculateOverallPercentage(project));
+
+        return dto;
+    }
+
+    private Double calculateOverallPercentage(Project project) {
+
+        List<Task> tasks = project.getTasks();
+        if (tasks == null || tasks.isEmpty()) {
+            return 0.0;
+        }
+
+        long completedTasks = tasks.stream()
+                .filter(task -> task.getStatus().getName().equalsIgnoreCase("DONE"))
+                .count();
+
+        return Math.round((completedTasks * 100.0 / tasks.size()) * 100.0) / 100.0;
+    }
 
 }

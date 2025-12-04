@@ -24,8 +24,12 @@ public class TestRunCase {
     @JoinColumn(name = "case_id")
     private TestCase testCase;
 
-    @Column(name = "assignee_id", nullable = false)
+    @Column(name = "assignee_id", nullable = true)
     private Long assigneeId;
+
+    @Column(name = "assigned_to",nullable = true)
+    private Long assignedTo;
+
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)

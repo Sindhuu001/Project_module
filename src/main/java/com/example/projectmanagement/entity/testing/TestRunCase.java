@@ -30,6 +30,8 @@ public class TestRunCase {
     @Column(name = "assigned_to",nullable = true)
     private Long assignedTo;
 
+//    @Column(name = "created_by")
+//    private  Long createdBy;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)

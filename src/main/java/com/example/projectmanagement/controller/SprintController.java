@@ -1,5 +1,6 @@
 package com.example.projectmanagement.controller;
 import com.example.projectmanagement.audit.annotation.AuditLog;
+import com.example.projectmanagement.dto.SprintBurndownResponse;
 import com.example.projectmanagement.dto.SprintDto;
 import com.example.projectmanagement.dto.SprintPopupResponse;
 import com.example.projectmanagement.dto.TaskDto;
@@ -165,4 +166,9 @@ public class SprintController {
         sprintService.finishSprintWithOption(sprintId, option);
         return ResponseEntity.ok("Sprint finished with option: " + option);
     }
+    @GetMapping("/{sprintId}/burndown")
+public SprintBurndownResponse getBurndownChart(@PathVariable Long sprintId) {
+    return sprintService.getSprintBurndown(sprintId);
+}
+
 }

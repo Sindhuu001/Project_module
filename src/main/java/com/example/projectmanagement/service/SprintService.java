@@ -2,6 +2,7 @@ package com.example.projectmanagement.service;
 
 import com.example.projectmanagement.ExternalDTO.ProjectTasksDto.TaskDto;
 import com.example.projectmanagement.client.UserClient;
+import com.example.projectmanagement.dto.SprintBurndownResponse;
 import com.example.projectmanagement.dto.SprintDto;
 import com.example.projectmanagement.dto.SprintPopupResponse;
 import com.example.projectmanagement.dto.UserDto;
@@ -27,6 +28,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
@@ -313,6 +315,72 @@ public class SprintService {
      * Move incomplete tasks according to user choice and close sprint.
      * option: "NEXT_SPRINT" or "BACKLOG"
      */
+    @Transactional(readOnly = true)
+public SprintBurndownResponse getSprintBurndown(Long sprintId) {
+
+    Sprint sprint = sprintRepository.findById(sprintId)
+            .orElseThrow(() -> new RuntimeException("Sprint not found"));
+
+    // Fetch all stories linked to this sprint
+    List<Story> stories = storyRepository.findBySprintId(sprintId);
+
+    // Find "Done" status
+    Integer doneSortOrder = statusRepository.findMaxSortOrderByProject(
+            sprint.getProject().getId()
+    );
+
+    // Total story points in Sprint
+    int totalStoryPoints = stories.stream()
+            .mapToInt(s -> s.getStoryPoints() != null ? s.getStoryPoints() : 0)
+            .sum();
+
+    LocalDate start = sprint.getStartDate().toLocalDate();
+    LocalDate end = sprint.getEndDate().toLocalDate();
+
+    List<SprintBurndownResponse.DailyBurn> dailyBurnList =
+            start.datesUntil(end.plusDays(1))
+                    .map(date -> {
+
+                        int remaining = stories.stream()
+                                .filter(story -> {
+
+                                    Status st = story.getStatus();
+
+                                    boolean isDone = st != null &&
+                                                     st.getSortOrder() == doneSortOrder;
+
+                                    // Was this story completed BEFORE this date?
+                                    boolean completedBeforeDate =
+                                            story.getUpdatedAt() != null &&
+                                            story.getUpdatedAt().toLocalDate()
+                                                .isBefore(date.plusDays(1));
+
+                                    // Remove if done AND was updated before chart date
+                                    return !(isDone && completedBeforeDate);
+                                })
+                                .mapToInt(story -> {
+                                    Integer sp = story.getStoryPoints();
+                                    return sp != null ? sp : 0;
+                                })
+                                .sum();
+
+                        SprintBurndownResponse.DailyBurn d = new SprintBurndownResponse.DailyBurn();
+                        d.setDate(date);
+                        d.setRemaining(remaining);
+                        return d;
+                    })
+                    .collect(Collectors.toList());
+
+    SprintBurndownResponse response = new SprintBurndownResponse();
+    response.setSprintId(sprintId);
+    response.setStartDate(start);
+    response.setEndDate(end);
+    response.setTotalStoryPoints(totalStoryPoints);
+    response.setDailyBurn(dailyBurnList);
+
+    return response;
+}
+
     @Transactional
     public void finishSprintWithOption(Long sprintId, String option) {
         Sprint sprint = sprintRepository.findById(sprintId)

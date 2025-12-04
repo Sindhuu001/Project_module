@@ -35,7 +35,7 @@ public class TaskCreateDto {
     private Long sprintId;
 
     private boolean isBillable;
-
+    private LocalDateTime startDate;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

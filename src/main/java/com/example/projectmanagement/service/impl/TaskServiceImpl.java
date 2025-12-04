@@ -79,7 +79,7 @@ public class TaskServiceImpl implements TaskService {
         task.setStoryPoints(taskCreateDto.getStoryPoints());
         task.setDueDate(taskCreateDto.getDueDate());
         task.setBillable(taskCreateDto.isBillable());
-
+        task.setStartDate(taskCreateDto.getStartDate());
         // 4️⃣ Assignee validation
         if (taskCreateDto.getAssigneeId() != null) {
             Long assigneeId = taskCreateDto.getAssigneeId();
@@ -160,7 +160,8 @@ public class TaskServiceImpl implements TaskService {
             existingTask.setDueDate(dto.getDueDate());
         if (dto.getBillable() != null)
             existingTask.setBillable(dto.getBillable());
-
+        if (dto.getStartDate() != null)
+            existingTask.setStartDate(dto.getStartDate());
         // Reporter
         if (dto.getReporterId() != null) {
             Long reporterId = dto.getReporterId();
@@ -408,7 +409,7 @@ public class TaskServiceImpl implements TaskService {
         dto.setReporterId(task.getReporterId());
         dto.setReporter(task.getReporterId() != null ? userMap.get(task.getReporterId())
                 : new UserDto(12345L, "Unknown User", "unknown.user@example.com", null));
-
+        dto.setStartDate(task.getStartDate());
         if (task.getStory() != null) {
             dto.setStoryId(task.getStory().getId());
             dto.setStory(storyService.convertToDto1(task.getStory(), userMap));
@@ -441,7 +442,7 @@ public class TaskServiceImpl implements TaskService {
         dto.setBillable(task.isBillable());
         dto.setCreatedAt(task.getCreatedAt());
         dto.setUpdatedAt(task.getUpdatedAt());
-
+        dto.setStartDate(task.getStartDate());
         if (task.getStatus() != null)
             dto.setStatusId(task.getStatus().getId());
         if (task.getProject() != null)
@@ -474,7 +475,7 @@ public class TaskServiceImpl implements TaskService {
         dto.setBillable(task.isBillable());
         dto.setCreatedAt(task.getCreatedAt());
         dto.setUpdatedAt(task.getUpdatedAt());
-
+        dto.setStartDate(task.getStartDate());
         if (task.getStatus() != null) {
             dto.setStatusId(task.getStatus().getId());
             dto.setStatusName(task.getStatus().getName());

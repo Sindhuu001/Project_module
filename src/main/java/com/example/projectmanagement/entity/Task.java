@@ -50,6 +50,8 @@ public class Task {
 
     @Column(name = "story_points")
     private Integer storyPoints;
+     @Column(name = "start_date")
+    private LocalDateTime startDate;
 
     @Column(name = "due_date")
     private LocalDateTime dueDate;

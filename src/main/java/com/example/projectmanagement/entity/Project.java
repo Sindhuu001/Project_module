@@ -106,6 +106,7 @@ public class Project {
         MAINTENANCE,
         COMPLETED
     }
+    
 
     public Project() {
     }

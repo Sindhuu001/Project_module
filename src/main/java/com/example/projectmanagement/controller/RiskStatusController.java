@@ -2,6 +2,7 @@ package com.example.projectmanagement.controller;
 
 import com.example.projectmanagement.dto.RiskStatusCreateRequest;
 import com.example.projectmanagement.dto.RiskStatusResponse;
+import com.example.projectmanagement.entity.RiskStatus;
 import com.example.projectmanagement.service.RiskStatusService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -27,6 +28,15 @@ public class RiskStatusController {
     ) {
         return ResponseEntity.ok(riskStatusService.createRiskStatus(request));
     }
+
+    @GetMapping("/risk-statuses/{id}")
+    @PreAuthorize("hasAnyRole('Manager','Admin','Employee')")
+    public ResponseEntity<RiskStatus> getRiskStatus(
+            @PathVariable Long id
+    ) {
+        return ResponseEntity.ok(riskStatusService.getRiskStatus(id));
+    }
+
 
     // READ: GET by project
     @GetMapping("/projects/{projectId}/risk-statuses")

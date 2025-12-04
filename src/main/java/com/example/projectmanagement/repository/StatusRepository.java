@@ -25,5 +25,8 @@ public interface StatusRepository extends JpaRepository<Status, Long> {
     @Query("SELECT s FROM Status s WHERE s.id=:statusId")
     Status findStatusById(@Param("statusId") Long statusId);
 
+   @Query("SELECT s.sortOrder FROM Status s WHERE s.name = 'Done' or s.name = 'DONE'")
+Integer findDoneSortOrder();
+
 
 }

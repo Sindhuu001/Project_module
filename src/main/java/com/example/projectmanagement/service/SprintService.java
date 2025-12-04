@@ -315,7 +315,7 @@ public class SprintService {
      * Move incomplete tasks according to user choice and close sprint.
      * option: "NEXT_SPRINT" or "BACKLOG"
      */
-    @Transactional(readOnly = true)
+   @Transactional(readOnly = true)
 public SprintBurndownResponse getSprintBurndown(Long sprintId) {
 
     Sprint sprint = sprintRepository.findById(sprintId)
@@ -347,15 +347,15 @@ public SprintBurndownResponse getSprintBurndown(Long sprintId) {
                                     Status st = story.getStatus();
 
                                     boolean isDone = st != null &&
-                                                     st.getSortOrder() == doneSortOrder;
+                                            st.getSortOrder() == doneSortOrder;
 
-                                    // Was this story completed BEFORE this date?
+                                    // FIX: use completedAt instead of updatedAt
                                     boolean completedBeforeDate =
-                                            story.getUpdatedAt() != null &&
-                                            story.getUpdatedAt().toLocalDate()
-                                                .isBefore(date.plusDays(1));
+                                            story.getCompletedAt() != null &&
+                                            story.getCompletedAt().toLocalDate()
+                                                    .isBefore(date.plusDays(1));
 
-                                    // Remove if done AND was updated before chart date
+                                    // If done AND completed before this date → remove it
                                     return !(isDone && completedBeforeDate);
                                 })
                                 .mapToInt(story -> {
@@ -380,6 +380,7 @@ public SprintBurndownResponse getSprintBurndown(Long sprintId) {
 
     return response;
 }
+
 
     @Transactional
     public void finishSprintWithOption(Long sprintId, String option) {

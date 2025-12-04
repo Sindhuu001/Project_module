@@ -18,6 +18,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -238,7 +239,7 @@ public class StoryService {
 
         // -----------------------------------------
         // CHECK: Assignee (optional)
-        // -----------------------------------------
+        // -----------------------------------------``
         if (dto.getAssigneeId() != null) {
             boolean isAssigneeValid = projectRepository.isUserPartOfProject(projectId, dto.getAssigneeId());
 
@@ -267,7 +268,13 @@ public class StoryService {
         Status status = statusRepository.findById(dto.getStatusId())
                 .orElseThrow(() -> new ResourceNotFoundException("Status not found"));
         story.setStatus(status);
+        Integer doneSortOrder = statusRepository.findMaxSortOrderByProject(projectId);
 
+if (status.getSortOrder() == doneSortOrder) {
+    story.setCompletedAt(LocalDateTime.now());
+} else {
+    story.setCompletedAt(null);
+}
         // -----------------------------------------
         // SPRINT UPDATE (nullable)
         // -----------------------------------------
@@ -319,6 +326,12 @@ public class StoryService {
         Status status = statusRepository.findById(statusId)
                 .orElseThrow(() -> new RuntimeException("Status not found with id: " + statusId));
         story.setStatus(status);
+         Integer doneSortOrder = statusRepository.findDoneSortOrder(); // however you get DONE's sort order
+    if (status.getSortOrder() != null && status.getSortOrder().equals(doneSortOrder)) {
+        story.setCompletedAt(LocalDateTime.now());
+    } else {
+        story.setCompletedAt(null);  // optional: clear if moved out of DONE
+    }
         Story updatedStory = storyRepository.save(story);
         return convertToDto(updatedStory);
     }

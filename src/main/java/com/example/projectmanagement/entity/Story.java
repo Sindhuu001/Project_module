@@ -82,7 +82,7 @@ private LocalDateTime dueDate;
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "sprint_id", nullable = true)
     private Sprint sprint;
-
+    private LocalDateTime completedAt;
     @OneToMany(mappedBy = "story", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Comment> comments = new ArrayList<>();
 

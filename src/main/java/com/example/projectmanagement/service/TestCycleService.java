@@ -11,4 +11,5 @@ public interface TestCycleService {
     List<TestCycleSummaryResponse> getCyclesForProject(Long projectId);
 
     TestCycleSummaryResponse getCycleDetail(Long cycleId);
+    List<TestCycleSummaryResponse> getAllCycles();
 }

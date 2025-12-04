@@ -13,4 +13,6 @@ public interface TestRunCaseStepRepository extends JpaRepository<TestRunCaseStep
     Optional<TestRunCaseStep> findByRunCaseIdAndStepId(Long runCaseId, Long stepId);
 
     boolean existsByRunCaseId(Long runCaseId);
+
+    int countByRunCaseId(Long runCaseId);
 }

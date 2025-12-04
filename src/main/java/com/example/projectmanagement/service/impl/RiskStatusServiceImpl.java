@@ -128,4 +128,13 @@ public class RiskStatusServiceImpl implements RiskStatusService {
                 .map(this::toResponse)
                 .collect(Collectors.toList());
     }
+
+    @Override
+    public RiskStatus getRiskStatus(Long id) {
+        return riskStatusRepository.findById(id)
+                .orElseThrow(() ->
+                        new RuntimeException("Risk status not found with id " + id)
+                );
+    }
+
 }

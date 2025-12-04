@@ -6,6 +6,7 @@ import com.example.projectmanagement.audit.base.AuditTrailRepository;
 import com.example.projectmanagement.audit.dynamic.DynamicAuditService;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 
 import jakarta.servlet.http.HttpServletRequest;
 import org.aspectj.lang.ProceedingJoinPoint;
@@ -37,6 +38,7 @@ public class AuditAspect {
         this.dynamicAuditService = dynamicAuditService;
 
         ObjectMapper om = new ObjectMapper().findAndRegisterModules();
+        om.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
         this.objectMapper = om;
 
         System.out.println("🔥 AuditAspect bean loaded");

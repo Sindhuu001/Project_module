@@ -13,5 +13,4 @@ public interface RiskStatusRepository extends JpaRepository<RiskStatus, Long> {
     List<RiskStatus> findByProjectIdOrderBySortOrder(Long projectId);
 
 
-
 }

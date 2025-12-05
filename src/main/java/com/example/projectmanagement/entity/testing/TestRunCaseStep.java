@@ -7,8 +7,7 @@ import lombok.*;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "test_run_case_steps",
-        uniqueConstraints = @UniqueConstraint(columnNames = {"run_case_id", "step_id"}))
+@Table(name = "test_run_case_steps") // Removed unique constraint to allow null step_id
 @Getter
 @Setter
 @NoArgsConstructor
@@ -18,19 +17,27 @@ public class TestRunCaseStep {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+
     private Long id;
 
-    // Execution context: which run-case this step result belongs to
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "run_case_id")
     private TestRunCase runCase;
 
-    // Design-time step definition
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "step_id")
+    // Link to the original blueprint step. Can be NULL for ad-hoc steps.
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "step_id", nullable = true)
     private TestStep step;
 
-    // Cached step number to avoid join for ordering
+    // --- Fields for Ad-Hoc Steps ---
+    // These are populated directly for ad-hoc steps, or can be copied from the blueprint for traceability.
+    @Column(name = "action", length = 2000)
+    private String action;
+
+    @Column(name = "expected_result", length = 2000)
+    private String expectedResult;
+    // ---------------------------------
+
     @Column(name = "step_number")
     private Integer stepNumber;
 
@@ -43,6 +50,11 @@ public class TestRunCaseStep {
 
     @Column(name = "executed_by")
     private Long executedBy;
+
+    @Column(name = "created_by")
+    private Long createdBy;
+
+
 
     @Column(name = "executed_at")
     private LocalDateTime executedAt;

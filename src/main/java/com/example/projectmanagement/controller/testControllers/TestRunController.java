@@ -1,6 +1,7 @@
 package com.example.projectmanagement.controller.testControllers;
 
 import com.example.projectmanagement.dto.UserDto;
+import com.example.projectmanagement.dto.testing.AddCasesToRunRequest;
 import com.example.projectmanagement.dto.testing.TestRunCreateRequest;
 import com.example.projectmanagement.dto.testing.TestRunSummaryResponse;
 import com.example.projectmanagement.security.CurrentUser;
@@ -27,6 +28,15 @@ public class TestRunController {
         return ResponseEntity.ok(
                 testRunService.createRun(request, currentUser.getId())
         );
+    }
+
+    @PostMapping("/{runId}/add-cases")
+    public ResponseEntity<Void> addCasesToRun(
+            @PathVariable Long runId,
+            @Valid @RequestBody AddCasesToRunRequest request
+    ) {
+        testRunService.addTestCasesToRun(runId, request);
+        return ResponseEntity.ok().build();
     }
 
     @GetMapping("/cycles/{cycleId}")

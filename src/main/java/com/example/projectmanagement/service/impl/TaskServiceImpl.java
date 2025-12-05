@@ -401,7 +401,7 @@ public class TaskServiceImpl implements TaskService {
 
         if (task.getProject() != null) {
             dto.setProjectId(task.getProject().getId());
-            dto.setProject(projectService.convertToDto1(task.getProject(), userMap));
+            dto.setProject(projectService.convertToDto(task.getProject()));
         }
 
         dto.setSprintId(task.getEffectiveSprintId());

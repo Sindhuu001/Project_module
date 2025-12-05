@@ -3,6 +3,7 @@ package com.example.projectmanagement.service.impl;
 import com.example.projectmanagement.client.UserClient;
 import com.example.projectmanagement.dto.*;
 import com.example.projectmanagement.entity.*;
+import com.example.projectmanagement.exception.ResourceNotFoundException;
 import com.example.projectmanagement.repository.*;
 import com.example.projectmanagement.service.*;
 import org.modelmapper.ModelMapper;
@@ -519,5 +520,19 @@ public class TaskServiceImpl implements TaskService {
         }
 
         return dto;
+    }
+    @Override
+    public void assignStory(Long taskId, Long storyId) {
+
+        Task task = taskRepository.findById(taskId)
+                .orElseThrow(() -> new ResourceNotFoundException("Task not found: " + taskId));
+
+        Story story = storyRepository.findById(storyId)
+                .orElseThrow(() -> new ResourceNotFoundException("Story not found: " + storyId));
+
+        task.setStory(story);
+        // task.setStory(storyId); // optional based on your entity
+
+        taskRepository.save(task); // no need to return anything
     }
 }

@@ -143,5 +143,14 @@ public class TaskController {
                 .toList();
         return ResponseEntity.ok(tasks);
     }
+    @PutMapping("/{taskId}/assign-story/{storyId}")
+    public ResponseEntity<String> assignStoryToTask(
+            @PathVariable Long taskId,
+            @PathVariable Long storyId) {
+
+        taskService.assignStory(taskId, storyId);
+        return ResponseEntity.ok("Task attached to story successfully");
+    }
+
 
 }

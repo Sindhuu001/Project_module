@@ -145,4 +145,13 @@ public class StoryController {
         storyService.assignStoryToSprint(storyId, sprintId);
         return ResponseEntity.ok("Sprint assignment updated successfully.");
     }
+    @PutMapping("/{storyId}/assign-epic/{epicId}")
+    public ResponseEntity<String> assignEpicToStory(
+            @PathVariable Long storyId,
+            @PathVariable Long epicId) {
+
+        storyService.assignEpic(storyId, epicId);
+        return ResponseEntity.ok("Story attached to epic successfully");
+    }
+
 }

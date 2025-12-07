@@ -166,6 +166,7 @@ public class SprintController {
         sprintService.finishSprintWithOption(sprintId, option);
         return ResponseEntity.ok("Sprint finished with option: " + option);
     }
+
     @GetMapping("/{sprintId}/burndown")
 public SprintBurndownResponse getBurndownChart(@PathVariable Long sprintId) {
     return sprintService.getSprintBurndown(sprintId);

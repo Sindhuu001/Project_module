@@ -2,6 +2,7 @@ package com.example.projectmanagement.controller;
 
 import com.example.projectmanagement.audit.annotation.AuditLog;
 import com.example.projectmanagement.dto.*;
+import com.example.projectmanagement.dto.testing.TaskResponse;
 import com.example.projectmanagement.entity.Task;
 import com.example.projectmanagement.service.TaskService;
 import jakarta.validation.Valid;
@@ -151,6 +152,15 @@ public class TaskController {
         taskService.assignStory(taskId, storyId);
         return ResponseEntity.ok("Task attached to story successfully");
     }
+
+    @PatchMapping("/{taskId}/assign-sprint")
+    public ResponseEntity<TaskResponse> assignTaskToSprint(
+            @PathVariable Long taskId,
+            @RequestParam(required = false) Long sprintId) {
+
+        return ResponseEntity.ok(taskService.assignTaskToSprint(taskId, sprintId));
+    }
+
 
 
 }

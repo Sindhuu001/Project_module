@@ -1,6 +1,7 @@
 package com.example.projectmanagement.service;
 
 import com.example.projectmanagement.dto.*;
+import com.example.projectmanagement.dto.testing.TaskResponse;
 import com.example.projectmanagement.entity.Task;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -51,4 +52,6 @@ public interface TaskService {
     List<TaskViewDto> getTasksBySprintId(Long projectId);
 
     void assignStory(Long taskId, Long storyId);
+
+    TaskResponse assignTaskToSprint(Long taskId, Long sprintId);
 }

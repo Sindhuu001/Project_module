@@ -120,6 +120,7 @@ public class ProjectService {
         return convertToDto(project);
     }
 
+
     @Transactional(readOnly = true)
     public ProjectDto getProjectByKey(String projectKey) {
         Project project = projectRepository.findByProjectKey(projectKey)
@@ -135,6 +136,19 @@ public class ProjectService {
                 .collect(Collectors.toMap(UserDto::getId, Function.identity()));
         List<ProjectDto> dtos = projectRepository.findAll().stream()
                 .map(project -> convertToDtoWithUsers(project, userMap))
+                .collect(Collectors.toList());
+        System.out.println("*****************Time taken to fetch all projects with users: " + (System.currentTimeMillis() - start) + " ms");
+        return dtos;
+    }
+
+    @Transactional(readOnly = true)
+    public List<ProjectTimesheetDto> getAllTmsProjects() {
+        long start = System.currentTimeMillis();
+        List<UserDto> allUsers = userClient.findAll();
+        Map<Long, UserDto> userMap = allUsers.stream()
+                .collect(Collectors.toMap(UserDto::getId, Function.identity()));
+        List<ProjectTimesheetDto> dtos = projectRepository.findAll().stream()
+                .map(project -> convertToDto3(project))
                 .collect(Collectors.toList());
         System.out.println("*****************Time taken to fetch all projects with users: " + (System.currentTimeMillis() - start) + " ms");
         return dtos;
@@ -363,6 +377,28 @@ public class ProjectService {
             Set<Long> memberIds = project.getMemberIds();
             dto.setMemberIds(memberIds);
 //            dto.setMembers(userService.getUsersByIds(new ArrayList<>(memberIds)));
+        }
+
+        System.out.println("&&&&&&&&&&&&&&&&&&&&&&&&&&Time taken to convert Project to ProjectDto: " + (System.currentTimeMillis() - start) + " ms");
+        return dto;
+    }
+
+    public ProjectTimesheetDto convertToDto3(Project project) {
+        long start = System.currentTimeMillis();
+        ProjectTimesheetDto dto = ProjectTimesheetDto.builder()
+                .id(project.getId())
+                .name(project.getName())
+                .startDate(project.getStartDate())
+                .endDate(project.getEndDate())
+                .build();
+
+//        dto.setOwnerId(project.getOwnerId());
+        dto.setOwner(project.getOwnerId() != null ? safeGetUserWithRoles(project.getOwnerId()) : null);
+
+        if (project.getMemberIds() != null) {
+            Set<Long> memberIds = project.getMemberIds();
+//            dto.setMemberIds(memberIds);
+            dto.setMembers(userService.getUsersByIds(new ArrayList<>(memberIds)));
         }
 
         System.out.println("&&&&&&&&&&&&&&&&&&&&&&&&&&Time taken to convert Project to ProjectDto: " + (System.currentTimeMillis() - start) + " ms");

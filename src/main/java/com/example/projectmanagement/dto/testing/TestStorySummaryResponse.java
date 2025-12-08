@@ -4,5 +4,6 @@ public record TestStorySummaryResponse(
         Long id,
         String name,
         Long linkedStoryId,
-        int scenarioCount
+        int scenarioCount,
+        String description
 ) {}

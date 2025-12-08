@@ -1,12 +1,12 @@
 package com.example.projectmanagement.service.impl;
 
+import com.example.projectmanagement.dto.testing.*;
 import com.example.projectmanagement.entity.Project;
 import com.example.projectmanagement.repository.ProjectRepository;
 import com.example.projectmanagement.entity.Story;
 import com.example.projectmanagement.repository.StoryRepository;
-import com.example.projectmanagement.dto.testing.TestStoryCreateRequest;
-import com.example.projectmanagement.dto.testing.TestStorySummaryResponse;
 import com.example.projectmanagement.entity.testing.TestStory;
+import com.example.projectmanagement.repository.TestCaseRepository;
 import com.example.projectmanagement.repository.TestScenarioRepository;
 import com.example.projectmanagement.repository.TestStoryRepository;
 import com.example.projectmanagement.service.TestStoryService;
@@ -17,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -27,6 +28,7 @@ public class TestStoryServiceImpl implements TestStoryService {
     private final ProjectRepository projectRepository;
     private final StoryRepository storyRepository;
     private final TestScenarioRepository testScenarioRepository;
+    private final TestCaseRepository testCaseRepository;
 
     @Override
     @Transactional
@@ -57,7 +59,8 @@ public class TestStoryServiceImpl implements TestStoryService {
                 saved.getId(),
                 saved.getName(),
                 saved.getLinkedUserStory() != null ? saved.getLinkedUserStory().getId() : null,
-                0
+                0,
+                saved.getDescription()
         );
     }
 
@@ -68,7 +71,8 @@ public class TestStoryServiceImpl implements TestStoryService {
                         ts.getId(),
                         ts.getName(),
                         ts.getLinkedUserStory() != null ? ts.getLinkedUserStory().getId() : null,
-                        testScenarioRepository.countByTestStoryId(ts.getId())
+                        testScenarioRepository.countByTestStoryId(ts.getId()),
+                        ts.getDescription()
                 ))
                 .toList();
     }
@@ -80,8 +84,49 @@ public class TestStoryServiceImpl implements TestStoryService {
                         ts.getId(),
                         ts.getName(),
                         ts.getLinkedUserStory() != null ? ts.getLinkedUserStory().getId() : null,
-                        testScenarioRepository.countByTestStoryId(ts.getId())
+                        testScenarioRepository.countByTestStoryId(ts.getId()),
+                        ts.getDescription()
                 ))
                 .toList();
+    }
+
+    @Override
+    public ProjectTestDataResponse getProjectTestData(Long projectId) {
+        List<TestStory> stories = testStoryRepository.findByProjectId(projectId);
+
+        List<TestStoryData> storyData = stories.stream()
+                .map(story -> {
+                    List<TestScenarioData> scenarios = testScenarioRepository.findByTestStoryId(story.getId()).stream()
+                            .map(scenario -> {
+                                List<TestCaseData> testCases = testCaseRepository.findByScenarioId(scenario.getId()).stream()
+                                        .map(testCase -> new TestCaseData(
+                                                testCase.getId(),
+                                                testCase.getTitle(),
+                                                testCase.getPreConditions(),
+                                                testCase.getType().name(),
+                                                testCase.getPriority().name(),
+                                                testCase.getStatus()
+                                        ))
+                                        .collect(Collectors.toList());
+
+                                return new TestScenarioData(
+                                        scenario.getId(),
+                                        scenario.getTitle(),
+                                        scenario.getDescription(),
+                                        testCases
+                                );
+                            })
+                            .collect(Collectors.toList());
+
+                    return new TestStoryData(
+                            story.getId(),
+                            story.getName(),
+                            story.getDescription(),
+                            scenarios
+                    );
+                })
+                .collect(Collectors.toList());
+
+        return new ProjectTestDataResponse(storyData);
     }
 }

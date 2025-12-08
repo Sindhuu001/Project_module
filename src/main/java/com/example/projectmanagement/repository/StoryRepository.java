@@ -74,4 +74,9 @@ public interface StoryRepository extends JpaRepository<Story, Long> {
     boolean existsBySprintIdAndStatus_SortOrderNot(@Param("sprintId") Long sprintId,
                                                    @Param("finalSortOrder") Integer finalSortOrder);
 
+    @Query("SELECT CASE WHEN COUNT(s) > 0 THEN true ELSE false END " +
+            "FROM Story s " +
+            "WHERE s.sprint.id = :sprintId AND s.tasks IS EMPTY")
+    boolean existsBySprintIdWithNoTasks(@Param("sprintId") Long sprintId);
+
 }

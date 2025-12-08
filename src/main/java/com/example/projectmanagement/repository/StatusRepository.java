@@ -25,5 +25,10 @@ public interface StatusRepository extends JpaRepository<Status, Long> {
     @Query("SELECT s FROM Status s WHERE s.id=:statusId")
     Status findStatusById(@Param("statusId") Long statusId);
 
+    @Query("SELECT CASE WHEN COUNT(s) > 0 THEN true ELSE false END " +
+            "FROM Story s " +
+            "WHERE s.sprint.id = :sprintId AND s.tasks IS EMPTY")
+    boolean existsBySprintIdWithNoTasks(@Param("sprintId") Long sprintId);
+
 
 }

@@ -79,4 +79,5 @@ public interface StoryRepository extends JpaRepository<Story, Long> {
             "WHERE s.sprint.id = :sprintId AND s.tasks IS EMPTY")
     boolean existsBySprintIdWithNoTasks(@Param("sprintId") Long sprintId);
 
+    long countBySprintId(Long id);
 }

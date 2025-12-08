@@ -1,5 +1,6 @@
 package com.example.projectmanagement.exception;
 
+import com.example.projectmanagement.dto.ErrorResponseDto;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
@@ -22,6 +23,16 @@ public class GlobalExceptionHandler {
                 LocalDateTime.now()
         );
         return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(SprintCompletionException.class)
+    public ResponseEntity<ErrorResponseDto> handleSprintCompletionException(SprintCompletionException ex) {
+        ErrorResponseDto response = new ErrorResponseDto(
+                "SPRINT_COMPLETION_VALIDATION_ERROR",
+                ex.getMessage(),
+                new ErrorResponseDto.ErrorDataDto(ex.getPendingTasks(), ex.getPendingStories())
+        );
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
     }
     
     @ExceptionHandler(MethodArgumentNotValidException.class)

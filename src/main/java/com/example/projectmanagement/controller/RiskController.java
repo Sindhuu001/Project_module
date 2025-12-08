@@ -40,8 +40,8 @@ public class RiskController {
     @GetMapping("/linked")
     public RiskResponseDTO getRisksWithPagination(
             @RequestParam Long projectId,
-            @RequestParam RiskLink.LinkedType linkedType,
-            @RequestParam Long linkedId,
+            @RequestParam(required = false) RiskLink.LinkedType linkedType,
+            @RequestParam(required = false) Long linkedId,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(required = false) String severity

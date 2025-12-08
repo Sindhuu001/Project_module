@@ -82,6 +82,8 @@ public class Task {
 
     private Long assigneeId;
     private Long reporterId;
+
+    @Column(name = "is_billable")
     private boolean billable;
 
     /* ------------------------

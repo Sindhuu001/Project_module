@@ -148,7 +148,7 @@ public class ProjectService {
         Map<Long, UserDto> userMap = allUsers.stream()
                 .collect(Collectors.toMap(UserDto::getId, Function.identity()));
         List<ProjectTimesheetDto> dtos = projectRepository.findAll().stream()
-                .map(project -> convertToDtoWithUsers(project, userMap))
+                .map(project -> convertToDtoWithUsers1(project, userMap))
                 .collect(Collectors.toList());
         System.out.println("*****************Time taken to fetch all projects with users: " + (System.currentTimeMillis() - start) + " ms");
         return dtos;
@@ -167,6 +167,20 @@ public class ProjectService {
 //                        .filter(Objects::nonNull)
 //                        .collect(Collectors.toList())
 //        );
+        System.out.println("###########################Time taken to convert single Project to ProjectDto: " + (System.currentTimeMillis() - start) + " ms");
+        return dto;
+    }
+
+    public ProjectTimesheetDto convertToDtoWithUsers1(Project project, Map<Long, UserDto> userMap) {
+        long start = System.currentTimeMillis();
+        ProjectTimesheetDto dto = modelMapper.map(project, ProjectTimesheetDto.class);
+        dto.setOwner(userMap.get(project.getOwnerId()));
+        dto.setMembers(
+                project.getMemberIds().stream()
+                        .map(userMap::get)
+                        .filter(Objects::nonNull)
+                        .collect(Collectors.toList())
+        );
         System.out.println("###########################Time taken to convert single Project to ProjectDto: " + (System.currentTimeMillis() - start) + " ms");
         return dto;
     }

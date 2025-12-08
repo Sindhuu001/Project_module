@@ -148,7 +148,7 @@ public class ProjectService {
         Map<Long, UserDto> userMap = allUsers.stream()
                 .collect(Collectors.toMap(UserDto::getId, Function.identity()));
         List<ProjectTimesheetDto> dtos = projectRepository.findAll().stream()
-                .map(project -> convertToDto3(project))
+                .map(project -> convertToDtoWithUsers(project, userMap))
                 .collect(Collectors.toList());
         System.out.println("*****************Time taken to fetch all projects with users: " + (System.currentTimeMillis() - start) + " ms");
         return dtos;

@@ -6,7 +6,6 @@ import com.example.projectmanagement.service.RiskIssueQueryService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.web.bind.annotation.*;
 
@@ -20,34 +19,24 @@ public class RiskLeftPanelController {
     @GetMapping("/issues")
     public Page<RiskIssueSummaryDTO> getIssuesWithRisks(
             @PathVariable Long projectId,
-            @RequestParam LinkedType issueType,
+            @RequestParam(required = false) LinkedType issueType, // ✅ OPTIONAL
             @RequestParam(required = false) String issueStatus,
             @RequestParam(required = false) Long sprintId,
             Pageable pageable
     ) {
-        // Determine safe sort property based on issue type
-        String sortProperty;
-        switch (issueType) {
-            case Epic -> sortProperty = "name";       // Epic.name
-            case Story -> sortProperty = "title";     // Story.title
-            case Task -> sortProperty = "title";      // Task.title
-            default -> sortProperty = "id";           // fallback
-        }
 
-        // Create safe Pageable with correct sort
+        // ✅ enforce safe pageable (avoid invalid sort)
         Pageable safePageable = PageRequest.of(
                 pageable.getPageNumber(),
                 pageable.getPageSize()
-//                Sort.by(sortProperty).ascending()
         );
 
         return service.getIssuesWithRisks(
                 projectId,
-                issueType,
+                issueType,       // ✅ can be null → ALL
                 issueStatus,
                 sprintId,
                 safePageable
         );
     }
-
 }

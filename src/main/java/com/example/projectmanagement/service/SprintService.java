@@ -95,30 +95,37 @@ public class SprintService {
         return convertToDto(savedSprint);
     }
 
-     public SprintDto startSprint(Long id) {
-    // 1. Find the sprint
-    Sprint sprint = sprintRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("Sprint not found with id: " + id));
+    public SprintDto startSprint(Long id) {
+        // 1. Find the sprint
+        Sprint sprint = sprintRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Sprint not found with id: " + id));
 
-    // 2. Ensure it's in PLANNED state (not PLANNING, assuming typo)
-    if (sprint.getStatus() != Sprint.SprintStatus.PLANNING) {
-        throw new RuntimeException("Only planned sprints can be started");
+        // 2. Ensure it's in PLANNED state
+        if (sprint.getStatus() != Sprint.SprintStatus.PLANNING) {
+            throw new IllegalStateException("Only planned sprints can be started");
+        }
+
+        // 3. Ensure the sprint is not empty
+        long taskCount = taskRepository.countBySprintId(id);
+        long storyCount = storyRepository.countBySprintId(id);
+        if (taskCount == 0 && storyCount == 0) {
+            throw new IllegalStateException("Cannot start an empty sprint. Add at least one task or story.");
+        }
+
+        // 4. Ensure no other ACTIVE sprint exists in this project
+        boolean hasActiveSprint = sprintRepository.existsActiveSprintInProject(sprint.getProject().getId());
+        if (hasActiveSprint) {
+            throw new IllegalStateException("Another active sprint already exists in this project.");
+        }
+
+        // 5. Update sprint status and time
+        sprint.setStatus(Sprint.SprintStatus.ACTIVE);
+        sprint.setStartedAt(LocalDateTime.now());
+
+        // 6. Save and return
+        Sprint updatedSprint = sprintRepository.save(sprint);
+        return convertToDto(updatedSprint);
     }
-
-    // 3. Ensure no other ACTIVE sprint exists in this project
-    boolean hasActiveSprint = sprintRepository.existsActiveSprintInProject(sprint.getProject().getId());
-    if (hasActiveSprint) {
-        throw new RuntimeException("Another active sprint already exists in this project.");
-    }
-
-    // 4. Update sprint status and time (remove startedBy since no user)
-    sprint.setStatus(Sprint.SprintStatus.ACTIVE);
-    sprint.setStartedAt(LocalDateTime.now());
-
-    // 5. Save and return
-    Sprint updatedSprint = sprintRepository.save(sprint);
-    return convertToDto(updatedSprint);
-}
 
     public SprintDto completeSprint(Long id) {
         // 1️⃣ Fetch sprint by ID

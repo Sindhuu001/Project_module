@@ -1,5 +1,6 @@
 package com.example.projectmanagement.controller.testControllers;
 
+import com.example.projectmanagement.dto.UserDto;
 import com.example.projectmanagement.dto.testing.BulkAssignRequest;
 import com.example.projectmanagement.dto.testing.BulkExecutionRequest;
 import com.example.projectmanagement.dto.testing.CloneRunRequest;
@@ -9,6 +10,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import com.example.projectmanagement.security.CurrentUser;
 
 import java.security.Principal;
 
@@ -24,10 +26,10 @@ public class TestRunBulkController {
     public ResponseEntity<Void> bulkAssign(
             @PathVariable Long runId,
             @Valid @RequestBody BulkAssignRequest req,
-            Principal principal
+            @CurrentUser UserDto currentUser
     ) {
-        Long userId = principal == null ? null : Long.parseLong(principal.getName());
-        bulkService.bulkAssign(runId, req, userId);
+//        Long userId = principal == null ? null : Long.parseLong(principal.getName());
+        bulkService.bulkAssign(runId, req, currentUser.getId());
         return ResponseEntity.ok().build();
     }
 

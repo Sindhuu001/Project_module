@@ -15,6 +15,7 @@ import com.example.projectmanagement.service.UserService;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Service
@@ -139,12 +140,21 @@ public class RiskServiceImpl implements RiskService {
 
         Pageable pageable = PageRequest.of(page - 1, size, Sort.by("id").descending());
 
-        Page<Risk> risksPage =
-                riskRepository.findByRiskLinks_LinkedTypeAndRiskLinks_LinkedId(
-                        linkedType,
-                        linkedId,
-                        pageable
-                );
+        Page<Risk> risksPage;
+
+        // 🔥 KEY LOGIC
+        if (linkedType == null || linkedId == null) {
+            // ✅ ALL linked entities
+            risksPage = riskRepository.findAllLinkedRisks(projectId, pageable);
+        } else {
+            // ✅ Specific Epic / Sprint / Story / Task
+            risksPage =
+                    riskRepository.findByRiskLinks_LinkedTypeAndRiskLinks_LinkedId(
+                            linkedType,
+                            linkedId,
+                            pageable
+                    );
+        }
 
         List<RiskItemDTO> items = risksPage.getContent().stream()
                 .map(risk -> {
@@ -179,17 +189,22 @@ public class RiskServiceImpl implements RiskService {
                             status,
                             owner,
                             reporter,
-                            risk.getOwnerId() != null ? risk.getOwnerId() : null,
-                            risk.getReporterId() != null ? risk.getReporterId(): null
+                            risk.getOwnerId(),
+                            risk.getReporterId()
                     );
                 })
-                .filter(r -> r != null)
+                .filter(Objects::nonNull)
                 .toList();
 
         RiskSummaryDTO summary = new RiskSummaryDTO(
                 (int) risksPage.getTotalElements(),
-                (int) items.stream().filter(i -> "High".equalsIgnoreCase(i.getSeverity())).count(),
-                items.stream().mapToInt(RiskItemDTO::getRiskScore).average().orElse(0.0)
+                (int) items.stream()
+                        .filter(i -> "High".equalsIgnoreCase(i.getSeverity()))
+                        .count(),
+                items.stream()
+                        .mapToInt(RiskItemDTO::getRiskScore)
+                        .average()
+                        .orElse(0.0)
         );
 
         PaginationDTO pagination = new PaginationDTO(
@@ -206,6 +221,7 @@ public class RiskServiceImpl implements RiskService {
                 items
         );
     }
+
 
 
     // --- Helpers ---

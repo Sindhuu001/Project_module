@@ -15,4 +15,6 @@ public interface TestRunService {
     List<TestRunSummaryResponse> getRunsForCycle(Long cycleId);
 
     TestRunSummaryResponse getRunDetail(Long runId);
+
+    List<com.example.projectmanagement.dto.testing.TestRunCaseResponse> getTestCasesForRun(Long runId);
 }

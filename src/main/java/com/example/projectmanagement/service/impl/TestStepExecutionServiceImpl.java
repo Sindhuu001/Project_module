@@ -83,7 +83,6 @@ public class TestStepExecutionServiceImpl implements TestStepExecutionService {
         // } catch (Exception ex) {
         //     log.error("Error in post-step bug handling for runCase {}: {}", runCase.getId(), ex.getMessage(), ex);
         // }
-
         return toDto(savedStep);
     }
 

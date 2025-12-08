@@ -23,10 +23,11 @@ public class TaskUpdateDto {
     private Long storyId;
     private Long sprintId;
     private Long reporterId;
-    public LocalDateTime getStartDate() {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'getStartDate'");
-    }
+    private LocalDateTime startDate;
+    // public LocalDateTime getStartDate() {
+    //     // TODO Auto-generated method stub
+    //     throw new UnsupportedOperationException("Unimplemented method 'getStartDate'");
+    // }
 
     // Getters & Setters
 }

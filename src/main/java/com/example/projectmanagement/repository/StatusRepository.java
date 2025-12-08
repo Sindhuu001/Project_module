@@ -27,6 +27,6 @@ public interface StatusRepository extends JpaRepository<Status, Long> {
 
    @Query("SELECT s.sortOrder FROM Status s WHERE s.name = 'Done' or s.name = 'DONE'")
 Integer findDoneSortOrder();
-
+   Status findFirstByNameIgnoreCaseOrderBySortOrderAsc(String name);
 
 }

@@ -117,13 +117,16 @@ public class SprintController {
         return ResponseEntity.ok(sprints);
     }
 
-    // Complete sprint (no User context needed)
-    @PutMapping("/{id}/complete")
-   @PreAuthorize("hasRole('Manager')")
-    public ResponseEntity<SprintDto> completeSprint(@PathVariable Long id) {
-        SprintDto updatedSprint = sprintService.completeSprint(id);
-        return ResponseEntity.ok(updatedSprint);
-    }
+    // Complete sprint (manager only)
+@PutMapping("/{id}/complete")
+@PreAuthorize("hasRole('Manager')")
+public ResponseEntity<SprintDto> completeSprint(
+        @PathVariable Long id,
+        @RequestParam(required = false) Long sprintId // next sprint ID (optional)
+) {
+    SprintDto updatedSprint = sprintService.completeSprint(id, sprintId);
+    return ResponseEntity.ok(updatedSprint);
+}
 
     // Update sprint with User context
     @PutMapping("/{id}")

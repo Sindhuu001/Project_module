@@ -321,20 +321,31 @@ if (status.getSortOrder() == doneSortOrder) {
 
 
     public StoryDto updateStoryStatus(Long storyId, Long statusId) {
-        Story story = storyRepository.findById(storyId)
-                .orElseThrow(() -> new RuntimeException("Story not found with id: " + storyId));
-        Status status = statusRepository.findById(statusId)
-                .orElseThrow(() -> new RuntimeException("Status not found with id: " + statusId));
-        story.setStatus(status);
-         Integer doneSortOrder = statusRepository.findDoneSortOrder(); // however you get DONE's sort order
-    if (status.getSortOrder() != null && status.getSortOrder().equals(doneSortOrder)) {
+
+    Story story = storyRepository.findById(storyId)
+            .orElseThrow(() -> new RuntimeException("Story not found with id: " + storyId));
+
+    Status status = statusRepository.findById(statusId)
+            .orElseThrow(() -> new RuntimeException("Status not found with id: " + statusId));
+
+    story.setStatus(status);
+
+    // ✅ Safely fetch the DONE status (first done by sort order)
+    Status doneStatus = statusRepository
+            .findFirstByNameIgnoreCaseOrderBySortOrderAsc("Done");
+
+    Integer doneSortOrder = (doneStatus != null) ? doneStatus.getSortOrder() : null;
+
+    // ✅ Set completedAt when status == DONE
+    if (doneSortOrder != null && status.getSortOrder().equals(doneSortOrder)) {
         story.setCompletedAt(LocalDateTime.now());
     } else {
-        story.setCompletedAt(null);  // optional: clear if moved out of DONE
+        story.setCompletedAt(null); // Clear when moved away from DONE
     }
-        Story updatedStory = storyRepository.save(story);
-        return convertToDto(updatedStory);
-    }
+
+    Story updatedStory = storyRepository.save(story);
+    return convertToDto(updatedStory);
+}
 
     public void deleteStory(Long id) {
         if (!storyRepository.existsById(id)) {

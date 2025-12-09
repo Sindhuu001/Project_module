@@ -10,6 +10,7 @@ import com.example.projectmanagement.entity.testing.TestRunCaseStep;
 import com.example.projectmanagement.enums.BugPriority;
 import com.example.projectmanagement.enums.BugSeverity;
 import com.example.projectmanagement.enums.BugStatus;
+import com.example.projectmanagement.enums.BugType;
 import com.example.projectmanagement.repository.BugRepository;
 import com.example.projectmanagement.repository.TestRunCaseRepository;
 import com.example.projectmanagement.repository.TestRunCaseStepRepository;
@@ -77,6 +78,16 @@ public class BugServiceImpl implements BugService {
             }
         } else {
             bug.setPriority(BugPriority.MEDIUM);
+        }
+
+        if (req.type() != null) {
+            try {
+                bug.setType(BugType.valueOf(req.type().trim().toUpperCase(Locale.ROOT)));
+            } catch (Exception ex) {
+                bug.setType(BugType.FUNCTIONAL);
+            }
+        } else {
+            bug.setType(BugType.FUNCTIONAL);
         }
 
         bug.setReporter(reporterId);
@@ -207,9 +218,10 @@ public class BugServiceImpl implements BugService {
         return new BugResponse(
                 b.getId(),
                 b.getTitle(),
-                b.getStatus(),                 // if your DTO expects enum or string; adjust if needed
-                b.getSeverity() != null ? b.getSeverity() : null,
+                b.getStatus(),
+                b.getSeverity(),
                 b.getPriority(),
+                b.getType(),
                 b.getReporter(),
                 b.getAssignedTo(),
                 b.getTestRun() != null ? b.getTestRun().getId() : null,

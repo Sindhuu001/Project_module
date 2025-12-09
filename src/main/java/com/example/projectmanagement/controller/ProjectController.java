@@ -146,6 +146,18 @@ public class ProjectController {
         return ResponseEntity.ok(projects);
     }
 
+    @GetMapping("/my-projects")
+    @PreAuthorize("hasAnyRole('Admin','Manager','Employee')")
+    public ResponseEntity<List<ProjectPermissionDto>> getMyAssociatedProjects(
+            @CurrentUser UserDto currentUser) {
+
+        List<ProjectPermissionDto> projects =
+                projectService.getAssociatedProjects(currentUser.getId());
+
+        return ResponseEntity.ok(projects);
+    }
+
+
     @GetMapping("/access")
     public ResponseEntity<List<ProjectSummary>> getAccessibleProjects(@CurrentUser UserDto user) {
         List<ProjectSummary> projects = projectService.getAccessibleProjects(user.getId());

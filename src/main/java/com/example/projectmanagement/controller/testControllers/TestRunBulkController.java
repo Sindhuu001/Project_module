@@ -38,10 +38,10 @@ public class TestRunBulkController {
     public ResponseEntity<Void> bulkPass(
             @PathVariable Long runId,
             @Valid @RequestBody BulkExecutionRequest req,
-            Principal principal
+            @CurrentUser UserDto currentUser
     ) {
-        Long userId = principal == null ? null : Long.parseLong(principal.getName());
-        bulkService.bulkPass(runId, req, userId);
+//        Long userId = principal == null ? null : Long.parseLong(principal.getName());
+        bulkService.bulkPass(runId, req, currentUser.getId());
         return ResponseEntity.ok().build();
     }
 

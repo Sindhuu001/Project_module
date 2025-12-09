@@ -192,6 +192,21 @@ public class ProjectService {
     }
 
     @Transactional(readOnly = true)
+    public List<ProjectPermissionDto> getAssociatedProjects(Long currentUserId) {
+
+        // 1️⃣ Fetch all projects where user is OWNER or MEMBER
+        List<Project> projects =
+                projectRepository.findByOwnerIdOrMemberId(currentUserId);
+
+        // 2️⃣ Build permission-aware response
+        return projects.stream()
+                .map(project -> buildPermissionDto(project, currentUserId))
+                .filter(ProjectPermissionDto::isCanView)
+                .toList();
+    }
+
+
+    @Transactional(readOnly = true)
     public List<ProjectTimesheetDto> getProjectsByOwner(Long ownerId) {
 
         List<Project> projects = projectRepository.findByOwnerId(ownerId);
@@ -543,5 +558,29 @@ public class ProjectService {
                 .map(this::convertToDto)
                 .collect(Collectors.toList());
     }
+
+    private ProjectPermissionDto buildPermissionDto(Project project, Long currentUserId) {
+
+        // 1️⃣ Is current user the OWNER?
+        boolean isOwner = project.getOwnerId().equals(currentUserId);
+
+        // 2️⃣ Is current user a MEMBER?
+        boolean isMember = project.getMemberIds() != null &&
+                project.getMemberIds().contains(currentUserId);
+
+        // 3️⃣ Permission rules
+        boolean canView = isOwner || isMember;
+        boolean canEdit = isOwner;
+        boolean canDelete = isOwner;
+
+        // 4️⃣ Build final response
+        return ProjectPermissionDto.builder()
+                .project(convertToDto(project)) // your existing mapper
+                .canView(canView)
+                .canEdit(canEdit)
+                .canDelete(canDelete)
+                .build();
+    }
+
 
 }

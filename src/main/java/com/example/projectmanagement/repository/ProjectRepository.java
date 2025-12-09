@@ -80,6 +80,15 @@ public interface ProjectRepository extends JpaRepository<Project, Long> {
                                                 LocalDateTime monthStart,
                                                 LocalDateTime monthEnd);
 
+    @Query("""
+   SELECT DISTINCT p
+   FROM Project p
+   WHERE p.ownerId = :userId
+      OR :userId MEMBER OF p.memberIds
+""")
+    List<Project> findByOwnerIdOrMemberId(@Param("userId") Long userId);
+
+
 
 
 }

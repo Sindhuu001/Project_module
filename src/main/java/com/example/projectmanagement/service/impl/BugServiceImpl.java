@@ -91,7 +91,14 @@ public class BugServiceImpl implements BugService {
         }
 
         bug.setReporter(reporterId);
-        bug.setAssignedTo(req.assignedTo());
+        if (req.assignedTo() != null) {
+            bug.setAssignedTo(req.assignedTo());
+        } else if (runCase.getTestCase() != null &&
+                runCase.getTestCase().getScenario() != null &&
+                runCase.getTestCase().getScenario().getTestStory() != null &&
+                runCase.getTestCase().getScenario().getTestStory().getLinkedUserStory() != null) {
+            bug.setAssignedTo(runCase.getTestCase().getScenario().getTestStory().getLinkedUserStory().getAssigneeId());
+        }
         bug.setStatus(BugStatus.NEW);
         bug.setCreatedAt(LocalDateTime.now());
         bug.setUpdatedAt(LocalDateTime.now());

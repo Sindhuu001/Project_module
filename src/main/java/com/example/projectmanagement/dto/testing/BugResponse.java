@@ -3,6 +3,7 @@ package com.example.projectmanagement.dto.testing;
 import com.example.projectmanagement.enums.BugPriority;
 import com.example.projectmanagement.enums.BugSeverity;
 import com.example.projectmanagement.enums.BugStatus;
+import com.example.projectmanagement.enums.BugType;
 
 import java.time.LocalDateTime;
 
@@ -12,6 +13,7 @@ public record BugResponse(
         BugStatus status,
         BugSeverity severity,
         BugPriority priority,
+        BugType type,
         Long reporterId,
         Long assignedTo,
         Long runId,
@@ -24,4 +26,3 @@ public record BugResponse(
         LocalDateTime createdAt,
         LocalDateTime updatedAt
 ) {}
-

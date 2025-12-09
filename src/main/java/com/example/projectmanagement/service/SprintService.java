@@ -131,62 +131,45 @@ if (sprint.getStatus() != Sprint.SprintStatus.ACTIVE) {
     throw new RuntimeException("Only active sprints can be completed");
 }
 
-// 3. Fetch all tasks in this sprint
-List<Task> tasks = taskRepository.findBySprintId(sprint.getId());
+        // 3️⃣ Determine the "Done" status for the project
+        Optional<Status> doneStatusOpt = statusRepository.findTopByProjectIdOrderBySortOrderDesc(sprint.getProject().getId());
+        if (doneStatusOpt.isEmpty()) {
+            throw new RuntimeException("Cannot complete sprint: No statuses defined for the project.");
+        }
+        Long doneStatusId = doneStatusOpt.get().getId();
 
-// 4. Get 'Done' Status
-Status doneStatus = statusRepository
-        .findTopByProjectIdOrderBySortOrderDesc(sprint.getProject().getId())
-        .orElseThrow(() -> new RuntimeException("Cannot complete sprint: No statuses defined."));
+        // 4️⃣ Fetch all tasks in this sprint
+        List<Task> tasks = taskRepository.findBySprintId(sprint.getId());
 
-Long doneStatusId = doneStatus.getId();
+        // 5️⃣ Fetch all stories in this sprint
+        List<Story> stories = storyRepository.findBySprintId(sprint.getId());
 
-// 5. Check if some tasks are not done
-boolean incompleteTasksExist = tasks.stream()
-        .anyMatch(t -> t.getStatus() == null || !t.getStatus().getId().equals(doneStatusId));
+        // 6️⃣ Check for incomplete tasks
+        List<Task> incompleteTasks = tasks.stream()
+                .filter(t -> t.getStatus() == null || !t.getStatus().getId().equals(doneStatusId))
+                .toList();
 
-if (incompleteTasksExist) {
-    throw new RuntimeException("Cannot complete sprint: some tasks are not done.");
-}
+        // 7️⃣ Check for incomplete stories
+        List<Story> incompleteStories = stories.stream()
+                .filter(s -> s.getStatus() == null || !s.getStatus().getId().equals(doneStatusId))
+                .toList();
 
-// 6. Sprint is now completed
-sprint.setStatus(Sprint.SprintStatus.COMPLETED);
-sprint.setEndDate(LocalDateTime.now());
-Sprint updatedSprint = sprintRepository.save(sprint);
-
-// 7. Move STORIES that are not fully done to next sprint
-// Fetch stories in sprint
-List<Story> stories = storyRepository.findBySprintId(sprint.getId());
-
-for (Story story : stories) {
-
-    // Fetch all tasks under this story
-    List<Task> storyTasks = taskRepository.findByStoryId(story.getId());
-
-    // Check if ALL tasks under story are DONE
-    boolean storyIncomplete = storyTasks.stream()
-            .anyMatch(t -> t.getStatus() == null || !t.getStatus().getId().equals(doneStatusId));
-
-    if (storyIncomplete) {
-
-        if (nextSprintId == null) {
-            // Move to backlog if no next sprint provided
-            story.setSprint(null);
-        } else {
-            // Move to next sprint
-            Sprint nextSprint = sprintRepository.findById(nextSprintId)
-                    .orElseThrow(() -> new RuntimeException("Next sprint not found with id: " + nextSprintId));
-
-            story.setSprint(nextSprint);
+        // 8️⃣ Throw exception if any tasks or stories are not done
+        if (!incompleteTasks.isEmpty() || !incompleteStories.isEmpty()) {
+            String taskMsg = incompleteTasks.isEmpty() ? "" : "Tasks not done: " + incompleteTasks.stream().map(Task::getTitle).toList();
+            String storyMsg = incompleteStories.isEmpty() ? "" : "Stories not done: " + incompleteStories.stream().map(Story::getTitle).toList();
+            throw new RuntimeException("Cannot complete sprint. " + taskMsg + " " + storyMsg);
         }
 
-        storyRepository.save(story);
-    }
-}
+        // 9️⃣ Mark sprint as completed
+        sprint.setStatus(Sprint.SprintStatus.COMPLETED);
+        sprint.setEndDate(LocalDateTime.now());
+        Sprint updatedSprint = sprintRepository.save(sprint);
 
-// 8. Return DTO
-return convertToDto(updatedSprint);
-}
+        // 🔟 Return DTO
+        return convertToDto(updatedSprint);
+    }
+
 
 
     public SprintDto updateSprint(Long id, SprintDto sprintDto) {
@@ -309,27 +292,33 @@ return convertToDto(updatedSprint);
      */
     public SprintPopupResponse checkSprintPopup(Long sprintId) {
         Sprint sprint = sprintRepository.findById(sprintId)
-                .orElseThrow(() -> new RuntimeException("Sprint not found"));
+                .orElseThrow(() -> new RuntimeException("Sprint not found with id: " + sprintId));
 
         LocalDateTime now = LocalDateTime.now();
         LocalDateTime end = sprint.getEndDate();
 
+        // 1️⃣ Sprint status
         boolean isActive = sprint.getStatus() == Sprint.SprintStatus.ACTIVE;
 
-        boolean isEndingSoon = !now.isAfter(end)
-                && Duration.between(now, end).toHours() <= promptWindowHours;
+        // 2️⃣ Check if sprint is ending soon
+        boolean isEndingSoon = !now.isAfter(end) &&
+                Duration.between(now, end).toHours() <= promptWindowHours;
 
-        Integer finalSortOrder = statusRepository.findMaxSortOrderByProject(
-                sprint.getProject().getId()
-        );
+        // 3️⃣ Determine the "done" status sort order for this project
+        Integer finalSortOrder = statusRepository.findMaxSortOrderByProject(sprint.getProject().getId());
 
-        System.out.println(finalSortOrder);
-
-        boolean hasUnfinished = taskRepository
+        // 4️⃣ Check for unfinished tasks in the sprint
+        boolean hasUnfinishedTasks = taskRepository
                 .existsTaskWithSprintIdAndStatusSortOrderNot(sprintId, finalSortOrder);
 
-        System.out.println(hasUnfinished);
+        // 5️⃣ Check for stories without any tasks (edge case)
+        boolean hasStoriesWithoutTasks = storyRepository
+                .existsBySprintIdWithNoTasks(sprintId);
 
+        // 6️⃣ Combine both conditions
+        boolean hasUnfinished = hasUnfinishedTasks || hasStoriesWithoutTasks;
+
+        // 7️⃣ Decide if popup should show
         boolean shouldShowPopup = isActive && isEndingSoon && hasUnfinished;
 
         return new SprintPopupResponse(
@@ -340,6 +329,7 @@ return convertToDto(updatedSprint);
                 shouldShowPopup
         );
     }
+
 
 
     /**
@@ -421,46 +411,45 @@ public SprintBurndownResponse getSprintBurndown(Long sprintId) {
         Integer finalSortOrder =
                 statusRepository.findMaxSortOrderByProject(sprint.getProject().getId());
 
-        // Fetch incomplete tasks + stories
+        // Fetch incomplete tasks and stories
         List<Task> incompleteTasks =
                 taskRepository.findIncompleteTasksBySprintId(sprintId, finalSortOrder);
 
         List<Story> incompleteStories =
                 storyRepository.findIncompleteStoriesBySprintId(sprintId, finalSortOrder);
 
-        if ("NEXT_SPRINT".equalsIgnoreCase(option)) {
+        Sprint targetSprint = null;
 
+        if ("NEXT_SPRINT".equalsIgnoreCase(option)) {
             Optional<Sprint> nextSprintOpt = sprintRepository
                     .findFirstByProject_IdAndStartDateAfterOrderByStartDateAsc(
                             sprint.getProject().getId(), sprint.getEndDate()
                     );
 
-            if (nextSprintOpt.isPresent()) {
-                final Sprint nextSprint = nextSprintOpt.get();
+            targetSprint = nextSprintOpt.orElse(null);
 
-                // Move tasks
-                incompleteTasks.forEach(t -> t.setSprint(nextSprint));
-
-                // Move stories
-                incompleteStories.forEach(s -> s.setSprint(nextSprint));
-
-            } else {
-                // Move everything to BACKLOG
-                incompleteTasks.forEach(t -> t.setSprint(null));
-                incompleteStories.forEach(s -> s.setSprint(null));
-            }
-
-        } else if ("BACKLOG".equalsIgnoreCase(option)) {
-
-            incompleteTasks.forEach(t -> t.setSprint(null));
-            incompleteStories.forEach(s -> s.setSprint(null));
-
-        } else {
+        } else if (!"BACKLOG".equalsIgnoreCase(option)) {
             throw new IllegalArgumentException("Invalid option. Expected NEXT_SPRINT or BACKLOG");
         }
 
+        // Move incomplete tasks
+        for (Task task : incompleteTasks) {
+            task.setSprint(targetSprint);
+        }
 
-        // Save updates
+        // Move incomplete stories
+        for (Story story : incompleteStories) {
+            story.setSprint(targetSprint);
+
+            // Move tasks under the story too
+            if (story.getTasks() != null && !story.getTasks().isEmpty()) {
+                for (Task t : story.getTasks()) {
+                    t.setSprint(targetSprint);
+                }
+            }
+        }
+
+        // Save all updates
         taskRepository.saveAll(incompleteTasks);
         storyRepository.saveAll(incompleteStories);
 

@@ -78,7 +78,7 @@ public class ProjectController {
     // ✅ UPDATE project
     @PutMapping("/{id}")
     public ResponseEntity<ProjectDto> updateProject(@PathVariable Long id,
-            @RequestBody ProjectDto updatedProjectDto) {
+                                                    @Valid @RequestBody ProjectDto updatedProjectDto) {
         ProjectDto updated = projectService.updateProject(id, updatedProjectDto);
         return ResponseEntity.ok(updated);
     }
@@ -130,9 +130,9 @@ public class ProjectController {
 
     // ✅ GET Projects by Owner
     @GetMapping("/owner")
-    public ResponseEntity<List<ProjectDto>> getProjectsByOwner(@CurrentUser UserDto currentUser) {
+    public ResponseEntity<List<ProjectTimesheetDto>> getProjectsByOwner(@CurrentUser UserDto currentUser) {
         System.out.println("******Current User:******** " + currentUser.getName() + ", Roles: " + currentUser.getRoles());
-        List<ProjectDto> projects = projectService.getProjectsByOwner(currentUser.getId());
+        List<ProjectTimesheetDto> projects = projectService.getProjectsByOwner(currentUser.getId());
 //        List<ProjectSummary> projects = projectService.getProjectSummariesByOwner(currentUser.getId());
         return ResponseEntity.ok(projects);
     }

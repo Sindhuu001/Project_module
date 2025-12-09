@@ -473,6 +473,20 @@ if (status.getSortOrder() == doneSortOrder) {
         return dto;
     }
 
+    public void assignEpic(Long storyId, Long epicId) {
+
+        Story story = storyRepository.findById(storyId)
+                .orElseThrow(() -> new ResourceNotFoundException("Story not found: " + storyId));
+
+        Epic epic = epicRepository.findById(epicId)
+                .orElseThrow(() -> new ResourceNotFoundException("Epic not found: " + epicId));
+
+        story.setEpic(epic);
+        // story.setEpicId(epicId);   // if you store FK separately
+
+        storyRepository.save(story);
+    }
+
 
 
 }

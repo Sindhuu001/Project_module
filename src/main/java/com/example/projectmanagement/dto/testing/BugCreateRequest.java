@@ -15,5 +15,5 @@ public record BugCreateRequest(
         @NotNull String severity,    // use enum names
         BugPriority priority,             // optional
         Long assignedTo,              // optional developer id
-        @NotNull String type
+        @NotBlank String type
 ) {}

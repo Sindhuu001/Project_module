@@ -5,7 +5,9 @@ import com.example.projectmanagement.dto.StoryCreateDto;
 import com.example.projectmanagement.dto.StoryViewDto;
 import com.example.projectmanagement.dto.TaskDto;
 import com.example.projectmanagement.dto.TaskViewDto;
+import com.example.projectmanagement.dto.UserDto;
 import com.example.projectmanagement.entity.Story;
+import com.example.projectmanagement.security.CurrentUser;
 import com.example.projectmanagement.service.StoryService;
 import com.example.projectmanagement.service.TaskService;
 import jakarta.validation.Valid;
@@ -31,8 +33,8 @@ public class StoryController {
     private TaskService taskService;
 
     @PostMapping
-    public ResponseEntity<StoryCreateDto> createStory(@Valid @RequestBody StoryCreateDto dto) {
-        StoryCreateDto created = storyService.createStory(dto);
+    public ResponseEntity<StoryCreateDto> createStory(@Valid @RequestBody StoryCreateDto dto,@CurrentUser UserDto currentUser) {
+        StoryCreateDto created = storyService.createStory(dto, currentUser.getId());
         return new ResponseEntity<>(created, HttpStatus.CREATED);
     }
 

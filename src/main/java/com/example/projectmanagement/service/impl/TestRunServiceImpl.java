@@ -1,6 +1,7 @@
 package com.example.projectmanagement.service.impl;
 
 import com.example.projectmanagement.dto.testing.AddCasesToRunRequest;
+import com.example.projectmanagement.dto.testing.TestRunCaseResponse;
 import com.example.projectmanagement.dto.testing.TestRunCreateRequest;
 import com.example.projectmanagement.dto.testing.TestRunSummaryResponse;
 import com.example.projectmanagement.entity.testing.TestCase;
@@ -181,5 +182,21 @@ public class TestRunServiceImpl implements TestRunService {
                 caseCount,
                 completedCount
         );
+    }
+
+    @Override
+    public List<TestRunCaseResponse> getTestCasesForRun(Long runId) {
+        List<TestRunCase> runCases = testRunCaseRepository.findByRunId(runId);
+        return runCases.stream()
+                .map(rc -> new TestRunCaseResponse(
+                        rc.getTestCase().getId(),
+                        rc.getTestCase().getTitle(),
+                        rc.getTestCase().getType().name(),
+                        rc.getTestCase().getPriority().name(),
+                        rc.getTestCase().getStatus(),
+                        rc.getAssigneeId(),
+                        rc.getStatus().name()
+                ))
+                .collect(Collectors.toList());
     }
 }

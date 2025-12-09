@@ -124,7 +124,7 @@ public ResponseEntity<SprintDto> completeSprint(
         @PathVariable Long id,
         @RequestParam(required = false) Long sprintId // next sprint ID (optional)
 ) {
-    SprintDto updatedSprint = sprintService.completeSprint(id, sprintId);
+    SprintDto updatedSprint = sprintService.completeSprint(id);
     return ResponseEntity.ok(updatedSprint);
 }
 

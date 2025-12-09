@@ -40,7 +40,7 @@ public class TaskViewDto {
     private LocalDateTime dueDate;
     private boolean billable;
     private Task.Priority priority;
-
+   private Long createdBy;
     private LocalDateTime startDate;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

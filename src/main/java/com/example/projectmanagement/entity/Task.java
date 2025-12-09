@@ -82,6 +82,8 @@ public class Task {
 
     private Long assigneeId;
     private Long reporterId;
+
+    @Column(name = "is_billable")
     private boolean billable;
 
     /* ------------------------
@@ -95,7 +97,8 @@ public class Task {
     @UpdateTimestamp
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
-
+    @Column(name="created_by", updatable = false)
+    private Long createdBy;
     /* ------------------------
        Child Collections
     ------------------------ */

@@ -94,6 +94,8 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
             "AND s.sortOrder <> :sortOrder")
     boolean existsTaskWithSprintIdAndStatusSortOrderNot(@Param("sprintId") Long sprintId,
                                                         @Param("sortOrder") Integer sortOrder);
+
+    long countBySprintId(Long id);
 }
 
 

@@ -24,4 +24,5 @@ public class EpicDto {
     @NotNull(message = "Project ID is required")
     private Long projectId;
     private LocalDate startDate;
+    private Long createdBy;
 }

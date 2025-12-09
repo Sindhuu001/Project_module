@@ -43,7 +43,7 @@ public class StoryCreateDto {
 
     @NotNull(message = "Status ID is required")
     private Long statusId;
-
+    private Long createdBy;
     @NotNull(message = "Priority is required")
     private Story.Priority priority;  // LOW / MEDIUM / HIGH / CRITICAL
     private LocalDateTime dueDate;

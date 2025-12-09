@@ -93,7 +93,8 @@ private LocalDateTime dueDate;
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
-    
+    @Column(name="created_by", updatable = false)
+    private Long createdBy;
     @UpdateTimestamp
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;

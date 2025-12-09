@@ -52,8 +52,11 @@ public class StoryService {
     @Autowired
     private UserClient userClient;
 
+    @Autowired
+    private TaskRepository taskRepository;
+
     @Transactional
-    public StoryCreateDto createStory(StoryCreateDto dto) {
+    public StoryCreateDto createStory(StoryCreateDto dto, Long userId) {
 
         Long projectId = dto.getProjectId();
 
@@ -94,7 +97,7 @@ public class StoryService {
         story.setAssigneeId(dto.getAssigneeId());
         story.setReporterId(dto.getReporterId());
         story.setPriority(dto.getPriority());
-
+        story.setCreatedBy(userId);
         story.setProject(
                 projectRepository.findById(projectId)
                         .orElseThrow(() -> new RuntimeException("Project not found"))
@@ -137,6 +140,7 @@ public class StoryService {
         createdDto.setSprintId(saved.getSprint() != null ? saved.getSprint().getId() : null);
         createdDto.setStatusId(saved.getStatus().getId());
         createdDto.setPriority(saved.getPriority());
+        createdDto.setCreatedBy(saved.getCreatedBy());
 
         return createdDto;
     }
@@ -387,16 +391,30 @@ if (status.getSortOrder() == doneSortOrder) {
         Story story = storyRepository.findById(storyId)
                 .orElseThrow(() -> new RuntimeException("Story not found with id: " + storyId));
 
+        Sprint sprint = null;
+        Project project = null;
+
         if (sprintId != null) {
-            Sprint sprint = sprintRepository.findById(sprintId)
+            sprint = sprintRepository.findById(sprintId)
                     .orElseThrow(() -> new RuntimeException("Sprint not found with id: " + sprintId));
-            story.setSprint(sprint);
-            story.setProject(sprint.getProject());
-        } else {
-            story.setSprint(null);
-            story.setProject(null);
+            project = sprint.getProject();
         }
 
+        // 1. Update Story
+        story.setSprint(sprint);
+        story.setProject(project);
+
+        // 2. Fetch Tasks under this Story
+        List<Task> tasks = taskRepository.findByStoryId(storyId);
+
+        // 3. Update all Tasks to same sprint + project as Story
+        for (Task task : tasks) {
+            task.setSprint(sprint);
+            task.setProject(project);
+        }
+
+        // 4. Save everything
+        taskRepository.saveAll(tasks);
         storyRepository.save(story);
     }
 

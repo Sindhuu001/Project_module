@@ -75,6 +75,15 @@ public class ProjectController {
         return ResponseEntity.ok(project);
     }
 
+    @GetMapping("tms")
+    @PreAuthorize("hasAnyRole('Manager','Admin','Employee')")
+    public ResponseEntity<List<ProjectTimesheetDto>> getAllTmsProjects() {
+        long start = System.currentTimeMillis();
+        List<ProjectTimesheetDto> projects = projectService.getAllTmsProjects();
+        System.out.println("*****************Time taken to fetch all projects: " + (System.currentTimeMillis() - start) + " ms");
+        return ResponseEntity.ok(projects);
+    }
+
     // ✅ UPDATE project
     @PutMapping("/{id}")
     public ResponseEntity<ProjectDto> updateProject(@PathVariable Long id,

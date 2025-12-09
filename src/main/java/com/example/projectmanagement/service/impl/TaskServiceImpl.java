@@ -2,6 +2,7 @@ package com.example.projectmanagement.service.impl;
 
 import com.example.projectmanagement.client.UserClient;
 import com.example.projectmanagement.dto.*;
+import com.example.projectmanagement.dto.testing.TaskResponse;
 import com.example.projectmanagement.entity.*;
 import com.example.projectmanagement.exception.ResourceNotFoundException;
 import com.example.projectmanagement.repository.*;
@@ -55,7 +56,7 @@ public class TaskServiceImpl implements TaskService {
     }
 
     @Override
-    public TaskCreateDto createTask(TaskCreateDto taskCreateDto) {
+    public TaskCreateDto createTask(TaskCreateDto taskCreateDto, Long userId) {
         Task task = new Task();
 
         // 1️⃣ Project validation (mandatory)
@@ -84,7 +85,7 @@ public class TaskServiceImpl implements TaskService {
         task.setDueDate(taskCreateDto.getDueDate());
         task.setStartDate(taskCreateDto.getStartDate());
         task.setBillable(taskCreateDto.isBillable());
-
+        
         // 4️⃣ Assignee validation (optional)
         if (taskCreateDto.getAssigneeId() != null) {
             Long assigneeId = taskCreateDto.getAssigneeId();
@@ -132,6 +133,8 @@ public class TaskServiceImpl implements TaskService {
         } else if (task.getStory() != null && task.getStory().getSprint() != null) {
             task.setSprint(task.getStory().getSprint());
         }
+
+        task.setCreatedBy(userId);
 
         // 8️⃣ Persist task
         Task savedTask = taskRepository.save(task);
@@ -473,6 +476,7 @@ public class TaskServiceImpl implements TaskService {
         dto.setCreatedAt(task.getCreatedAt());
         dto.setUpdatedAt(task.getUpdatedAt());
         dto.setStartDate(task.getStartDate());
+        dto.setCreatedBy(task.getCreatedBy());
         if (task.getStatus() != null)
             dto.setStatusId(task.getStatus().getId());
         if (task.getProject() != null)
@@ -564,5 +568,48 @@ public class TaskServiceImpl implements TaskService {
         // task.setStory(storyId); // optional based on your entity
 
         taskRepository.save(task); // no need to return anything
+    }
+
+    @Override
+    public TaskResponse assignTaskToSprint(Long taskId, Long sprintId) {
+        Task task = taskRepository.findById(taskId)
+                .orElseThrow(() -> new ResourceNotFoundException("Task not found: " + taskId));
+
+        Sprint sprint = null;
+        if (sprintId != null) {
+            sprint = sprintRepository.findById(sprintId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Sprint not found: " + sprintId));
+        }
+
+        // If the task is part of a story, move the whole story and all its tasks
+        if (task.getStory() != null) {
+            Story story = task.getStory();
+            story.setSprint(sprint);
+            storyRepository.save(story);
+
+            // Find all tasks for this story and update their sprint
+            List<Task> tasksToUpdate = taskRepository.findByStoryId(story.getId());
+            for (Task t : tasksToUpdate) {
+                t.setSprint(sprint);
+            }
+            taskRepository.saveAll(tasksToUpdate);
+        } else {
+            // If the task is not part of a story, just move the task
+            task.setSprint(sprint);
+            taskRepository.save(task);
+        }
+
+        return toResponse(task);
+    }
+
+
+    private TaskResponse toResponse(Task t) {
+        return new TaskResponse(
+                t.getId(),
+                t.getTitle(),
+                t.getSprint() != null ? t.getSprint().getId() : null,
+                t.getSprint() != null ? t.getSprint().getName() : null,
+                t.getStatus() != null ? t.getStatus().getName() : null
+        );
     }
 }

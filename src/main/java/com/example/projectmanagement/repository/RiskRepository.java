@@ -35,5 +35,15 @@ public interface RiskRepository extends JpaRepository<Risk, Long> {
             Pageable pageable
     );
 
+    @Query("""
+    SELECT DISTINCT r FROM Risk r
+    JOIN r.riskLinks rl
+    WHERE r.project.id = :projectId
+""")
+    Page<Risk> findAllLinkedRisks(
+            @Param("projectId") Long projectId,
+            Pageable pageable
+    );
+
 
 }

@@ -46,12 +46,16 @@ public class TestStepExecutionServiceImpl implements TestStepExecutionService {
         TestRunCase runCase = testRunCaseRepository.findById(runCaseId)
                 .orElseThrow(() -> new EntityNotFoundException("TestRunCase not found: " + runCaseId));
 
-        boolean initialized = testRunCaseStepRepository.existsByRunCaseId(runCaseId);
-        if (!initialized && runCase.getTestCase() != null) { // Only init if it's from a blueprint
+        List<TestRunCaseStep> steps = testRunCaseStepRepository.findByRunCaseIdOrderByStepNumberAsc(runCaseId);
+
+        // If steps are not initialized, create them from the blueprint.
+        // This happens only once when the test case is opened for the first time.
+        if (steps.isEmpty() && runCase.getTestCase() != null) {
             initRunCaseSteps(runCase);
+            // Re-fetch the newly created steps to ensure a consistent view
+            steps = testRunCaseStepRepository.findByRunCaseIdOrderByStepNumberAsc(runCaseId);
         }
 
-        List<TestRunCaseStep> steps = testRunCaseStepRepository.findByRunCaseIdOrderByStepNumberAsc(runCaseId);
         return steps.stream().map(this::toDto).toList();
     }
 

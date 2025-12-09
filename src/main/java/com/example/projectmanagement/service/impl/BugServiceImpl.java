@@ -1,6 +1,7 @@
 package com.example.projectmanagement.service.impl;
 
 import com.example.projectmanagement.dto.testing.BugCreateRequest;
+import com.example.projectmanagement.dto.testing.BugDetailResponse;
 import com.example.projectmanagement.dto.testing.BugResponse;
 import com.example.projectmanagement.dto.testing.BugStatusUpdateRequest;
 import com.example.projectmanagement.dto.testing.BugSummaryResponse;
@@ -91,7 +92,14 @@ public class BugServiceImpl implements BugService {
         }
 
         bug.setReporter(reporterId);
-        bug.setAssignedTo(req.assignedTo());
+        if (req.assignedTo() != null) {
+            bug.setAssignedTo(req.assignedTo());
+        } else if (runCase.getTestCase() != null &&
+                runCase.getTestCase().getScenario() != null &&
+                runCase.getTestCase().getScenario().getTestStory() != null &&
+                runCase.getTestCase().getScenario().getTestStory().getLinkedUserStory() != null) {
+            bug.setAssignedTo(runCase.getTestCase().getScenario().getTestStory().getLinkedUserStory().getAssigneeId());
+        }
         bug.setStatus(BugStatus.NEW);
         bug.setCreatedAt(LocalDateTime.now());
         bug.setUpdatedAt(LocalDateTime.now());
@@ -158,6 +166,13 @@ public class BugServiceImpl implements BugService {
 
         Bug saved = bugRepository.save(bug);
         return toResponse(saved);
+    }
+
+    @Override
+    public BugDetailResponse getBugById(Long bugId) {
+        Bug bug = bugRepository.findById(bugId)
+                .orElseThrow(() -> new EntityNotFoundException("Bug not found: " + bugId));
+        return toDetailResponse(bug);
     }
 
     @Override
@@ -234,6 +249,45 @@ public class BugServiceImpl implements BugService {
                 b.getCreatedAt(),
                 b.getUpdatedAt()
         );
+    }
+
+    private BugDetailResponse toDetailResponse(Bug b) {
+        BugDetailResponse res = new BugDetailResponse();
+        res.setId(b.getId());
+        res.setTitle(b.getTitle());
+        res.setDescription(b.getDescription());
+        res.setReproductionSteps(b.getReproductionSteps());
+        res.setExpectedResult(b.getExpectedResult());
+        res.setActualResult(b.getActualResult());
+        res.setStatus(b.getStatus());
+        res.setSeverity(b.getSeverity());
+        res.setPriority(b.getPriority());
+        res.setType(b.getType());
+        res.setReporter(b.getReporter());
+        res.setAssignedTo(b.getAssignedTo());
+        res.setCreatedAt(b.getCreatedAt());
+        res.setUpdatedAt(b.getUpdatedAt());
+
+        if (b.getProject() != null) {
+            res.setProject(new BugDetailResponse.ProjectInfo(b.getProject().getId(), b.getProject().getName()));
+        }
+        if (b.getTestStory() != null) {
+            res.setTestStory(new BugDetailResponse.TestStoryInfo(b.getTestStory().getId(), b.getTestStory().getName()));
+        }
+        if (b.getTestScenario() != null) {
+            res.setTestScenario(new BugDetailResponse.TestScenarioInfo(b.getTestScenario().getId(), b.getTestScenario().getTitle()));
+        }
+        if (b.getTestCase() != null) {
+            res.setTestCase(new BugDetailResponse.TestCaseInfo(b.getTestCase().getId(), b.getTestCase().getTitle()));
+        }
+        if (b.getRunCase() != null) {
+            res.setRunCase(new BugDetailResponse.TestRunCaseInfo(b.getRunCase().getId(), b.getRunCase().getTestCase().getTitle()));
+        }
+        if (b.getRunCaseStep() != null) {
+            res.setRunCaseStep(new BugDetailResponse.TestRunCaseStepInfo(b.getRunCaseStep().getId(), b.getRunCaseStep().getStep().getExpectedResult()));
+        }
+
+        return res;
     }
 
     private BugSummaryResponse toSummaryResponse(Bug bug) {

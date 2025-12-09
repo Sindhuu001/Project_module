@@ -1,6 +1,7 @@
 package com.example.projectmanagement.service;
 
 import com.example.projectmanagement.dto.testing.BugCreateRequest;
+import com.example.projectmanagement.dto.testing.BugDetailResponse;
 import com.example.projectmanagement.dto.testing.BugResponse;
 import com.example.projectmanagement.dto.testing.BugStatusUpdateRequest;
 import com.example.projectmanagement.dto.testing.BugSummaryResponse;
@@ -13,6 +14,8 @@ public interface BugService {
     BugResponse createBug(BugCreateRequest req, Long reporterId);
 
     BugResponse updateBugStatus(Long bugId, BugStatusUpdateRequest req, Long userId);
+
+    BugDetailResponse getBugById(Long bugId);
 
     Page<BugResponse> findBugsByProjectId(Long projectId, int page, int size);
 

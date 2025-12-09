@@ -1,11 +1,13 @@
 package com.example.projectmanagement.service.impl;
 
+import com.example.projectmanagement.dto.testing.BugAssignRequest;
 import com.example.projectmanagement.dto.testing.BugCreateRequest;
 import com.example.projectmanagement.dto.testing.BugDetailResponse;
 import com.example.projectmanagement.dto.testing.BugResponse;
 import com.example.projectmanagement.dto.testing.BugStatusUpdateRequest;
 import com.example.projectmanagement.dto.testing.BugSummaryResponse;
 import com.example.projectmanagement.entity.Bug;
+import com.example.projectmanagement.entity.User;
 import com.example.projectmanagement.entity.testing.TestRunCase;
 import com.example.projectmanagement.entity.testing.TestRunCaseStep;
 import com.example.projectmanagement.enums.BugPriority;
@@ -16,6 +18,7 @@ import com.example.projectmanagement.repository.BugRepository;
 import com.example.projectmanagement.repository.TestRunCaseRepository;
 import com.example.projectmanagement.repository.TestRunCaseStepRepository;
 import com.example.projectmanagement.repository.TestRunRepository;
+import com.example.projectmanagement.repository.UserRepository;
 import com.example.projectmanagement.service.BugService;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -40,6 +43,7 @@ public class BugServiceImpl implements BugService {
     private final TestRunCaseRepository testRunCaseRepository;
     private final TestRunCaseStepRepository testRunCaseStepRepository;
     private final TestRunRepository testRunRepository;
+    private final UserRepository userRepository;
 
     @Override
     @Transactional
@@ -98,7 +102,7 @@ public class BugServiceImpl implements BugService {
                 runCase.getTestCase().getScenario() != null &&
                 runCase.getTestCase().getScenario().getTestStory() != null &&
                 runCase.getTestCase().getScenario().getTestStory().getLinkedUserStory() != null) {
-            bug.setAssignedTo(runCase.getTestCase().getScenario().getTestStory().getLinkedUserStory().getAssigneeId());
+            bug.setAssignedTo(runCase.getTestCase().getScenario().getTestStory().getLinkedUserStory().getDeveloperId());
         }
         bug.setStatus(BugStatus.NEW);
         bug.setCreatedAt(LocalDateTime.now());
@@ -162,6 +166,22 @@ public class BugServiceImpl implements BugService {
         }
 
         // keep assignedTo unchanged here; frontend can update separately
+        bug.setUpdatedAt(LocalDateTime.now());
+
+        Bug saved = bugRepository.save(bug);
+        return toResponse(saved);
+    }
+
+    @Override
+    @Transactional
+    public BugResponse assignBug(Long bugId, BugAssignRequest req) {
+        Bug bug = bugRepository.findById(bugId)
+                .orElseThrow(() -> new EntityNotFoundException("Bug not found: " + bugId));
+
+        User assignee = userRepository.findById(req.assigneeId())
+                .orElseThrow(() -> new EntityNotFoundException("Assignee not found: " + req.assigneeId()));
+
+        bug.setAssignedTo(assignee.getId());
         bug.setUpdatedAt(LocalDateTime.now());
 
         Bug saved = bugRepository.save(bug);
@@ -264,15 +284,21 @@ public class BugServiceImpl implements BugService {
         res.setPriority(b.getPriority());
         res.setType(b.getType());
         res.setReporter(b.getReporter());
-        res.setAssignedTo(b.getAssignedTo());
         res.setCreatedAt(b.getCreatedAt());
         res.setUpdatedAt(b.getUpdatedAt());
+
+        if (b.getAssignedTo() != null) {
+            User assignee = userRepository.findById(b.getAssignedTo()).orElse(null);
+            if (assignee != null) {
+                res.setAssignedTo(new BugDetailResponse.AssigneeInfo(assignee.getId(), assignee.getFirstName()));
+            }
+        }
 
         if (b.getProject() != null) {
             res.setProject(new BugDetailResponse.ProjectInfo(b.getProject().getId(), b.getProject().getName()));
         }
         if (b.getTestStory() != null) {
-            res.setTestStory(new BugDetailResponse.TestStoryInfo(b.getTestStory().getId(), b.getTestStory().getName()));
+            res.setTestStory(new BugDetailResponse.TestStoryInfo(b.getTestStory().getId(), b.getTestStory().getTitle()));
         }
         if (b.getTestScenario() != null) {
             res.setTestScenario(new BugDetailResponse.TestScenarioInfo(b.getTestScenario().getId(), b.getTestScenario().getTitle()));
@@ -284,7 +310,7 @@ public class BugServiceImpl implements BugService {
             res.setRunCase(new BugDetailResponse.TestRunCaseInfo(b.getRunCase().getId(), b.getRunCase().getTestCase().getTitle()));
         }
         if (b.getRunCaseStep() != null) {
-            res.setRunCaseStep(new BugDetailResponse.TestRunCaseStepInfo(b.getRunCaseStep().getId(), b.getRunCaseStep().getStep().getExpectedResult()));
+            res.setRunCaseStep(new BugDetailResponse.TestRunCaseStepInfo(b.getRunCaseStep().getId(), b.getRunCaseStep().getStep().getDescription()));
         }
 
         return res;

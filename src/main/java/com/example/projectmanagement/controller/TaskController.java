@@ -159,10 +159,18 @@ public class TaskController {
     @PatchMapping("/{taskId}/assign-sprint/{sprintId}")
     public ResponseEntity<TaskResponse> assignTaskToSprint(
             @PathVariable Long taskId,
-            @PathVariable Long sprintId) {
+            @PathVariable(required = false) String sprintId) {
 
-//        Long sprintId = (payload != null) ? payload.get("sprintId") : null;
-        return ResponseEntity.ok(taskService.assignTaskToSprint(taskId, sprintId));
+        Long sprintIdLong = null;
+        if (sprintId != null && !sprintId.equalsIgnoreCase("null")) {
+            try {
+                sprintIdLong = Long.parseLong(sprintId);
+            } catch (NumberFormatException e) {
+                return ResponseEntity.badRequest().body(null); // Or handle error appropriately
+            }
+        }
+
+        return ResponseEntity.ok(taskService.assignTaskToSprint(taskId, sprintIdLong));
     }
 
 

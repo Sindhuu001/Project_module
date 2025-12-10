@@ -575,10 +575,12 @@ public class TaskServiceImpl implements TaskService {
         Task task = taskRepository.findById(taskId)
                 .orElseThrow(() -> new ResourceNotFoundException("Task not found: " + taskId));
 
-        Sprint sprint = null;
+        Sprint sprint;
         if (sprintId != null) {
             sprint = sprintRepository.findById(sprintId)
                     .orElseThrow(() -> new ResourceNotFoundException("Sprint not found: " + sprintId));
+        } else {
+            sprint = null;
         }
 
         // If the task is part of a story, move the whole story and all its tasks

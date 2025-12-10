@@ -43,4 +43,9 @@ public class TestCycleController {
         TestCycleSummaryResponse cycle = testCycleService.getCycleDetail(cycleId);
         return ResponseEntity.ok(cycle);
     }
+    @GetMapping("/getall")
+    public ResponseEntity<List<TestCycleSummaryResponse>> getAllCycles() {
+        List<TestCycleSummaryResponse> cycles = testCycleService.getAllCycles();
+        return ResponseEntity.ok(cycles);
+    }
 }

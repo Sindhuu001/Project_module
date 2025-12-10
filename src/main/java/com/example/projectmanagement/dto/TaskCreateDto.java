@@ -38,4 +38,5 @@ public class TaskCreateDto {
     private LocalDateTime startDate;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private Long createdBy;
 }

@@ -2,6 +2,7 @@ package com.example.projectmanagement.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
@@ -9,19 +10,17 @@ import jakarta.validation.constraints.Size;
 import lombok.Data;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
+
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import com.fasterxml.jackson.annotation.JsonBackReference;
-
 
 @Entity
 @Table(
-    name = "tasks",
-    uniqueConstraints = @UniqueConstraint(columnNames = {"title", "project_id", "story_id"})
+        name = "tasks",
+        uniqueConstraints = @UniqueConstraint(columnNames = {"title", "project_id", "story_id"})
 )
 @Data
-
 public class Task {
 
     @Id
@@ -29,20 +28,44 @@ public class Task {
     private Long id;
 
     @NotBlank(message = "Task title is required")
-    @Size(min = 2, max = 200, message = "Task title must be between 2 and 200 characters")
+    @Size(min = 2, max = 200)
     @Pattern(
-        regexp = "^(?!.* {3,})[A-Za-z0-9 ]+$",
-        message = "Name must contain only letters, digits, spaces, and not more than 2 consecutive spaces"
+            regexp = "^(?!.* {3,})[A-Za-z0-9 ]+$",
+            message = "Name must contain only letters, digits, spaces, and not more than 2 consecutive spaces"
     )
     @Column(nullable = false)
     private String title;
 
-    @Size(max = 1000, message = "Description cannot exceed 1000 characters")
+    @Size(max = 1000)
     private String description;
+
+    /* ------------------------
+       Relations (IGNORED)
+    ------------------------ */
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "status_id", nullable = false)
+    @JsonIgnore   // ✅ status details fetched via separate API if needed
     private Status status;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "project_id", nullable = false)
+    @JsonBackReference   // ✅ prevents Project → Task → Project loop
+    private Project project;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "story_id")
+    @JsonIgnore
+    private Story story;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "sprint_id")
+    @JsonIgnore
+    private Sprint sprint;
+
+    /* ------------------------
+       Simple Fields
+    ------------------------ */
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -50,52 +73,64 @@ public class Task {
 
     @Column(name = "story_points")
     private Integer storyPoints;
-     @Column(name = "start_date")
+
+    @Column(name = "start_date")
     private LocalDateTime startDate;
 
     @Column(name = "due_date")
     private LocalDateTime dueDate;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "project_id", nullable = false)
-    @JsonBackReference
-    private Project project;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "story_id", nullable = true) // story optional
-    private Story story;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "sprint_id", nullable = true) // sprint optional
-    private Sprint sprint;
-
     private Long assigneeId;
     private Long reporterId;
-    private boolean isBillable;
+
+    @Column(name = "is_billable")
+    private boolean billable;
+
+    /* ------------------------
+       Audit Fields
+    ------------------------ */
 
     @CreationTimestamp
-    @Column(name = "created_at", nullable = false, updatable = false)
+    @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
     @UpdateTimestamp
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+    @Column(name="created_by", updatable = false)
+    private Long createdBy;
+    /* ------------------------
+       Child Collections
+    ------------------------ */
 
     @OneToMany(mappedBy = "task", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore   // ✅ comments fetched via separate endpoint
     private List<Comment> comments = new ArrayList<>();
 
-    // Transient getter for sprintId (derived from story)
+    /* ------------------------
+       Derived Transient Fields
+    ------------------------ */
+
     @Transient
     @JsonProperty("effectiveSprintId")
     public Long getEffectiveSprintId() {
-        return sprint != null ? sprint.getId() : (story != null && story.getSprint() != null ? story.getSprint().getId() : null);
+        if (sprint != null) return sprint.getId();
+        if (story != null && story.getSprint() != null) return story.getSprint().getId();
+        return null;
     }
+
+    /* ------------------------
+       Enums
+    ------------------------ */
 
     public enum Priority {
         LOW, MEDIUM, HIGH, CRITICAL
     }
 
-    // Constructors
+    /* ------------------------
+       Constructors
+    ------------------------ */
+
     public Task() {}
 
     public Task(String title, String description, Project project, Long reporterId) {

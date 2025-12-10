@@ -1,6 +1,8 @@
 package com.example.projectmanagement.controller.testControllers;
 
+import com.example.projectmanagement.dto.UserDto;
 import com.example.projectmanagement.dto.testing.*;
+import com.example.projectmanagement.security.CurrentUser;
 import com.example.projectmanagement.service.AssignmentService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -27,11 +29,12 @@ public class AssignmentController {
     @PostMapping("/apply")
     public ResponseEntity<AssignmentApplyResponse> apply(
             @Valid @RequestBody AssignmentApplyRequest req,
-            Principal principal
+            @CurrentUser UserDto currentUser
     ) {
         // currentUserId could be logged in user — used for auditing (not strictly required here)
-        Long currentUserId = principal == null ? null : Long.parseLong(principal.getName());
-        AssignmentApplyResponse resp = assignmentService.applyAssignment(req, currentUserId);
+//        currentUser.getId()
+//        Long currentUserId = prin == null ? null : Long.parseLong(principal.getName());
+        AssignmentApplyResponse resp = assignmentService.applyAssignment(req, currentUser.getId());
         return ResponseEntity.ok(resp);
     }
 }

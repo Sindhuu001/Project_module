@@ -2,6 +2,8 @@ package com.example.projectmanagement.controller;
 
 import com.example.projectmanagement.audit.annotation.AuditLog;
 import com.example.projectmanagement.dto.EpicDto;
+import com.example.projectmanagement.dto.UserDto;
+import com.example.projectmanagement.security.CurrentUser;
 import com.example.projectmanagement.service.EpicService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -23,8 +25,8 @@ public class EpicController {
     // Create new Epic
     @PostMapping
     @PreAuthorize("hasRole('Manager')")
-    public ResponseEntity<EpicDto> createEpic(@RequestBody EpicDto epicDto) {
-        EpicDto createdEpic = epicService.createEpic(epicDto);
+    public ResponseEntity<EpicDto> createEpic(@RequestBody EpicDto epicDto,@CurrentUser UserDto currentUser) {
+        EpicDto createdEpic = epicService.createEpic(epicDto, currentUser.getId());
         System.out.println("*********audit log created for epic***********");
         return ResponseEntity.ok(createdEpic);
     }
@@ -84,4 +86,5 @@ public class EpicController {
     // public ResponseEntity<List<EpicDto>> getEpicsByOrganizationId(@PathVariable Long organizationId) {
     //     return ResponseEntity.ok(epicService.getEpicsByOrganizationId(organizationId));
     // }
+    
 }

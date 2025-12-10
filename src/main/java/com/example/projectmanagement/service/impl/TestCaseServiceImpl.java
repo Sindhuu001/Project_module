@@ -43,15 +43,16 @@ public class TestCaseServiceImpl implements TestCaseService {
         TestPriority priority = request.priority() != null ? request.priority() : TestPriority.MEDIUM;
 
         TestCase testCase = TestCase.builder()
-                .scenario(scenario)
-                .title(request.title())
-                .preConditions(request.preConditions())
-                .type(type)
-                .priority(priority)
-                .status("READY") // as per your decision
-                .createdBy(currentUserId)
-                .updatedAt(LocalDateTime.now())
-                .build();
+        .scenario(scenario)
+        // .projectId(scenario.getProjectId().getId()) // <-- assign projectId from scenario
+        .title(request.title())
+        .preConditions(request.preConditions())
+        .type(type)
+        .priority(priority)
+        .status("READY")
+        .createdBy(currentUserId)
+        .updatedAt(LocalDateTime.now())
+        .build();
 
         TestCase savedCase = testCaseRepository.save(testCase);
 
@@ -79,6 +80,7 @@ public class TestCaseServiceImpl implements TestCaseService {
                 savedCase.getType().name(),
                 savedCase.getPriority().name(),
                 savedCase.getStatus(),
+              
                 stepCount
         );
     }
@@ -128,4 +130,42 @@ public class TestCaseServiceImpl implements TestCaseService {
                 stepDtos
         );
     }
+   
+public List<TestCaseSummaryResponse> getCasesForProject(Long projectId) {
+
+    List<TestCase> cases =
+            testCaseRepository.findAvailableCasesByProjectId(projectId);
+
+    return cases.stream()
+            .map(tc -> {
+                int stepCount = testStepRepository.countByTestCaseId(tc.getId());
+                return new TestCaseSummaryResponse(
+                        tc.getId(),
+                        tc.getTitle(),
+                        tc.getType().name(),
+                        tc.getPriority().name(),
+                        tc.getStatus(),
+                        stepCount
+                );
+            })
+            .toList();
+}
+
+
+        // @Override       
+        // public List<TestCaseSummaryResponse> getCasesForProject(Long projectId) {
+        // List<TestCase> cases = testCaseRepository.findByProjectId(projectId);
+        // return cases.stream()             .map(tc -> {
+        //             int stepCount = testStepRepository.countByTestCaseId(tc.getId());
+        //             return new TestCaseSummaryResponse(
+        //                     tc.getId(),
+        //                     tc.getTitle(),
+        //                     tc.getType().name(),
+        //                     tc.getPriority().name(),
+        //                     tc.getStatus(),
+        //                     stepCount
+        //             );
+        //         })
+        //         .toList();
+        // }
 }

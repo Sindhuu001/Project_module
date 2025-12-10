@@ -46,12 +46,16 @@ public class TestStepExecutionServiceImpl implements TestStepExecutionService {
         TestRunCase runCase = testRunCaseRepository.findById(runCaseId)
                 .orElseThrow(() -> new EntityNotFoundException("TestRunCase not found: " + runCaseId));
 
-        boolean initialized = testRunCaseStepRepository.existsByRunCaseId(runCaseId);
-        if (!initialized && runCase.getTestCase() != null) { // Only init if it's from a blueprint
+        List<TestRunCaseStep> steps = testRunCaseStepRepository.findByRunCaseIdOrderByStepNumberAsc(runCaseId);
+
+        // If steps are not initialized, create them from the blueprint.
+        // This happens only once when the test case is opened for the first time.
+        if (steps.isEmpty() && runCase.getTestCase() != null) {
             initRunCaseSteps(runCase);
+            // Re-fetch the newly created steps to ensure a consistent view
+            steps = testRunCaseStepRepository.findByRunCaseIdOrderByStepNumberAsc(runCaseId);
         }
 
-        List<TestRunCaseStep> steps = testRunCaseStepRepository.findByRunCaseIdOrderByStepNumberAsc(runCaseId);
         return steps.stream().map(this::toDto).toList();
     }
 
@@ -60,6 +64,11 @@ public class TestStepExecutionServiceImpl implements TestStepExecutionService {
     public TestRunCaseStepResponse executeStep(TestStepExecutionRequest request, Long currentUserId) {
         TestRunCase runCase = testRunCaseRepository.findById(request.runCaseId())
                 .orElseThrow(() -> new EntityNotFoundException("TestRunCase not found: " + request.runCaseId()));
+
+        // If this is the first step executed, move the case to IN_PROGRESS
+        if (runCase.getStatus() == TestRunCaseStatus.NOT_STARTED) {
+            runCase.setStatus(TestRunCaseStatus.IN_PROGRESS);
+        }
 
         TestRunCaseStep stepResult = testRunCaseStepRepository.findById(request.stepId())
                 .orElseThrow(() -> new EntityNotFoundException("TestRunCaseStep not found: " + request.stepId()));
@@ -72,18 +81,20 @@ public class TestStepExecutionServiceImpl implements TestStepExecutionService {
 
         TestRunCaseStep savedStep = testRunCaseStepRepository.save(stepResult);
         
-        // Temporarily comment out to isolate the issue
-        // recalcRunCaseStatus(runCase);
-        // try {
-        //     if (runCase.getStatus() == TestRunCaseStatus.FAILED) {
-        //         bugService.handleCaseFailed(runCase.getId(), savedStep.getId(), currentUserId);
-        //     } else if (runCase.getStatus() == TestRunCaseStatus.PASSED) {
-        //         bugService.handleCasePassed(runCase.getId(), currentUserId);
-        //     }
-        // } catch (Exception ex) {
-        //     log.error("Error in post-step bug handling for runCase {}: {}", runCase.getId(), ex.getMessage(), ex);
-        // }
-
+        // Recalculate the overall status of the test case
+        recalcRunCaseStatus(runCase);
+//
+//        // Handle bug creation/resolution based on the new status
+//        try {
+//            if (runCase.getStatus() == TestRunCaseStatus.FAILED) {
+//                bugService.handleCaseFailed(runCase.getId(), savedStep.getId(), currentUserId);
+//            } else if (runCase.getStatus() == TestRunCaseStatus.PASSED) {
+//                bugService.handleCasePassed(runCase.getId(), currentUserId);
+//            }
+//        } catch (Exception ex) {
+//            log.error("Error in post-step bug handling for runCase {}: {}", runCase.getId(), ex.getMessage(), ex);
+//        }
+        
         return toDto(savedStep);
     }
 

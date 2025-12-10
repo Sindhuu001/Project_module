@@ -1,7 +1,9 @@
 package com.example.projectmanagement.controller;
 
 import com.example.projectmanagement.dto.UserDto;
+import com.example.projectmanagement.dto.testing.BugAssignRequest;
 import com.example.projectmanagement.dto.testing.BugCreateRequest;
+import com.example.projectmanagement.dto.testing.BugDetailResponse;
 import com.example.projectmanagement.dto.testing.BugResponse;
 import com.example.projectmanagement.dto.testing.BugStatusUpdateRequest;
 import com.example.projectmanagement.dto.testing.BugSummaryResponse;
@@ -40,6 +42,21 @@ public class BugController {
     ) {
         BugResponse resp = bugService.updateBugStatus(bugId, req, currentUser.getId());
         return ResponseEntity.ok(resp);
+    }
+
+    @PutMapping("/{bugId}/assign")
+    public ResponseEntity<BugResponse> assignBug(
+            @PathVariable Long bugId,
+            @Valid @RequestBody BugAssignRequest req
+    ) {
+        BugResponse resp = bugService.assignBug(bugId, req);
+        return ResponseEntity.ok(resp);
+    }
+
+    @GetMapping("/{bugId}")
+    public ResponseEntity<BugDetailResponse> getBugById(@PathVariable Long bugId) {
+        BugDetailResponse bug = bugService.getBugById(bugId);
+        return ResponseEntity.ok(bug);
     }
 
     @GetMapping("/projects/{projectId}")

@@ -39,9 +39,10 @@ public class EpicService {
 
 
     // ✅ Create Epic
-    public EpicDto createEpic(EpicDto epicDto) {
+    public EpicDto createEpic(EpicDto epicDto, Long userId) {
 
         Epic epic = convertToEntity(epicDto);
+        epic.setCreatedBy(userId);
 
         boolean exists = epicRepository.existsByNameAndProjectId(epic.getName(), epic.getProject().getId());
         if (exists) {
@@ -129,7 +130,7 @@ public class EpicService {
         dto.setName(epic.getName());
         dto.setDescription(epic.getDescription());
         dto.setStartDate(epic.getStartDate());
-
+        dto.setCreatedBy(epic.getCreatedBy());
         // Convert enum to String
         if (epic.getStatus() != null) {
             dto.setStatusId(epic.getStatus().getId());

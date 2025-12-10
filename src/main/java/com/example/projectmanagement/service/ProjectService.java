@@ -4,17 +4,13 @@ import com.example.projectmanagement.ExternalDTO.ProjectIdName;
 import com.example.projectmanagement.ExternalDTO.ProjectTasksDto;
 import com.example.projectmanagement.client.UserClient;
 import com.example.projectmanagement.config.ProjectStatusProperties;
-import com.example.projectmanagement.dto.ProjectDto;
-import com.example.projectmanagement.dto.ProjectSummary;
-import com.example.projectmanagement.dto.StatusDto;
-import com.example.projectmanagement.dto.UserDto;
+import com.example.projectmanagement.dto.*;
 import com.example.projectmanagement.entity.Project;
 import com.example.projectmanagement.exception.ValidationException;
 import com.example.projectmanagement.repository.ProjectRepository;
 import com.example.projectmanagement.repository.StatusRepository;
 import lombok.AllArgsConstructor;
 import org.modelmapper.ModelMapper;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -32,29 +28,18 @@ import java.util.stream.Collectors;
 @AllArgsConstructor
 public class ProjectService {
 
-    @Autowired
-    private ProjectRepository projectRepository;
-
-    @Autowired
-    private ModelMapper modelMapper;
-
-    @Autowired
-    private UserClient userClient;
-
-    @Autowired
-    private UserService userService;
-
-    @Autowired
-    private ProjectStatusProperties projectStatusProperties;
-
-    @Autowired
-    private StatusService statusService;
-
-    @Autowired
-    private StatusRepository statusRepository;
-
+    private final ProjectRepository projectRepository;
+    private final ModelMapper modelMapper;
+    private final UserClient userClient;
+    private final UserService userService;
+    private final ProjectStatusProperties projectStatusProperties;
+    private final StatusService statusService;
+    private final StatusRepository statusRepository;
     private final RiskStatusService riskStatusService;
 
+    /**
+     * Create project with validation and default statuses
+     */
     public ProjectDto createProject(ProjectDto projectDto) {
         List<String> errors = new ArrayList<>();
         System.out.println("********Entering Create Service file ********");
@@ -81,6 +66,9 @@ public class ProjectService {
         UserDto owner;
         try {
             owner = userService.getUserWithRoles(projectDto.getOwnerId());
+            if (owner == null) {
+                errors.add("Valid owner ID is required.");
+            }
         } catch (Exception e) {
             errors.add("Valid owner ID is required.");
             owner = null;
@@ -90,6 +78,7 @@ public class ProjectService {
             throw new ValidationException(errors);
         }
 
+        // Map DTO -> Entity
         Project project = modelMapper.map(projectDto, Project.class);
         project.setOwnerId(owner.getId());
 
@@ -100,23 +89,20 @@ public class ProjectService {
         }
 
         Set<Long> memberIds = projectDto.getMemberIds();
-        if (memberIds != null && !memberIds.isEmpty()) {
-            project.setMemberIds(memberIds);
-        } else {
-            project.setMemberIds(new HashSet<>());
-        }
+        project.setMemberIds(memberIds != null ? new HashSet<>(memberIds) : new HashSet<>());
 
         System.out.println("****************Created project: " + project);
         Project savedProject = projectRepository.save(project);
         System.out.println("**************Saved Projects" + savedProject);
 
+        // Create default statuses for the project
         projectStatusProperties.getDefaultStatuses().forEach(statusProperty -> {
             StatusDto defaultStatusDto = new StatusDto();
             defaultStatusDto.setName(statusProperty.getName());
-            // The sortOrder will be calculated by the addStatus method
             statusService.addStatus(savedProject.getId(), defaultStatusDto);
         });
 
+        // Create default risk statuses
         riskStatusService.createDefaultStatusesForProject(savedProject.getId());
 
         return convertToDto(savedProject);
@@ -134,6 +120,7 @@ public class ProjectService {
         return convertToDto(project);
     }
 
+
     @Transactional(readOnly = true)
     public ProjectDto getProjectByKey(String projectKey) {
         Project project = projectRepository.findByProjectKey(projectKey)
@@ -148,19 +135,50 @@ public class ProjectService {
         Map<Long, UserDto> userMap = allUsers.stream()
                 .collect(Collectors.toMap(UserDto::getId, Function.identity()));
         List<ProjectDto> dtos = projectRepository.findAll().stream()
-                .map(project -> convertToDto1(project, userMap))
+                .map(project -> convertToDtoWithUsers(project, userMap))
                 .collect(Collectors.toList());
         System.out.println("*****************Time taken to fetch all projects with users: " + (System.currentTimeMillis() - start) + " ms");
         return dtos;
     }
 
-    public ProjectDto convertToDto1(Project project, Map<Long, UserDto> userMap) {
+    @Transactional(readOnly = true)
+    public List<ProjectTimesheetDto> getAllTmsProjects() {
+        long start = System.currentTimeMillis();
+        List<UserDto> allUsers = userClient.findAll();
+        Map<Long, UserDto> userMap = allUsers.stream()
+                .collect(Collectors.toMap(UserDto::getId, Function.identity()));
+        List<ProjectTimesheetDto> dtos = projectRepository.findAll().stream()
+                .map(project -> convertToDtoWithUsers1(project, userMap))
+                .collect(Collectors.toList());
+        System.out.println("*****************Time taken to fetch all projects with users: " + (System.currentTimeMillis() - start) + " ms");
+        return dtos;
+    }
+
+    /**
+     * Convert with user objects already fetched and put into a map to avoid N+1
+     */
+    public ProjectDto convertToDtoWithUsers(Project project, Map<Long, UserDto> userMap) {
         long start = System.currentTimeMillis();
         ProjectDto dto = modelMapper.map(project, ProjectDto.class);
+//        dto.setOwner(userMap.get(project.getOwnerId()));
+//        dto.setMembers(
+//                project.getMemberIds().stream()
+//                        .map(userMap::get)
+//                        .filter(Objects::nonNull)
+//                        .collect(Collectors.toList())
+//        );
+        System.out.println("###########################Time taken to convert single Project to ProjectDto: " + (System.currentTimeMillis() - start) + " ms");
+        return dto;
+    }
+
+    public ProjectTimesheetDto convertToDtoWithUsers1(Project project, Map<Long, UserDto> userMap) {
+        long start = System.currentTimeMillis();
+        ProjectTimesheetDto dto = modelMapper.map(project, ProjectTimesheetDto.class);
         dto.setOwner(userMap.get(project.getOwnerId()));
         dto.setMembers(
                 project.getMemberIds().stream()
                         .map(userMap::get)
+                        .filter(Objects::nonNull)
                         .collect(Collectors.toList())
         );
         System.out.println("###########################Time taken to convert single Project to ProjectDto: " + (System.currentTimeMillis() - start) + " ms");
@@ -174,11 +192,44 @@ public class ProjectService {
     }
 
     @Transactional(readOnly = true)
-    public List<ProjectDto> getProjectsByOwner(Long ownerId) {
-        return projectRepository.findByOwnerId(ownerId).stream()
-                .map(this::convertToDto)
-                .collect(Collectors.toList());
+    public List<ProjectPermissionDto> getAssociatedProjects(Long currentUserId) {
+
+        // 1️⃣ Fetch all projects where user is OWNER or MEMBER
+        List<Project> projects =
+                projectRepository.findByOwnerIdOrMemberId(currentUserId);
+
+        // 2️⃣ Build permission-aware response
+        return projects.stream()
+                .map(project -> buildPermissionDto(project, currentUserId))
+                .filter(ProjectPermissionDto::isCanView)
+                .toList();
     }
+
+
+    @Transactional(readOnly = true)
+    public List<ProjectTimesheetDto> getProjectsByOwner(Long ownerId) {
+
+        List<Project> projects = projectRepository.findByOwnerId(ownerId);
+
+        Set<Long> allUserIds = new HashSet<>();
+
+        for (Project p : projects) {
+            if (p.getOwnerId() != null) {
+                allUserIds.add(p.getOwnerId());
+            }
+            if (p.getMemberIds() != null) {
+                allUserIds.addAll(p.getMemberIds());
+            }
+        }
+
+        Map<Long, UserDto> usersMap =
+                userService.getUsersByIdsMap(allUserIds);
+
+        return projects.stream()
+                .map(project -> convertToDto2(project, usersMap))
+                .toList();
+    }
+
 
     @Transactional(readOnly = true)
     public List<Map<String, Object>> getActiveProjectsByOwner1(Long ownerId) {
@@ -199,7 +250,7 @@ public class ProjectService {
         Map<Long, UserDto> userMap = allUsers.stream()
                 .collect(Collectors.toMap(UserDto::getId, Function.identity()));
         return projectRepository.findByMemberId(userId).stream()
-                .map(project -> convertToDto1(project, userMap))
+                .map(project -> convertToDtoWithUsers(project, userMap))
                 .collect(Collectors.toList());
     }
 
@@ -210,6 +261,13 @@ public class ProjectService {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Update project (partial updates allowed).
+     * Rules:
+     * - Archived projects may only be changed back to ACTIVE (no other field updates allowed)
+     * - Validate owner existence if ownerId provided
+     * - Validate start/end dates (use existing values if partial)
+     */
     public ProjectDto updateProject(Long id, ProjectDto updatedDto) {
         List<String> errors = new ArrayList<>();
         Project existing = projectRepository.findById(id)
@@ -218,19 +276,28 @@ public class ProjectService {
         Project.ProjectStatus existingStatus = existing.getStatus();
         Project.ProjectStatus newStatus = updatedDto.getStatus();
 
-        if (existingStatus == Project.ProjectStatus.ARCHIVED && newStatus != Project.ProjectStatus.ACTIVE) {
-            errors.add("Cannot update an archived project unless status is changed to ACTIVE.");
+        // If archived, only allow status -> ACTIVE (or no-op)
+        if (existingStatus == Project.ProjectStatus.ARCHIVED) {
+            if (newStatus == null) {
+                errors.add("Archived project: to modify it you must set status to ACTIVE.");
+            } else if (newStatus != Project.ProjectStatus.ACTIVE) {
+                errors.add("Cannot update an archived project unless status is changed to ACTIVE.");
+            }
         }
 
-        if (updatedDto.getStartDate() != null && updatedDto.getEndDate() != null &&
-                updatedDto.getStartDate().isAfter(updatedDto.getEndDate())) {
+        // Determine effective start/end for validation (use existing when null)
+        LocalDateTime effectiveStart = updatedDto.getStartDate() != null ? updatedDto.getStartDate() : existing.getStartDate();
+        LocalDateTime effectiveEnd = updatedDto.getEndDate() != null ? updatedDto.getEndDate() : existing.getEndDate();
+
+        if (effectiveStart != null && effectiveEnd != null && effectiveStart.isAfter(effectiveEnd)) {
             errors.add("Start date cannot be after end date.");
         }
 
+        // Owner validation if provided
         if (updatedDto.getOwnerId() != null) {
             try {
-                Object ownerResponse = userClient.findExternalById(updatedDto.getOwnerId());
-                if (ownerResponse == null || (ownerResponse instanceof List && ((List<?>) ownerResponse).isEmpty())) {
+                UserDto owner = userService.getUserWithRoles(updatedDto.getOwnerId());
+                if (owner == null) {
                     errors.add("Owner not found with id: " + updatedDto.getOwnerId());
                 }
             } catch (Exception e) {
@@ -242,24 +309,22 @@ public class ProjectService {
             throw new ValidationException(errors);
         }
 
+        // If archived -> active transition requested, only update status
         if (existingStatus == Project.ProjectStatus.ARCHIVED && newStatus == Project.ProjectStatus.ACTIVE) {
             existing.setStatus(Project.ProjectStatus.ACTIVE);
-        } else {
-            existing.setName(updatedDto.getName());
-            existing.setDescription(updatedDto.getDescription());
-            existing.setProjectKey(updatedDto.getProjectKey());
-            existing.setStartDate(updatedDto.getStartDate());
-            existing.setEndDate(updatedDto.getEndDate());
-            existing.setStatus(updatedDto.getStatus());
-
-            if (updatedDto.getOwnerId() != null) {
-                existing.setOwnerId(updatedDto.getOwnerId());
-            }
-
-            if (updatedDto.getCurrentStage() != null) {
-                existing.setCurrentStage(updatedDto.getCurrentStage());
-            }
+            Project saved = projectRepository.save(existing);
+            return convertToDto(saved);
         }
+
+        // Partial safe updates
+        if (updatedDto.getName() != null) existing.setName(updatedDto.getName());
+        if (updatedDto.getDescription() != null) existing.setDescription(updatedDto.getDescription());
+        if (updatedDto.getProjectKey() != null) existing.setProjectKey(updatedDto.getProjectKey());
+        if (updatedDto.getStartDate() != null) existing.setStartDate(updatedDto.getStartDate());
+        if (updatedDto.getEndDate() != null) existing.setEndDate(updatedDto.getEndDate());
+        if (updatedDto.getStatus() != null) existing.setStatus(updatedDto.getStatus());
+        if (updatedDto.getCurrentStage() != null) existing.setCurrentStage(updatedDto.getCurrentStage());
+        if (updatedDto.getOwnerId() != null) existing.setOwnerId(updatedDto.getOwnerId());
 
         if (updatedDto.getMemberIds() != null) {
             existing.setMemberIds(new HashSet<>(updatedDto.getMemberIds()));
@@ -316,6 +381,9 @@ public class ProjectService {
         }
     }
 
+    /**
+     * Convert Project entity to ProjectDto including owner and member user info
+     */
     public ProjectDto convertToDto(Project project) {
         long start = System.currentTimeMillis();
         ProjectDto dto = ProjectDto.builder()
@@ -327,21 +395,76 @@ public class ProjectService {
                 .currentStage(project.getCurrentStage())
                 .createdAt(project.getCreatedAt())
                 .updatedAt(project.getUpdatedAt())
+                .startDate(project.getStartDate())
+                .endDate(project.getEndDate())
                 .build();
 
         dto.setOwnerId(project.getOwnerId());
-        dto.setStartDate(project.getStartDate());
-        dto.setEndDate(project.getEndDate());
-        dto.setOwner(project.getOwnerId() != null ? userService.getUserWithRoles(project.getOwnerId()) : null);
+//        dto.setOwner(project.getOwnerId() != null ? safeGetUserWithRoles(project.getOwnerId()) : null);
 
         if (project.getMemberIds() != null) {
             Set<Long> memberIds = project.getMemberIds();
             dto.setMemberIds(memberIds);
+//            dto.setMembers(userService.getUsersByIds(new ArrayList<>(memberIds)));
+        }
+
+        System.out.println("&&&&&&&&&&&&&&&&&&&&&&&&&&Time taken to convert Project to ProjectDto: " + (System.currentTimeMillis() - start) + " ms");
+        return dto;
+    }
+
+    public ProjectTimesheetDto convertToDto3(Project project) {
+        long start = System.currentTimeMillis();
+        ProjectTimesheetDto dto = ProjectTimesheetDto.builder()
+                .id(project.getId())
+                .name(project.getName())
+                .startDate(project.getStartDate())
+                .endDate(project.getEndDate())
+                .build();
+
+//        dto.setOwnerId(project.getOwnerId());
+        dto.setOwner(project.getOwnerId() != null ? safeGetUserWithRoles(project.getOwnerId()) : null);
+
+        if (project.getMemberIds() != null) {
+            Set<Long> memberIds = project.getMemberIds();
+//            dto.setMemberIds(memberIds);
             dto.setMembers(userService.getUsersByIds(new ArrayList<>(memberIds)));
         }
 
         System.out.println("&&&&&&&&&&&&&&&&&&&&&&&&&&Time taken to convert Project to ProjectDto: " + (System.currentTimeMillis() - start) + " ms");
         return dto;
+    }
+
+    private ProjectTimesheetDto convertToDto2(
+            Project project,
+            Map<Long, UserDto> usersMap) {
+
+        ProjectTimesheetDto dto = ProjectTimesheetDto.builder()
+                .id(project.getId())
+                .name(project.getName())
+                .startDate(project.getStartDate())
+                .endDate(project.getEndDate())
+                .build();
+
+        dto.setOwner(usersMap.get(project.getOwnerId()));
+
+        if (project.getMemberIds() != null) {
+            dto.setMembers(
+                    project.getMemberIds().stream()
+                            .map(usersMap::get)
+                            .toList()
+            );
+        }
+
+        return dto;
+    }
+
+
+    private UserDto safeGetUserWithRoles(Long ownerId) {
+        try {
+            return userService.getUserWithRoles(ownerId);
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     public ProjectDto unarchiveProject(Long projectId) {
@@ -386,9 +509,8 @@ public class ProjectService {
     }
 
     public List<UserDto> getProjectMembersOwner(Long id) {
-        Project project = projectRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Project not found with id: " + id));
-        return userService.getUsersByIds(new ArrayList<>(project.getMemberIds()));
+        // duplicate of getProjectMembers - preserved for compatibility with your original API
+        return getProjectMembers(id);
     }
 
     public List<ProjectIdName> getActiveProjectsByMember(Long userId) {
@@ -422,7 +544,6 @@ public class ProjectService {
         return projectRepository.findAccessibleProjectSummaries(userId);
     }
 
-    
     @Transactional(readOnly = true)
     public List<ProjectDto> getProjectsByOwner(Long ownerId, String period) {
 
@@ -438,6 +559,28 @@ public class ProjectService {
                 .collect(Collectors.toList());
     }
 
+    private ProjectPermissionDto buildPermissionDto(Project project, Long currentUserId) {
+
+        // 1️⃣ Is current user the OWNER?
+        boolean isOwner = project.getOwnerId().equals(currentUserId);
+
+        // 2️⃣ Is current user a MEMBER?
+        boolean isMember = project.getMemberIds() != null &&
+                project.getMemberIds().contains(currentUserId);
+
+        // 3️⃣ Permission rules
+        boolean canView = isOwner || isMember;
+        boolean canEdit = isOwner;
+        boolean canDelete = isOwner;
+
+        // 4️⃣ Build final response
+        return ProjectPermissionDto.builder()
+                .project(convertToDto(project)) // your existing mapper
+                .canView(canView)
+                .canEdit(canEdit)
+                .canDelete(canDelete)
+                .build();
+    }
 
 
 }

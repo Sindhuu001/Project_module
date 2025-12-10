@@ -1,6 +1,7 @@
 package com.example.projectmanagement.service;
 
 import com.example.projectmanagement.dto.*;
+import com.example.projectmanagement.dto.testing.TaskResponse;
 import com.example.projectmanagement.entity.Task;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -10,7 +11,7 @@ import java.util.List;
 public interface TaskService {
     long countTasksByStoryId(Long storyId);
 
-    TaskCreateDto createTask(TaskCreateDto taskCreateDto);
+    TaskCreateDto createTask(TaskCreateDto taskCreateDto, Long userId);
 
     TaskViewDto getTaskById(Long id);
 
@@ -49,4 +50,8 @@ public interface TaskService {
     List<TaskViewDto> getTasksByProjectId(Long projectId);
 
     List<TaskViewDto> getTasksBySprintId(Long projectId);
+
+    void assignStory(Long taskId, Long storyId);
+
+    TaskResponse assignTaskToSprint(Long taskId, Long sprintId);
 }

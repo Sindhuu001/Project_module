@@ -1,6 +1,9 @@
 package com.example.projectmanagement.service.impl;
 
+import com.example.projectmanagement.dto.UserDto;
+import com.example.projectmanagement.dto.testing.BugAssignRequest;
 import com.example.projectmanagement.dto.testing.BugCreateRequest;
+import com.example.projectmanagement.dto.testing.BugDetailResponse;
 import com.example.projectmanagement.dto.testing.BugResponse;
 import com.example.projectmanagement.dto.testing.BugStatusUpdateRequest;
 import com.example.projectmanagement.dto.testing.BugSummaryResponse;
@@ -10,11 +13,13 @@ import com.example.projectmanagement.entity.testing.TestRunCaseStep;
 import com.example.projectmanagement.enums.BugPriority;
 import com.example.projectmanagement.enums.BugSeverity;
 import com.example.projectmanagement.enums.BugStatus;
+import com.example.projectmanagement.enums.BugType;
 import com.example.projectmanagement.repository.BugRepository;
 import com.example.projectmanagement.repository.TestRunCaseRepository;
 import com.example.projectmanagement.repository.TestRunCaseStepRepository;
 import com.example.projectmanagement.repository.TestRunRepository;
 import com.example.projectmanagement.service.BugService;
+import com.example.projectmanagement.service.UserService;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -38,6 +43,7 @@ public class BugServiceImpl implements BugService {
     private final TestRunCaseRepository testRunCaseRepository;
     private final TestRunCaseStepRepository testRunCaseStepRepository;
     private final TestRunRepository testRunRepository;
+    private final UserService userService;
 
     @Override
     @Transactional
@@ -79,8 +85,25 @@ public class BugServiceImpl implements BugService {
             bug.setPriority(BugPriority.MEDIUM);
         }
 
+        if (req.type() != null) {
+            try {
+                bug.setType(BugType.valueOf(req.type().trim().toUpperCase(Locale.ROOT)));
+            } catch (Exception ex) {
+                bug.setType(BugType.FUNCTIONAL);
+            }
+        } else {
+            bug.setType(BugType.FUNCTIONAL);
+        }
+
         bug.setReporter(reporterId);
-        bug.setAssignedTo(req.assignedTo());
+        if (req.assignedTo() != null) {
+            bug.setAssignedTo(req.assignedTo());
+        } else if (runCase.getTestCase() != null &&
+                runCase.getTestCase().getScenario() != null &&
+                runCase.getTestCase().getScenario().getTestStory() != null &&
+                runCase.getTestCase().getScenario().getTestStory().getLinkedUserStory() != null) {
+            bug.setAssignedTo(runCase.getTestCase().getScenario().getTestStory().getLinkedUserStory().getAssigneeId());
+        }
         bug.setStatus(BugStatus.NEW);
         bug.setCreatedAt(LocalDateTime.now());
         bug.setUpdatedAt(LocalDateTime.now());
@@ -150,6 +173,31 @@ public class BugServiceImpl implements BugService {
     }
 
     @Override
+    @Transactional
+    public BugResponse assignBug(Long bugId, BugAssignRequest req) {
+        Bug bug = bugRepository.findById(bugId)
+                .orElseThrow(() -> new EntityNotFoundException("Bug not found: " + bugId));
+
+        UserDto assignee = userService.getUserWithRoles(req.assigneeId());
+        if (assignee == null) {
+            throw new EntityNotFoundException("Assignee not found: " + req.assigneeId());
+        }
+
+        bug.setAssignedTo(assignee.getId());
+        bug.setUpdatedAt(LocalDateTime.now());
+
+        Bug saved = bugRepository.save(bug);
+        return toResponse(saved);
+    }
+
+    @Override
+    public BugDetailResponse getBugById(Long bugId) {
+        Bug bug = bugRepository.findById(bugId)
+                .orElseThrow(() -> new EntityNotFoundException("Bug not found: " + bugId));
+        return toDetailResponse(bug);
+    }
+
+    @Override
     public Page<BugResponse> findBugsByProjectId(Long projectId, int page, int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
         Page<Bug> bugPage = bugRepository.findByProjectId(projectId, pageable);
@@ -207,9 +255,10 @@ public class BugServiceImpl implements BugService {
         return new BugResponse(
                 b.getId(),
                 b.getTitle(),
-                b.getStatus(),                 // if your DTO expects enum or string; adjust if needed
-                b.getSeverity() != null ? b.getSeverity() : null,
+                b.getStatus(),
+                b.getSeverity(),
                 b.getPriority(),
+                b.getType(),
                 b.getReporter(),
                 b.getAssignedTo(),
                 b.getTestRun() != null ? b.getTestRun().getId() : null,
@@ -222,6 +271,51 @@ public class BugServiceImpl implements BugService {
                 b.getCreatedAt(),
                 b.getUpdatedAt()
         );
+    }
+
+    private BugDetailResponse toDetailResponse(Bug b) {
+        BugDetailResponse res = new BugDetailResponse();
+        res.setId(b.getId());
+        res.setTitle(b.getTitle());
+        res.setDescription(b.getDescription());
+        res.setReproductionSteps(b.getReproductionSteps());
+        res.setExpectedResult(b.getExpectedResult());
+        res.setActualResult(b.getActualResult());
+        res.setStatus(b.getStatus());
+        res.setSeverity(b.getSeverity());
+        res.setPriority(b.getPriority());
+        res.setType(b.getType());
+        res.setReporter(b.getReporter());
+        res.setCreatedAt(b.getCreatedAt());
+        res.setUpdatedAt(b.getUpdatedAt());
+
+        if (b.getAssignedTo() != null) {
+            UserDto assignee = userService.getUserWithRoles(b.getAssignedTo());
+            if (assignee != null) {
+                res.setAssignedTo(assignee.getId());
+            }
+        }
+
+        if (b.getProject() != null) {
+            res.setProject(new BugDetailResponse.ProjectInfo(b.getProject().getId(), b.getProject().getName()));
+        }
+        if (b.getTestStory() != null) {
+            res.setTestStory(new BugDetailResponse.TestStoryInfo(b.getTestStory().getId(), b.getTestStory().getName()));
+        }
+        if (b.getTestScenario() != null) {
+            res.setTestScenario(new BugDetailResponse.TestScenarioInfo(b.getTestScenario().getId(), b.getTestScenario().getTitle()));
+        }
+        if (b.getTestCase() != null) {
+            res.setTestCase(new BugDetailResponse.TestCaseInfo(b.getTestCase().getId(), b.getTestCase().getTitle()));
+        }
+        if (b.getRunCase() != null) {
+            res.setRunCase(new BugDetailResponse.TestRunCaseInfo(b.getRunCase().getId(), b.getRunCase().getTestCase().getTitle()));
+        }
+        if (b.getRunCaseStep() != null) {
+            res.setRunCaseStep(new BugDetailResponse.TestRunCaseStepInfo(b.getRunCaseStep().getId(), b.getRunCaseStep().getStep().getAction()));
+        }
+
+        return res;
     }
 
     private BugSummaryResponse toSummaryResponse(Bug bug) {

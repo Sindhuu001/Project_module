@@ -51,7 +51,8 @@ public class Epic {
     @ManyToOne
     @JoinColumn(name = "project_id", nullable = false)
     private Project project;
-
+    @Column(name="created_by", updatable = false)
+    private Long createdBy;
     @OneToMany(mappedBy = "epic", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Story> stories = new ArrayList<>();
 

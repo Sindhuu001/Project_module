@@ -52,4 +52,9 @@ public class TestScenario {
 
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
+
+    public TestCase getProjectId() {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'getProjectId'");
+    }
 }

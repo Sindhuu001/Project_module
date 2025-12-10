@@ -11,7 +11,7 @@ import java.util.List;
 public interface TaskService {
     long countTasksByStoryId(Long storyId);
 
-    TaskCreateDto createTask(TaskCreateDto taskCreateDto);
+    TaskCreateDto createTask(TaskCreateDto taskCreateDto, Long userId);
 
     TaskViewDto getTaskById(Long id);
 

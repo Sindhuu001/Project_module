@@ -81,7 +81,37 @@ public class TestCycleServiceImpl implements TestCycleService {
                 0
         );
     }
+    @Override
+    public List<TestCycleSummaryResponse> getAllCycles() {
+        List<TestCycle> cycles = testCycleRepository.findAll();
 
+        return cycles.stream()
+                .map(cycle -> {
+                    int runCount = 0;
+                    int completedRunCount = 0;
+                    try {
+                        runCount = testRunRepository.countByCycleId(cycle.getId());
+                        // if you later add status enum, adjust this
+                        completedRunCount = testRunRepository.countByCycleIdAndStatus(cycle.getId(), "COMPLETED");
+                    } catch (Exception ex) {
+                        // if TestRunRepository is not wired yet, you can temporarily skip this
+                    }
+
+                    return new TestCycleSummaryResponse(
+                            cycle.getId(),
+                            cycle.getName(),
+                            cycle.getCycleType(),
+                            cycle.getStatus(),
+                            cycle.getProject().getId(),
+                            cycle.getSprint() != null ? cycle.getSprint().getId() : null,
+                            cycle.getStartDate(),
+                            cycle.getEndDate(),
+                            runCount,
+                            completedRunCount
+                    );
+                })
+                .toList();
+    }
     @Override
     public List<TestCycleSummaryResponse> getCyclesForProject(Long projectId) {
         // Load only cycles for that project; keep this lightweight

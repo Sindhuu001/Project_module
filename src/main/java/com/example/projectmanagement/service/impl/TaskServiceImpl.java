@@ -56,7 +56,7 @@ public class TaskServiceImpl implements TaskService {
     }
 
     @Override
-    public TaskCreateDto createTask(TaskCreateDto taskCreateDto) {
+    public TaskCreateDto createTask(TaskCreateDto taskCreateDto, Long userId) {
         Task task = new Task();
 
         // 1️⃣ Project validation (mandatory)
@@ -85,7 +85,7 @@ public class TaskServiceImpl implements TaskService {
         task.setDueDate(taskCreateDto.getDueDate());
         task.setStartDate(taskCreateDto.getStartDate());
         task.setBillable(taskCreateDto.isBillable());
-
+        
         // 4️⃣ Assignee validation (optional)
         if (taskCreateDto.getAssigneeId() != null) {
             Long assigneeId = taskCreateDto.getAssigneeId();
@@ -133,6 +133,8 @@ public class TaskServiceImpl implements TaskService {
         } else if (task.getStory() != null && task.getStory().getSprint() != null) {
             task.setSprint(task.getStory().getSprint());
         }
+
+        task.setCreatedBy(userId);
 
         // 8️⃣ Persist task
         Task savedTask = taskRepository.save(task);
@@ -474,6 +476,7 @@ public class TaskServiceImpl implements TaskService {
         dto.setCreatedAt(task.getCreatedAt());
         dto.setUpdatedAt(task.getUpdatedAt());
         dto.setStartDate(task.getStartDate());
+        dto.setCreatedBy(task.getCreatedBy());
         if (task.getStatus() != null)
             dto.setStatusId(task.getStatus().getId());
         if (task.getProject() != null)

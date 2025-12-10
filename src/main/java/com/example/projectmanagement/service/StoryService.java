@@ -18,6 +18,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -55,7 +56,7 @@ public class StoryService {
     private TaskRepository taskRepository;
 
     @Transactional
-    public StoryCreateDto createStory(StoryCreateDto dto) {
+    public StoryCreateDto createStory(StoryCreateDto dto, Long userId) {
 
         Long projectId = dto.getProjectId();
 
@@ -96,7 +97,7 @@ public class StoryService {
         story.setAssigneeId(dto.getAssigneeId());
         story.setReporterId(dto.getReporterId());
         story.setPriority(dto.getPriority());
-
+        story.setCreatedBy(userId);
         story.setProject(
                 projectRepository.findById(projectId)
                         .orElseThrow(() -> new RuntimeException("Project not found"))
@@ -139,6 +140,7 @@ public class StoryService {
         createdDto.setSprintId(saved.getSprint() != null ? saved.getSprint().getId() : null);
         createdDto.setStatusId(saved.getStatus().getId());
         createdDto.setPriority(saved.getPriority());
+        createdDto.setCreatedBy(saved.getCreatedBy());
 
         return createdDto;
     }
@@ -241,7 +243,7 @@ public class StoryService {
 
         // -----------------------------------------
         // CHECK: Assignee (optional)
-        // -----------------------------------------
+        // -----------------------------------------``
         if (dto.getAssigneeId() != null) {
             boolean isAssigneeValid = projectRepository.isUserPartOfProject(projectId, dto.getAssigneeId());
 
@@ -270,7 +272,13 @@ public class StoryService {
         Status status = statusRepository.findById(dto.getStatusId())
                 .orElseThrow(() -> new ResourceNotFoundException("Status not found"));
         story.setStatus(status);
+        Integer doneSortOrder = statusRepository.findMaxSortOrderByProject(projectId);
 
+if (status.getSortOrder() == doneSortOrder) {
+    story.setCompletedAt(LocalDateTime.now());
+} else {
+    story.setCompletedAt(null);
+}
         // -----------------------------------------
         // SPRINT UPDATE (nullable)
         // -----------------------------------------
@@ -317,14 +325,31 @@ public class StoryService {
 
 
     public StoryDto updateStoryStatus(Long storyId, Long statusId) {
-        Story story = storyRepository.findById(storyId)
-                .orElseThrow(() -> new RuntimeException("Story not found with id: " + storyId));
-        Status status = statusRepository.findById(statusId)
-                .orElseThrow(() -> new RuntimeException("Status not found with id: " + statusId));
-        story.setStatus(status);
-        Story updatedStory = storyRepository.save(story);
-        return convertToDto(updatedStory);
+
+    Story story = storyRepository.findById(storyId)
+            .orElseThrow(() -> new RuntimeException("Story not found with id: " + storyId));
+
+    Status status = statusRepository.findById(statusId)
+            .orElseThrow(() -> new RuntimeException("Status not found with id: " + statusId));
+
+    story.setStatus(status);
+
+    // ✅ Safely fetch the DONE status (first done by sort order)
+    Status doneStatus = statusRepository
+            .findFirstByNameIgnoreCaseOrderBySortOrderAsc("Done");
+
+    Integer doneSortOrder = (doneStatus != null) ? doneStatus.getSortOrder() : null;
+
+    // ✅ Set completedAt when status == DONE
+    if (doneSortOrder != null && status.getSortOrder().equals(doneSortOrder)) {
+        story.setCompletedAt(LocalDateTime.now());
+    } else {
+        story.setCompletedAt(null); // Clear when moved away from DONE
     }
+
+    Story updatedStory = storyRepository.save(story);
+    return convertToDto(updatedStory);
+}
 
     public void deleteStory(Long id) {
         if (!storyRepository.existsById(id)) {

@@ -4,6 +4,7 @@ import com.example.projectmanagement.audit.annotation.AuditLog;
 import com.example.projectmanagement.dto.*;
 import com.example.projectmanagement.dto.testing.TaskResponse;
 import com.example.projectmanagement.entity.Task;
+import com.example.projectmanagement.security.CurrentUser;
 import com.example.projectmanagement.service.TaskService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,8 +34,10 @@ public class TaskController {
     // ------------------------------
     @PostMapping
     @PreAuthorize("hasRole('Manager')")
-    public ResponseEntity<TaskCreateDto> createTask(@Valid @RequestBody TaskCreateDto taskCreateDto) {
-        TaskCreateDto createdTask = taskService.createTask(taskCreateDto);
+    public ResponseEntity<TaskCreateDto> createTask(@Valid @RequestBody TaskCreateDto taskCreateDto, @CurrentUser UserDto currentUser) {
+        // taskCreateDto.setCreatedBy(currentUser.getId());
+        System.out.println("Current User ID: " + currentUser.getId());
+        TaskCreateDto createdTask = taskService.createTask(taskCreateDto, currentUser.getId());
         return new ResponseEntity<>(createdTask, HttpStatus.CREATED);
     }
 

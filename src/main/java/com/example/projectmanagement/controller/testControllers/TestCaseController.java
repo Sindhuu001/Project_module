@@ -46,4 +46,17 @@ public class TestCaseController {
                 testCaseService.getCaseDetail(caseId)
         );
     }
-}
+    @GetMapping("/getcases/{projectId}")
+    public ResponseEntity<List<TestCaseSummaryResponse>> getCasesForProject(
+            @PathVariable Long projectId
+    ) {
+        return ResponseEntity.ok(
+                testCaseService.getCasesForProject(projectId)
+        );
+    }
+
+
+  
+
+
+}       

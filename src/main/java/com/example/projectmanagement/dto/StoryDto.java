@@ -46,7 +46,7 @@ public class StoryDto {
     private EpicDto epic;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
-   
+    private Long createdBy;
     private LocalDateTime startDate;
     private LocalDateTime dueDate;
     // Constructors

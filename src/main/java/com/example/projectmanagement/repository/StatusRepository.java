@@ -30,5 +30,7 @@ public interface StatusRepository extends JpaRepository<Status, Long> {
             "WHERE s.sprint.id = :sprintId AND s.tasks IS EMPTY")
     boolean existsBySprintIdWithNoTasks(@Param("sprintId") Long sprintId);
 
+    Status findFirstByNameIgnoreCaseOrderBySortOrderAsc(String string);
+
 
 }

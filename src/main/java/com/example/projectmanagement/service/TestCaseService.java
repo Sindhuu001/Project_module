@@ -13,5 +13,8 @@ public interface TestCaseService {
     List<TestCaseSummaryResponse> getCasesForScenario(Long scenarioId);
 
     TestCaseDetailResponse getCaseDetail(Long caseId);
+    // List<TestCaseSummaryResponse> getCasesForProject(Long projectId);
+
+    List<TestCaseSummaryResponse> getCasesForProject(Long projectId);
 }
 

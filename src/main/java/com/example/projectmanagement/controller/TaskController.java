@@ -156,14 +156,14 @@ public class TaskController {
         return ResponseEntity.ok("Task attached to story successfully");
     }
 
-    @PatchMapping("/{taskId}/assign-sprint")
+    @PatchMapping("/{taskId}/assign-sprint/{sprintId}")
     public ResponseEntity<TaskResponse> assignTaskToSprint(
             @PathVariable Long taskId,
-            @RequestParam(required = false) Long sprintId) {
+            @PathVariable Long sprintId) {
 
+//        Long sprintId = (payload != null) ? payload.get("sprintId") : null;
         return ResponseEntity.ok(taskService.assignTaskToSprint(taskId, sprintId));
     }
-
 
 
 }

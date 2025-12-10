@@ -1,5 +1,6 @@
 package com.example.projectmanagement.service;
 
+import com.example.projectmanagement.dto.testing.ProjectTestDataResponse;
 import com.example.projectmanagement.dto.testing.TestStoryCreateRequest;
 import com.example.projectmanagement.dto.testing.TestStorySummaryResponse;
 
@@ -12,4 +13,6 @@ public interface TestStoryService {
     List<TestStorySummaryResponse> getTestStoriesForProject(Long projectId);
 
     List<TestStorySummaryResponse> getTestStoriesForUserStory(Long storyId);
+
+    ProjectTestDataResponse getProjectTestData(Long projectId);
 }

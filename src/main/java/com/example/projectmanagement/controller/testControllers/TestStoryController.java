@@ -1,6 +1,7 @@
 package com.example.projectmanagement.controller.testControllers;
 
 import com.example.projectmanagement.dto.UserDto;
+import com.example.projectmanagement.dto.testing.ProjectTestDataResponse;
 import com.example.projectmanagement.dto.testing.TestStoryCreateRequest;
 import com.example.projectmanagement.dto.testing.TestStorySummaryResponse;
 import com.example.projectmanagement.security.CurrentUser;
@@ -46,6 +47,11 @@ public class TestStoryController {
     ) {
         List<TestStorySummaryResponse> stories = testStoryService.getTestStoriesForUserStory(storyId);
         return ResponseEntity.ok(stories);
+    }
+
+    @GetMapping("/project-test-data/{projectId}")
+    public ResponseEntity<ProjectTestDataResponse> getProjectTestData(@PathVariable Long projectId) {
+        return ResponseEntity.ok(testStoryService.getProjectTestData(projectId));
     }
 
 

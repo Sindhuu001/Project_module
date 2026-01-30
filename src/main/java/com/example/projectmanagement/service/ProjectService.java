@@ -5,10 +5,9 @@ import com.example.projectmanagement.ExternalDTO.ProjectTasksDto;
 import com.example.projectmanagement.client.UserClient;
 import com.example.projectmanagement.config.ProjectStatusProperties;
 import com.example.projectmanagement.dto.*;
-import com.example.projectmanagement.entity.Project;
+import com.example.projectmanagement.entity.*;
 import com.example.projectmanagement.exception.ValidationException;
-import com.example.projectmanagement.repository.ProjectRepository;
-import com.example.projectmanagement.repository.StatusRepository;
+import com.example.projectmanagement.repository.*;
 import lombok.AllArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.data.domain.Page;
@@ -36,6 +35,12 @@ public class ProjectService {
     private final StatusService statusService;
     private final StatusRepository statusRepository;
     private final RiskStatusService riskStatusService;
+    private final SprintRepository sprintRepository;
+    private final RiskRepository riskRepository;
+    private final RiskStatusRepository riskStatusRepository;
+    private final StoryRepository storyRepository;
+    private final TaskRepository taskRepository;
+    private final RiskLinkRepository riskLinkRepository;
 
     /**
      * Create project with validation and default statuses
@@ -119,6 +124,135 @@ public class ProjectService {
                 .orElseThrow(() -> new RuntimeException("Project not found with id: " + id));
         return convertToDto(project);
     }
+
+    @Transactional(readOnly = true)
+    public ProjectRiskSummaryDTO getProjectRisk(Long projectId) {
+
+        ProjectRiskSummaryDTO dto = new ProjectRiskSummaryDTO();
+        dto.setProjectId(projectId);
+
+        // 1️⃣ Fetch ACTIVE sprint
+//        Sprint activeSprint =
+//                sprintRepository.findActiveSprintByProjectId(projectId)
+//                        .orElse(null);
+
+        Sprint activeSprint = sprintRepository
+                .findFirstByProjectIdAndStatus(projectId, Sprint.SprintStatus.ACTIVE)
+                .orElse(null);
+
+        if (activeSprint == null) {
+            dto.setRiskHealth(ProjectRiskSummaryDTO.RiskHealth.LOW);
+            return dto;
+        }
+
+        dto.setSprintId(activeSprint.getId());
+
+        // 2️⃣ Fetch sprint stories
+        List<Story> sprintStories =
+                storyRepository.findBySprintId(activeSprint.getId());
+
+        List<Long> storyIds =
+                sprintStories.stream()
+                        .map(Story::getId)
+                        .toList();
+
+        // 3️⃣ Fetch sprint tasks (direct + via story)
+        List<Task> directSprintTasks =
+                taskRepository.findBySprintId(activeSprint.getId());
+
+        Set<Long> taskIds = new HashSet<>();
+
+        directSprintTasks.forEach(t -> taskIds.add(t.getId()));
+        sprintStories.forEach(s ->
+                s.getTasks().forEach(t -> taskIds.add(t.getId()))
+        );
+
+        // 4️⃣ Fetch relevant RiskLinks
+        List<RiskLink> riskLinks =
+                riskLinkRepository.findRelevantSprintRiskLinks(
+                        activeSprint.getId(),
+                        storyIds,
+                        taskIds
+                );
+
+        if (riskLinks.isEmpty()) {
+            dto.setRiskHealth(ProjectRiskSummaryDTO.RiskHealth.LOW);
+            return dto;
+        }
+
+        // 5️⃣ Extract UNIQUE risks
+        Map<Long, Risk> riskMap =
+                riskLinks.stream()
+                        .map(RiskLink::getRisk)
+                        .collect(Collectors.toMap(
+                                Risk::getId,
+                                r -> r,
+                                (a, b) -> a
+                        ));
+
+        List<Risk> risks = new ArrayList<>(riskMap.values());
+
+        // 6️⃣ Fetch risk statuses
+        List<RiskStatus> statuses =
+                riskStatusRepository.findByProjectIdOrderBySortOrderAsc(projectId);
+
+        Integer finalSortOrder =
+                riskStatusRepository.findMaxSortOrder(projectId);
+
+        Map<Long, RiskStatus> statusMap =
+                statuses.stream()
+                        .collect(Collectors.toMap(RiskStatus::getId, s -> s));
+
+        // 7️⃣ Filter ACTIVE risks (not CLOSED)
+        List<Risk> activeRisks =
+                risks.stream()
+                        .filter(r -> {
+                            RiskStatus rs = statusMap.get(r.getStatusId());
+                            return rs != null && rs.getSortOrder() < finalSortOrder;
+                        })
+                        .toList();
+
+        dto.setTotalActiveRisks(activeRisks.size());
+
+        // 8️⃣ Severity classification
+        int high = 0, medium = 0, low = 0;
+        int totalScore = 0;
+        int maxScore = 0;
+
+        for (Risk r : activeRisks) {
+            if (r.getRiskScore() == null) continue;
+
+            int score = r.getRiskScore();
+            totalScore += score;
+            maxScore = Math.max(maxScore, score);
+
+            if (score >= 15) high++;
+            else if (score >= 8) medium++;
+            else low++;
+        }
+
+        dto.setHighRisks(high);
+        dto.setMediumRisks(medium);
+        dto.setLowRisks(low);
+        dto.setTotalRiskScore(totalScore);
+        dto.setMaxRiskScore(maxScore);
+
+        // 9️⃣ Derive RiskHealth
+        ProjectRiskSummaryDTO.RiskHealth health;
+
+        if (high > 0 || maxScore >= 15) {
+            health = ProjectRiskSummaryDTO.RiskHealth.HIGH;
+        } else if (medium > 0) {
+            health = ProjectRiskSummaryDTO.RiskHealth.MEDIUM;
+        } else {
+            health = ProjectRiskSummaryDTO.RiskHealth.LOW;
+        }
+
+        dto.setRiskHealth(health);
+
+        return dto;
+    }
+
 
 
     @Transactional(readOnly = true)

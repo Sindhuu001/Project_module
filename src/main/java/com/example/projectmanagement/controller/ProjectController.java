@@ -52,6 +52,14 @@ public class ProjectController {
         return ResponseEntity.status(HttpStatus.CREATED).body(createdProject);
     }
 
+    @GetMapping("/project-risk-status/{id}")
+    @PreAuthorize("hasRole('Manager')")
+    public ResponseEntity<ProjectRiskSummaryDTO> getProjectRisk(@PathVariable Long id) {
+        System.out.println("*********Entering Project Risk Level*****");
+        ProjectRiskSummaryDTO projectRisk = projectService.getProjectRisk(id);
+        return ResponseEntity.status(HttpStatus.CREATED).body(projectRisk);
+    }
+
     @GetMapping
     @PreAuthorize("hasAnyRole('Manager','Admin','Employee')")
     public ResponseEntity<List<ProjectDto>> getAllProjects() {
@@ -258,5 +266,7 @@ public class ProjectController {
 //        List<ProjectSummary> projects = projectService.getProjectSummariesByOwner(currentUser.getId());
         return ResponseEntity.ok(projects);
     }
+
+
     
 }

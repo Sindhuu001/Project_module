@@ -46,72 +46,124 @@ public class ProjectService {
      * Create project with validation and default statuses
      */
     public ProjectDto createProject(ProjectDto projectDto) {
-        List<String> errors = new ArrayList<>();
-        System.out.println("********Entering Create Service file ********");
 
-        if (projectDto.getName() == null || projectDto.getName().trim().isEmpty()) {
-            errors.add("Project name must not be empty.");
-        }
+    List<String> errors = new ArrayList<>();
+    System.out.println("********Entering Create Service file ********");
 
-        if (projectDto.getProjectKey() == null || projectDto.getProjectKey().trim().isEmpty()) {
-            errors.add("Project key must be provided.");
-        } else if (projectRepository.existsByProjectKey(projectDto.getProjectKey())) {
-            errors.add("Project with key " + projectDto.getProjectKey() + " already exists.");
-        }
-
-        if (projectDto.getStartDate() == null) {
-            errors.add("Start date is required.");
-        }
-
-        if (projectDto.getStartDate() != null && projectDto.getEndDate() != null &&
-                projectDto.getStartDate().isAfter(projectDto.getEndDate())) {
-            errors.add("Start date cannot be after end date.");
-        }
-
-        UserDto owner;
-        try {
-            owner = userService.getUserWithRoles(projectDto.getOwnerId());
-            if (owner == null) {
-                errors.add("Valid owner ID is required.");
-            }
-        } catch (Exception e) {
-            errors.add("Valid owner ID is required.");
-            owner = null;
-        }
-
-        if (!errors.isEmpty()) {
-            throw new ValidationException(errors);
-        }
-
-        // Map DTO -> Entity
-        Project project = modelMapper.map(projectDto, Project.class);
-        project.setOwnerId(owner.getId());
-
-        if (projectDto.getCurrentStage() != null) {
-            project.setCurrentStage(projectDto.getCurrentStage());
-        } else {
-            project.setCurrentStage(Project.ProjectStage.INITIATION);
-        }
-
-        Set<Long> memberIds = projectDto.getMemberIds();
-        project.setMemberIds(memberIds != null ? new HashSet<>(memberIds) : new HashSet<>());
-
-        System.out.println("****************Created project: " + project);
-        Project savedProject = projectRepository.save(project);
-        System.out.println("**************Saved Projects" + savedProject);
-
-        // Create default statuses for the project
-        projectStatusProperties.getDefaultStatuses().forEach(statusProperty -> {
-            StatusDto defaultStatusDto = new StatusDto();
-            defaultStatusDto.setName(statusProperty.getName());
-            statusService.addStatus(savedProject.getId(), defaultStatusDto);
-        });
-
-        // Create default risk statuses
-        riskStatusService.createDefaultStatusesForProject(savedProject.getId());
-
-        return convertToDto(savedProject);
+    /* =====================
+       BASIC VALIDATIONS
+       ===================== */
+    if (projectDto.getName() == null || projectDto.getName().trim().isEmpty()) {
+        errors.add("Project name must not be empty.");
     }
+
+    if (projectDto.getProjectKey() == null || projectDto.getProjectKey().trim().isEmpty()) {
+        errors.add("Project key must be provided.");
+    } else if (projectRepository.existsByProjectKey(projectDto.getProjectKey())) {
+        errors.add("Project with key " + projectDto.getProjectKey() + " already exists.");
+    }
+
+    if (projectDto.getClientId() == null) {
+        errors.add("Client ID is required.");
+    }
+
+    if (projectDto.getStartDate() == null) {
+        errors.add("Start date is required.");
+    }
+
+    if (projectDto.getStartDate() != null
+            && projectDto.getEndDate() != null
+            && projectDto.getStartDate().isAfter(projectDto.getEndDate())) {
+        errors.add("Start date cannot be after end date.");
+    }
+
+    /* =====================
+       OWNER VALIDATION (UMS)
+       ===================== */
+    UserDto owner;
+    try {
+        owner = userService.getUserWithRoles(projectDto.getOwnerId());
+        if (owner == null) {
+            errors.add("Valid owner ID is required.");
+        }
+    } catch (Exception e) {
+        errors.add("Valid owner ID is required.");
+        owner = null;
+    }
+
+    if (!errors.isEmpty()) {
+        throw new ValidationException(errors);
+    }
+
+    /* =====================
+       DTO → ENTITY MAPPING
+       ===================== */
+    Project project = modelMapper.map(projectDto, Project.class);
+
+    // Mandatory fields
+    project.setClientId(projectDto.getClientId());
+    project.setOwnerId(owner.getId());
+
+    // Defaults (entity-safe)
+    project.setStatus(
+            projectDto.getStatus() != null
+                    ? projectDto.getStatus()
+                    : Project.ProjectStatus.ACTIVE
+    );
+
+    project.setCurrentStage(
+            projectDto.getCurrentStage() != null
+                    ? projectDto.getCurrentStage()
+                    : Project.ProjectStage.INITIATION
+    );
+
+    // Members
+    project.setMemberIds(
+            projectDto.getMemberIds() != null
+                    ? new HashSet<>(projectDto.getMemberIds())
+                    : new HashSet<>()
+    );
+
+    // Optional ownership fields
+    project.setRmId(projectDto.getRmId());
+    project.setDeliveryOwnerId(projectDto.getDeliveryOwnerId());
+
+    // Delivery / Risk / Priority
+    project.setDeliveryModel(projectDto.getDeliveryModel());
+    project.setPrimaryLocation(projectDto.getPrimaryLocation());
+    project.setRiskLevel(projectDto.getRiskLevel());
+    project.setRiskLevelUpdatedAt(projectDto.getRiskLevelUpdatedAt());
+    project.setPriorityLevel(projectDto.getPriorityLevel());
+
+    // Budget
+    project.setProjectBudget(projectDto.getProjectBudget());
+    project.setProjectBudgetCurrency(projectDto.getProjectBudgetCurrency());
+
+    System.out.println("****************Created project entity: " + project);
+
+    /* =====================
+       SAVE PROJECT
+       ===================== */
+    Project savedProject = projectRepository.save(project);
+    System.out.println("**************Saved Project: " + savedProject);
+
+    /* =====================
+       DEFAULT STATUSES
+       ===================== */
+    projectStatusProperties.getDefaultStatuses().forEach(statusProperty -> {
+        StatusDto defaultStatusDto = new StatusDto();
+        defaultStatusDto.setName(statusProperty.getName());
+        statusService.addStatus(savedProject.getId(), defaultStatusDto);
+    });
+
+    /* =====================
+       DEFAULT RISK STATUSES
+       ===================== */
+    riskStatusService.createDefaultStatusesForProject(savedProject.getId());
+
+    return convertToDto(savedProject);
+}
+
 
     @Transactional(readOnly = true)
     public Long getProjectCount() {
@@ -531,6 +583,17 @@ public class ProjectService {
                 .updatedAt(project.getUpdatedAt())
                 .startDate(project.getStartDate())
                 .endDate(project.getEndDate())
+                .clientId(project.getClientId())
+                .rmId(project.getRmId())
+                .deliveryOwnerId(project.getDeliveryOwnerId())
+                .deliveryModel(project.getDeliveryModel())
+                .primaryLocation(project.getPrimaryLocation())
+                .riskLevel(project.getRiskLevel())
+                .riskLevelUpdatedAt(project.getRiskLevelUpdatedAt())
+                .priorityLevel(project.getPriorityLevel())  
+                .projectBudget(project.getProjectBudget())
+                .projectBudgetCurrency(project.getProjectBudgetCurrency())
+                
                 .build();
 
         dto.setOwnerId(project.getOwnerId());

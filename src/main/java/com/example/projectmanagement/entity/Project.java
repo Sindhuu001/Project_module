@@ -57,8 +57,9 @@ public class Project {
     /* =====================
        OWNERSHIP & IDENTITY (OURS TAKES PRIORITY)
        ===================== */
-    @Column(name = "client_id", nullable = false)
-    private UUID clientId;
+    @Column(name = "client_id", nullable = false, length = 36)
+    private String clientId;
+
  
     @Column(name = "owner_id", nullable = false)
     private Long ownerId;
@@ -191,7 +192,7 @@ public class Project {
             String name,
             String projectKey,
             String description,
-            UUID clientId,
+            String clientId,
             Long ownerId,
             LocalDateTime startDate,
             LocalDateTime endDate

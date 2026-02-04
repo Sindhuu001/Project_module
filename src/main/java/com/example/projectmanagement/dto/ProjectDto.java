@@ -9,9 +9,10 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 
 @Data
 @Builder
@@ -19,6 +20,9 @@ import java.util.Set;
 @NoArgsConstructor
 public class ProjectDto {
 
+    /* =====================
+       BASIC IDENTIFIERS
+       ===================== */
     private Long id;
 
     @NotBlank(message = "Project name is required")
@@ -32,29 +36,60 @@ public class ProjectDto {
     @Size(max = 500, message = "Description cannot exceed 500 characters")
     private String description;
 
+    /* =====================
+       STATUS & STAGE
+       ===================== */
     private Project.ProjectStatus status;
-
-    // ✅ Changed from String → Enum (to match entity)
     private Project.ProjectStage currentStage;
+
+    /* =====================
+       OWNERSHIP & IDENTITY
+       ===================== */
+    @NotNull(message = "Client ID is required")
+    private String clientId;
 
     @NotNull(message = "Owner is required")
     private Long ownerId;
 
+    private Long rmId;
+    private Long deliveryOwnerId;
+
+    /* =====================
+       DELIVERY / RISK / PRIORITY
+       ===================== */
+    private Project.DeliveryModel deliveryModel;
+    private String primaryLocation;
+    private Project.RiskLevel riskLevel;
+    private LocalDateTime riskLevelUpdatedAt;
+    private Project.PriorityLevel priorityLevel;
+
+    /* =====================
+       BUDGET
+       ===================== */
+    private BigDecimal projectBudget;
+    private String projectBudgetCurrency;
+
+    /* =====================
+       MEMBERS
+       ===================== */
     private Set<Long> memberIds;
 
-    // Optional: user details from UMS or another service
-//    private UserDto owner;
-//    private List<UserDto> members;
-
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
+    /* =====================
+       DATES & AUDIT
+       ===================== */
     private LocalDateTime startDate;
     private LocalDateTime endDate;
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
 
-    public ProjectDto(String name, String projectKey, String description, Long ownerId) {
+    /* =====================
+       CONVENIENCE CONSTRUCTOR
+       ===================== */
+    public ProjectDto(String name, String projectKey, String description, String clientId, Long ownerId) {
         this.name = name;
         this.projectKey = projectKey;
         this.description = description;
+        this.clientId = clientId;
         this.ownerId = ownerId;
     }
 }

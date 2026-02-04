@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Set;
 
 @Repository
 public interface RiskLinkRepository extends JpaRepository<RiskLink, Long> {
@@ -29,5 +30,17 @@ public interface RiskLinkRepository extends JpaRepository<RiskLink, Long> {
             @Param("projectId") Long projectId
     );
 
+    @Query("""
+    SELECT rl FROM RiskLink rl
+    WHERE
+        (rl.linkedType = 'Sprint' AND rl.linkedId = :sprintId)
+     OR (rl.linkedType = 'Story' AND rl.linkedId IN :storyIds)
+     OR (rl.linkedType = 'Task'  AND rl.linkedId IN :taskIds)
+""")
+    List<RiskLink> findRelevantSprintRiskLinks(
+            @Param("sprintId") Long sprintId,
+            @Param("storyIds") List<Long> storyIds,
+            @Param("taskIds") Set<Long> taskIds
+    );
 
 }

@@ -9,6 +9,8 @@ import jakarta.validation.constraints.Size;
 import lombok.Data;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
+
+import com.example.projectmanagement.config.UuidConverter;
  
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -58,7 +60,8 @@ public class Project {
        OWNERSHIP & IDENTITY (OURS TAKES PRIORITY)
        ===================== */
     @Column(name = "client_id", nullable = false, length = 36)
-    private String clientId;
+    @Convert(converter = UuidConverter.class)
+    private UUID clientId;
 
  
     @Column(name = "owner_id", nullable = false)
@@ -192,7 +195,7 @@ public class Project {
             String name,
             String projectKey,
             String description,
-            String clientId,
+            UUID clientId,
             Long ownerId,
             LocalDateTime startDate,
             LocalDateTime endDate

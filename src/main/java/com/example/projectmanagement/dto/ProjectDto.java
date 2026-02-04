@@ -46,7 +46,7 @@ public class ProjectDto {
        OWNERSHIP & IDENTITY
        ===================== */
     @NotNull(message = "Client ID is required")
-    private String clientId;
+    private UUID clientId;
 
     @NotNull(message = "Owner is required")
     private Long ownerId;
@@ -85,7 +85,7 @@ public class ProjectDto {
     /* =====================
        CONVENIENCE CONSTRUCTOR
        ===================== */
-    public ProjectDto(String name, String projectKey, String description, String clientId, Long ownerId) {
+    public ProjectDto(String name, String projectKey, String description, UUID clientId, Long ownerId) {
         this.name = name;
         this.projectKey = projectKey;
         this.description = description;

@@ -141,6 +141,8 @@ public class StoryService {
         createdDto.setStatusId(saved.getStatus().getId());
         createdDto.setPriority(saved.getPriority());
         createdDto.setCreatedBy(saved.getCreatedBy());
+        createdDto.setStartDate(saved.getStartDate());
+        createdDto.setDueDate(saved.getDueDate());
 
         return createdDto;
     }
@@ -265,6 +267,8 @@ public class StoryService {
         story.setStoryPoints(dto.getStoryPoints());
         story.setReporterId(dto.getReporterId());
         story.setPriority(dto.getPriority());
+        story.setStartDate(dto.getStartDate());
+        story.setDueDate(dto.getDueDate());
 
         // -----------------------------------------
         // STATUS UPDATE
@@ -318,6 +322,8 @@ if (status.getSortOrder() == doneSortOrder) {
         updated.setSprintId(saved.getSprint() != null ? saved.getSprint().getId() : null);
         updated.setStatusId(saved.getStatus().getId());
         updated.setPriority(saved.getPriority());
+        updated.setStartDate(saved.getStartDate());
+        updated.setDueDate(saved.getDueDate());
 
         return updated;
     }
@@ -377,6 +383,7 @@ if (status.getSortOrder() == doneSortOrder) {
         dto.setAssigneeId(story.getAssigneeId() != null ? story.getAssigneeId() : null);
         dto.setAssignee(story.getAssigneeId() != null ? userService.getUserWithRoles(story.getAssigneeId()) : null);
         dto.setReporter(story.getReporterId() != null ? userService.getUserWithRoles(story.getReporterId()) : null);
+        // dto.setStartDate(story.getStartDate()!=null? story.getStartDate());
         return dto;
     }
 

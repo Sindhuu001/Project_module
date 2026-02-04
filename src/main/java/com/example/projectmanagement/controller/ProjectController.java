@@ -60,6 +60,18 @@ public class ProjectController {
         return ResponseEntity.status(HttpStatus.CREATED).body(projectRisk);
     }
 
+    @PatchMapping("/{id}/risk-level")
+    @PreAuthorize("hasRole('Manager')")
+    public ResponseEntity<ProjectDto> updateProjectRiskLevel(
+            @PathVariable Long id,
+            @Valid @RequestBody ProjectRiskUpdateDto request) {
+
+        ProjectDto updatedProject =
+                projectService.updateProjectRiskLevel(id, request.getRiskLevel());
+
+        return ResponseEntity.ok(updatedProject);
+    }
+
     @GetMapping
     @PreAuthorize("hasAnyRole('Manager','Admin','Employee')")
     public ResponseEntity<List<ProjectDto>> getAllProjects() {

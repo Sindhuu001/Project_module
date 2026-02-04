@@ -42,6 +42,39 @@ public class ProjectService {
     private final TaskRepository taskRepository;
     private final RiskLinkRepository riskLinkRepository;
 
+    @Transactional
+    public ProjectDto updateProjectRiskLevel(Long projectId, Project.RiskLevel newRiskLevel) {
+
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() -> new RuntimeException("Project not found with id: " + projectId));
+
+        String existingRisk =
+                project.getRiskLevel() == null
+                        ? null
+                        : project.getRiskLevel().name()
+                        .replaceAll("\\s+", "")
+                        .toLowerCase();
+
+        String incomingRisk =
+                newRiskLevel == null
+                        ? null
+                        : newRiskLevel.name()
+                        .replaceAll("\\s+", "")
+                        .toLowerCase();
+
+        // ✅ No DB update if logically same
+        if (Objects.equals(existingRisk, incomingRisk)) {
+            return convertToDto(project);
+        }
+
+        project.setRiskLevel(newRiskLevel);
+        project.setRiskLevelUpdatedAt(LocalDateTime.now());
+
+        Project updatedProject = projectRepository.save(project);
+        return convertToDto(updatedProject);
+    }
+
+
     /**
      * Create project with validation and default statuses
      */

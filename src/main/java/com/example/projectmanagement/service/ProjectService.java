@@ -167,6 +167,7 @@ public class ProjectService {
     project.setRiskLevel(projectDto.getRiskLevel());
     project.setRiskLevelUpdatedAt(projectDto.getRiskLevelUpdatedAt());
     project.setPriorityLevel(projectDto.getPriorityLevel());
+    project.setRmId(projectDto.getRmId());
 
     // Budget
     project.setProjectBudget(projectDto.getProjectBudget());
@@ -544,6 +545,18 @@ public class ProjectService {
         if (updatedDto.getStatus() != null) existing.setStatus(updatedDto.getStatus());
         if (updatedDto.getCurrentStage() != null) existing.setCurrentStage(updatedDto.getCurrentStage());
         if (updatedDto.getOwnerId() != null) existing.setOwnerId(updatedDto.getOwnerId());
+        if (updatedDto.getClientId() != null) existing.setClientId(updatedDto.getClientId());
+        if (updatedDto.getDeliveryModel() != null) existing.setDeliveryModel(updatedDto.getDeliveryModel());
+        if (updatedDto.getPrimaryLocation() != null) existing.setPrimaryLocation(updatedDto.getPrimaryLocation());
+        if (updatedDto.getRiskLevel() != null) existing.setRiskLevel(updatedDto.getRiskLevel());
+        if (updatedDto.getRiskLevelUpdatedAt() != null) existing.setRiskLevelUpdatedAt(updatedDto.getRiskLevelUpdatedAt());         
+        if (updatedDto.getPriorityLevel() != null) existing.setPriorityLevel(updatedDto.getPriorityLevel());
+        if (updatedDto.getRmId() != null) existing.setRmId(updatedDto.getRmId());
+        if (updatedDto.getDeliveryOwnerId() != null) existing.setDeliveryOwnerId(updatedDto.getDeliveryOwnerId());
+        if (updatedDto.getProjectBudget() != null) existing.setProjectBudget(updatedDto.getProjectBudget());
+        if (updatedDto.getProjectBudgetCurrency() != null) existing.setProjectBudgetCurrency(updatedDto.getProjectBudgetCurrency());    
+        if (updatedDto.getDeliveryOwnerId() != null) existing.setDeliveryOwnerId(updatedDto.getDeliveryOwnerId());   
+        
 
         if (updatedDto.getMemberIds() != null) {
             existing.setMemberIds(new HashSet<>(updatedDto.getMemberIds()));
@@ -626,6 +639,7 @@ public class ProjectService {
                 .priorityLevel(project.getPriorityLevel())  
                 .projectBudget(project.getProjectBudget())
                 .projectBudgetCurrency(project.getProjectBudgetCurrency())
+                
                 
                 .build();
 

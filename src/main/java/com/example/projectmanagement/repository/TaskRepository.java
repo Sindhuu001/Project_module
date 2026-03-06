@@ -1,6 +1,7 @@
 package com.example.projectmanagement.repository;
 
 import com.example.projectmanagement.dto.TaskDto;
+import com.example.projectmanagement.entity.Status;
 import com.example.projectmanagement.entity.Task;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -48,6 +49,13 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
     @Query("SELECT t FROM Task t WHERE t.sprint IS NULL")
     List<Task> findBacklogTasks();
 
+    @Query("""
+        SELECT COUNT(t) 
+        FROM Task t 
+        WHERE t.story.id = :storyId 
+        AND t.status.id <> :statusId
+        """)
+    long countTasksWithDifferentStatus(Long storyId, Long statusId);
 
     @Query("SELECT COUNT(t) FROM Task t WHERE t.dueDate BETWEEN CURRENT_TIMESTAMP AND :futureDate")
     long countTasksDueSoon(@Param("futureDate") LocalDateTime futureDate);
@@ -96,6 +104,25 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
                                                         @Param("sortOrder") Integer sortOrder);
 
     long countBySprintId(Long id);
+    @Query("""
+    SELECT t.status
+    FROM Task t
+    WHERE t.story.id = :storyId
+    AND t.status.sortOrder = (
+        SELECT MIN(t2.status.sortOrder)
+        FROM Task t2
+        WHERE t2.story.id = :storyId
+    )
+    """)
+    Status findMinStatusByStoryId(@Param("storyId") Long storyId);
+
+    @Query("""
+    SELECT t.status
+    FROM Task t
+    WHERE t.story.id = :storyId
+    ORDER BY t.status.sortOrder ASC
+    """)
+    List<Status> findMinStatusByStoryId(@Param("storyId") Long storyId, Pageable pageable);
 }
 
 

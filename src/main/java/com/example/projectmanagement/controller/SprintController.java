@@ -146,10 +146,10 @@ public ResponseEntity<SprintDto> completeSprint(
     // Delete sprint with User context
     @DeleteMapping("/{id}")
    @PreAuthorize("hasRole('Manager')")
-    public ResponseEntity<Void> deleteSprint(@PathVariable Long id) {
-        UserDto currentUserId = userService.getUserWithRoles(id);
-                
+    public ResponseEntity<Void> deleteSprint(@PathVariable Long id, @CurrentUser UserDto currentUser) {
+        UserDto currentUserId = userService.getUserWithRoles(currentUser.getId());
         sprintService.deleteSprint(id, currentUserId.getId());
+        System.out.println("Deleted sprint with id: " + id + ", User ID: " + currentUserId);
         return ResponseEntity.noContent().build();
     }
 

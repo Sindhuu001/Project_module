@@ -14,6 +14,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -85,7 +86,7 @@ public class TaskServiceImpl implements TaskService {
         task.setDueDate(taskCreateDto.getDueDate());
         task.setStartDate(taskCreateDto.getStartDate());
         task.setBillable(taskCreateDto.isBillable());
-        
+
         // 4️⃣ Assignee validation (optional)
         if (taskCreateDto.getAssigneeId() != null) {
             Long assigneeId = taskCreateDto.getAssigneeId();
@@ -139,6 +140,10 @@ public class TaskServiceImpl implements TaskService {
         // 8️⃣ Persist task
         Task savedTask = taskRepository.save(task);
 
+        if (savedTask.getStory() != null) {
+            updateStoryStatus(savedTask.getStory().getId());
+        }
+
         // 9️⃣ Return DTO
         return mapToDto(savedTask);
     }
@@ -154,15 +159,24 @@ public class TaskServiceImpl implements TaskService {
 
     @Override
     public void deleteTask(Long id) {
+
         Task task = taskRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Task not found with id: " + id));
+
+        Long storyId = task.getStory() != null ? task.getStory().getId() : null;
+
         taskRepository.delete(task);
+
+        updateStoryStatus(storyId);
     }
 
     @Override
     public TaskCreateDto updateTask(Long id, TaskUpdateDto dto) {
+
         Task existingTask = taskRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Task not found with id: " + id));
+
+        Long oldStoryId = existingTask.getStory() != null ? existingTask.getStory().getId() : null;
 
         Project project = existingTask.getProject();
         if (project == null)
@@ -240,6 +254,12 @@ public class TaskServiceImpl implements TaskService {
         }
 
         Task updatedTask = taskRepository.save(existingTask);
+
+        if (oldStoryId != null) updateStoryStatus(oldStoryId);
+
+        if (updatedTask.getStory() != null)
+            updateStoryStatus(updatedTask.getStory().getId());
+
         return mapToDto(updatedTask);
     }
 
@@ -381,23 +401,19 @@ public class TaskServiceImpl implements TaskService {
 
     @Override
     public TaskStatusUpdateDto updateTaskStatus(Long taskId, Long statusId) {
+
         Task task = taskRepository.findById(taskId)
-                .orElseThrow(() -> new RuntimeException("Task not found with id: " + taskId));
+                .orElseThrow(() -> new RuntimeException("Task not found"));
 
-        Status status = statusRepository.findById(statusId)
-                .orElseThrow(() -> new RuntimeException("Status not found with id: " + statusId));
+        Status status = statusRepository.findStatusById(statusId);
 
-        // Update task
         task.setStatus(status);
         taskRepository.save(task);
 
-        // Update story status if task belongs to a story
         if (task.getStory() != null) {
-            task.getStory().setStatus(status);
-            storyRepository.save(task.getStory());
+            updateStoryStatus(task.getStory().getId());
         }
 
-        // Build clean response
         TaskStatusUpdateDto dto = new TaskStatusUpdateDto();
         dto.setId(task.getId());
         dto.setStatusId(status.getId());
@@ -560,14 +576,18 @@ public class TaskServiceImpl implements TaskService {
         Task task = taskRepository.findById(taskId)
                 .orElseThrow(() -> new ResourceNotFoundException("Task not found: " + taskId));
 
+        Long oldStoryId = task.getStory() != null ? task.getStory().getId() : null;
+
         Story story = storyRepository.findById(storyId)
                 .orElseThrow(() -> new ResourceNotFoundException("Story not found: " + storyId));
 
         task.setStory(story);
         task.setSprint(story.getSprint());
-        // task.setStory(storyId); // optional based on your entity
 
-        taskRepository.save(task); // no need to return anything
+        taskRepository.save(task);
+
+        updateStoryStatus(oldStoryId);
+        updateStoryStatus(storyId);
     }
 
     @Override
@@ -613,5 +633,19 @@ public class TaskServiceImpl implements TaskService {
                 t.getSprint() != null ? t.getSprint().getName() : null,
                 t.getStatus() != null ? t.getStatus().getName() : null
         );
+    }
+
+    private void updateStoryStatus(Long storyId) {
+
+        if (storyId == null) return;
+
+        Status minStatus = taskRepository.findMinStatusByStoryId(storyId);
+        if (minStatus == null) return;
+
+        Story story = storyRepository.findById(storyId)
+                .orElseThrow(() -> new RuntimeException("Story not found"));
+
+        story.setStatus(minStatus);
+        storyRepository.save(story);
     }
 }

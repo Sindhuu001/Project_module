@@ -81,6 +81,9 @@ public class SprintService {
         if (sprintRepository.existsByNameAndProjectId(sprintDto.getName(), sprintDto.getProjectId())) {
             throw new RuntimeException("Sprint with name '" + sprintDto.getName() + "' already exists in this project.");
         }
+        if (sprintDto.getStartDate().isBefore(LocalDateTime.now())) {
+            throw new RuntimeException("Sprint start date cannot be in the past.");
+        }
 
         if (sprintDto.getStartDate().isAfter(sprintDto.getEndDate())||
             sprintDto.getStartDate().isEqual(sprintDto.getEndDate())) {

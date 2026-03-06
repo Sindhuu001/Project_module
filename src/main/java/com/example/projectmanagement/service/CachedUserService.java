@@ -19,7 +19,7 @@ public class CachedUserService {
     //  Cache user info
     @Cacheable(value = "users", key = "#id")
     public ExternalUserResponse getUserById(Long id) {
-        System.out.println("Fetching user from user-service via Feign...");
+        System.out.println("Fetching user from user-service via Feign..." + id);
         return userClient.findExternalById(id);
     }
 

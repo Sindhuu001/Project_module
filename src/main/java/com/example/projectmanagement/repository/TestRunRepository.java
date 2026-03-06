@@ -1,6 +1,8 @@
 package com.example.projectmanagement.repository;
 
 import com.example.projectmanagement.entity.testing.TestRun;
+import com.example.projectmanagement.entity.testing.TestRunCase;
+import com.example.projectmanagement.enums.TestRunCaseStatus;
 import com.example.projectmanagement.enums.TestRunStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 
@@ -17,5 +19,9 @@ public interface TestRunRepository extends JpaRepository<TestRun, Long> {
 //    int countByCycle_IdAndStatus(Long cycleId, TestRunStatus status);
 
     List<TestRun> findByCycleIdOrderByCreatedAtAsc(Long cycleId);
+
+    // ADD to TestRunRepository:
+    List<TestRun> findByCreatedByAndStatusNot(Long createdBy, TestRunStatus status);
+
 
 }

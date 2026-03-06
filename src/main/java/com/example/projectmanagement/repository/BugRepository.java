@@ -7,6 +7,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 
@@ -28,4 +30,16 @@ public interface BugRepository extends JpaRepository<Bug, Long> , JpaSpecificati
     List<Bug> findByTestCaseId(Long testCaseId);
     Page<Bug> findAll(Specification<Bug> spec, Pageable pageable); // extends JpaSpecificationExecutor<Bug>
 
+    // ADD these two methods to the existing BugRepository interface
+// File: repository/BugRepository.java
+
+    // Find all bugs assigned to a specific user (for My Work page)
+    List<Bug> findByAssignedTo(Long assignedTo);
+
+    // Find bugs assigned to a user, excluding certain statuses
+    @Query("SELECT b FROM Bug b WHERE b.assignedTo = :userId AND b.status NOT IN :excludedStatuses")
+    List<Bug> findByAssignedToAndStatusNotIn(
+            @Param("userId") Long userId,
+            @Param("excludedStatuses") List<BugStatus> excludedStatuses
+    );
 }

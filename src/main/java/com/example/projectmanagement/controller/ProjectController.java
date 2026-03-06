@@ -95,6 +95,14 @@ public class ProjectController {
         return ResponseEntity.ok(project);
     }
 
+    // GET full project data for edit modal
+    @GetMapping("/{id}/edit")
+    @PreAuthorize("hasAnyRole('Manager','Admin')")
+    public ResponseEntity<ProjectEditDto> getProjectForEdit(@PathVariable Long id) {
+        ProjectEditDto dto = projectService.getProjectForEdit(id);
+        return ResponseEntity.ok(dto);
+    }
+
     @GetMapping("tms")
     @PreAuthorize("hasAnyRole('Manager','Admin','Employee')")
     public ResponseEntity<List<ProjectTimesheetDto>> getAllTmsProjects() {

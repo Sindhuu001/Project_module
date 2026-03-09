@@ -1,4 +1,5 @@
 package com.example.projectmanagement.service;
+
 import com.example.projectmanagement.dto.testing.TestCycleCreateRequest;
 import com.example.projectmanagement.dto.testing.TestCycleSummaryResponse;
 
@@ -11,5 +12,10 @@ public interface TestCycleService {
     List<TestCycleSummaryResponse> getCyclesForProject(Long projectId);
 
     TestCycleSummaryResponse getCycleDetail(Long cycleId);
+
     List<TestCycleSummaryResponse> getAllCycles();
+
+    TestCycleSummaryResponse updateCycle(Long cycleId, TestCycleCreateRequest request, Long currentUserId);
+
+    void deleteCycle(Long cycleId);
 }

@@ -7,10 +7,13 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 
-public interface BugRepository extends JpaRepository<Bug, Long> , JpaSpecificationExecutor<Bug> {
+public interface BugRepository extends JpaRepository<Bug, Long>, JpaSpecificationExecutor<Bug> {
 
     Page<Bug> findByProjectId(Long projectId, Pageable pageable);
 
@@ -25,7 +28,13 @@ public interface BugRepository extends JpaRepository<Bug, Long> , JpaSpecificati
 
     // optional: find bugs by run id
     List<Bug> findByTestRunId(Long runId);
+
     List<Bug> findByTestCaseId(Long testCaseId);
+
     Page<Bug> findAll(Specification<Bug> spec, Pageable pageable); // extends JpaSpecificationExecutor<Bug>
+
+    @Modifying(clearAutomatically = true)
+    @Query("DELETE FROM Bug b WHERE b.runCaseStep.runCase.run.cycle.id = :cycleId")
+    void deleteByRunCycleId(@Param("cycleId") Long cycleId);
 
 }

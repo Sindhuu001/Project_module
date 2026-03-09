@@ -35,6 +35,8 @@ public class TaskServiceImpl implements TaskService {
     private SprintRepository sprintRepository;
     @Autowired
     private StatusRepository statusRepository;
+//    @Autowired
+//    private EpicRepository epicRepository;
 
     @Autowired
     private ModelMapper modelMapper;
@@ -48,6 +50,8 @@ public class TaskServiceImpl implements TaskService {
     private StoryService storyService;
     @Autowired
     private UserClient userClient;
+    @Autowired
+    private EpicService epicService;
 
     // ---------- CRUD Operations ----------
 
@@ -645,7 +649,16 @@ public class TaskServiceImpl implements TaskService {
         Story story = storyRepository.findById(storyId)
                 .orElseThrow(() -> new RuntimeException("Story not found"));
 
-        story.setStatus(minStatus);
-        storyRepository.save(story);
+        if (!story.getStatus().getId().equals(minStatus.getId())) {
+
+            story.setStatus(minStatus);
+            storyRepository.save(story);
+
+            if (story.getEpic() != null) {
+                storyService.updateEpicStatus(story.getEpic().getId());
+            }
+
+            System.out.println("story status updated");
+        }
     }
 }

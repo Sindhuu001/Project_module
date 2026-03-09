@@ -28,6 +28,11 @@ public interface TestRunCaseRepository extends JpaRepository<TestRunCase, Long> 
 
     List<TestRunCase> findByIdIn(List<Long> ids);
 
+    // ADD to TestRunCaseRepository:
+    List<TestRunCase> findByAssigneeIdAndStatusNot(Long assigneeId, TestRunCaseStatus status);
+//    List<TestRunCase> findByRunId(Long runId);  // likely already exists, verify
+
+
     @Modifying(clearAutomatically = true)
     @Query("DELETE FROM TestRunCase t WHERE t.run.cycle.id = :cycleId")
     void deleteByRunCycleId(@Param("cycleId") Long cycleId);

@@ -1,6 +1,8 @@
 package com.example.projectmanagement.repository;
 
 import com.example.projectmanagement.entity.testing.TestRun;
+import com.example.projectmanagement.entity.testing.TestRunCase;
+import com.example.projectmanagement.enums.TestRunCaseStatus;
 import com.example.projectmanagement.enums.TestRunStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;

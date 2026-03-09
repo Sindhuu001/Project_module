@@ -6,6 +6,7 @@ import com.example.projectmanagement.client.UserClient;
 import com.example.projectmanagement.config.ProjectStatusProperties;
 import com.example.projectmanagement.dto.*;
 import com.example.projectmanagement.entity.*;
+import com.example.projectmanagement.exception.ResourceNotFoundException;
 import com.example.projectmanagement.exception.ValidationException;
 import com.example.projectmanagement.repository.*;
 import lombok.AllArgsConstructor;
@@ -209,6 +210,35 @@ public class ProjectService {
         Project project = projectRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Project not found with id: " + id));
         return convertToDto(project);
+    }
+
+//    @Override
+    @Transactional(readOnly = true)
+    public ProjectEditDto getProjectForEdit(Long id) {
+        Project p = projectRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Project not found with id: " + id));
+
+        return ProjectEditDto.builder()
+                .id(p.getId())
+                .name(p.getName())
+                .projectKey(p.getProjectKey())
+                .description(p.getDescription())
+                .status(p.getStatus())
+                .currentStage(p.getCurrentStage())
+                .deliveryModel(p.getDeliveryModel())
+                .primaryLocation(p.getPrimaryLocation())
+                .riskLevel(p.getRiskLevel())
+                .priorityLevel(p.getPriorityLevel())
+                .projectBudget(p.getProjectBudget())
+                .projectBudgetCurrency(p.getProjectBudgetCurrency())
+                .clientId(p.getClientId())
+                .ownerId(p.getOwnerId())
+                .rmId(p.getRmId())
+                .deliveryOwnerId(p.getDeliveryOwnerId())
+                .memberIds(p.getMemberIds())
+                .startDate(p.getStartDate())
+                .endDate(p.getEndDate())
+                .build();
     }
 
     @Transactional(readOnly = true)

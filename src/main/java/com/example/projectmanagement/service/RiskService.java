@@ -11,7 +11,7 @@ import java.util.List;
 public interface RiskService {
 
     // ===== EXISTING (UNCHANGED) =====
-    RiskResponse createRisk(RiskRequest request);
+    RiskResponse createRisk(RiskRequest request,Long createdBy);
     List<RiskResponse> getRisksByProject(Long projectId);
     RiskResponse getRiskById(Long id);
     RiskResponse updateRisk(Long id, RiskRequest request);

@@ -37,4 +37,7 @@ public interface BugRepository extends JpaRepository<Bug, Long>, JpaSpecificatio
     @Query("DELETE FROM Bug b WHERE b.runCaseStep.runCase.run.cycle.id = :cycleId")
     void deleteByRunCycleId(@Param("cycleId") Long cycleId);
 
+    List<Bug> findByAssignedTo(Long assigneeId);
+
+
 }

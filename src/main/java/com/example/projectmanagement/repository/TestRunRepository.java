@@ -26,5 +26,7 @@ public interface TestRunRepository extends JpaRepository<TestRun, Long> {
     @Modifying(clearAutomatically = true)
     @Query("DELETE FROM TestRun t WHERE t.cycle.id = :cycleId")
     void deleteByCycleId(@Param("cycleId") Long cycleId);
+    
+    List<TestRun> findByCreatedByAndStatusNot(Long assigneeId, TestRunStatus status);
 
 }

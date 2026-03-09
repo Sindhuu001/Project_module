@@ -104,6 +104,7 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
                                                         @Param("sortOrder") Integer sortOrder);
 
     long countBySprintId(Long id);
+
     @Query("""
     SELECT t.status
     FROM Task t

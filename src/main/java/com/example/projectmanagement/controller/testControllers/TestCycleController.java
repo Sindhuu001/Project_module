@@ -43,9 +43,28 @@ public class TestCycleController {
         TestCycleSummaryResponse cycle = testCycleService.getCycleDetail(cycleId);
         return ResponseEntity.ok(cycle);
     }
+
     @GetMapping("/getall")
     public ResponseEntity<List<TestCycleSummaryResponse>> getAllCycles() {
         List<TestCycleSummaryResponse> cycles = testCycleService.getAllCycles();
         return ResponseEntity.ok(cycles);
+    }
+
+    @PutMapping("/{cycleId}")
+    public ResponseEntity<TestCycleSummaryResponse> updateCycle(
+            @PathVariable Long cycleId,
+            @Valid @RequestBody TestCycleCreateRequest request,
+            @CurrentUser UserDto currentUser
+    ) {
+        TestCycleSummaryResponse updated = testCycleService.updateCycle(cycleId, request, currentUser.getId());
+        return ResponseEntity.ok(updated);
+    }
+
+    @DeleteMapping("/{cycleId}")
+    public ResponseEntity<Void> deleteCycle(
+            @PathVariable Long cycleId
+    ) {
+        testCycleService.deleteCycle(cycleId);
+        return ResponseEntity.noContent().build();
     }
 }

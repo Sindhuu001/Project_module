@@ -37,13 +37,14 @@ public class RiskServiceImpl implements RiskService {
     private UserService userService;
 
     @Override
-    public RiskResponse createRisk(RiskRequest request) {
+    public RiskResponse createRisk(RiskRequest request,Long createdBy) {
         validateRequest(request);
         checkDuplicate(request);
 
         Risk risk = new Risk();
         risk.setProjectId(request.getProjectId());
         risk.setOwnerId(request.getOwnerId());
+        risk.setCreatedBy(createdBy);
         risk.setReporterId(request.getReporterId());
         risk.setCategoryId(request.getCategoryId());
         risk.setStatusId(request.getStatusId());

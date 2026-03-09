@@ -6,6 +6,7 @@ import com.example.projectmanagement.entity.RiskLink.LinkedType;
 import com.example.projectmanagement.service.RiskService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+import com.example.projectmanagement.security.CurrentUser;
 
 import java.util.List;
 
@@ -19,8 +20,8 @@ public class RiskController {
     /* ---------- CREATE ---------- */
 
     @PostMapping
-    public RiskResponse createRisk(@RequestBody RiskRequest request) {
-        return riskService.createRisk(request);
+    public RiskResponse createRisk(@RequestBody RiskRequest request,@CurrentUser UserDto currentUser) {
+        return riskService.createRisk(request,currentUser.getId());
     }
 
     /* ---------- READ (OLD – KEEP FOR BACKWARD COMPATIBILITY) ---------- */

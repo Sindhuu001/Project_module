@@ -304,6 +304,23 @@ if (status.getSortOrder() == doneSortOrder) {
         } else {
             story.setEpic(null);
         }
+        // -----------------------------------------
+// VALIDATION: Sprint requires Epic
+// -----------------------------------------
+if (dto.getSprintId() != null && dto.getEpicId() == null) {
+    throw new IllegalArgumentException("Story must belong to an Epic before assigning to a Sprint");
+}
+
+// -----------------------------------------
+// SPRINT UPDATE (nullable)
+// -----------------------------------------
+if (dto.getSprintId() != null) {
+    Sprint sprint = sprintRepository.findById(dto.getSprintId())
+            .orElseThrow(() -> new ResourceNotFoundException("Sprint not found"));
+    story.setSprint(sprint);
+} else {
+    story.setSprint(null); // move to backlog
+}
 
         Story saved = storyRepository.save(story);
 

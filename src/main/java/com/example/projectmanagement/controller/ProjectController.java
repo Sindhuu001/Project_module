@@ -185,6 +185,12 @@ public class ProjectController {
         return ResponseEntity.ok(projects);
     }
 
+    @GetMapping("/{id}/permissions")
+    public ResponseEntity<PermissionDto> getProjectPermissions(@PathVariable Long id, @CurrentUser UserDto currentUser) {
+        PermissionDto permissions = projectService.getProjectPermissions(id, currentUser.getId());
+        return ResponseEntity.ok(permissions);
+    }
+
 
     @GetMapping("/access")
     public ResponseEntity<List<ProjectSummary>> getAccessibleProjects(@CurrentUser UserDto user) {

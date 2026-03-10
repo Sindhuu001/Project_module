@@ -455,6 +455,28 @@ public class ProjectService {
                 .toList();
     }
 
+    public PermissionDto getProjectPermissions(Long projectId, Long currentUserId) {
+        // fetch project
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() -> new RuntimeException("Project not found with id: " + projectId));
+        // build permission-aware response
+        boolean isOwner = project.getOwnerId().equals(currentUserId);
+
+        boolean isMember = project.getMemberIds() != null &&
+                project.getMemberIds().contains(currentUserId);
+
+        boolean canView = isOwner || isMember;
+        boolean canEdit = isOwner;
+        boolean canDelete = isOwner;
+
+        return PermissionDto.builder()
+                .canView(canView)
+                .canEdit(canEdit)
+                .canDelete(canDelete)
+                .build();
+            
+    }
+
 
     @Transactional(readOnly = true)
     public List<ProjectTimesheetDto> getProjectsByOwner(Long ownerId) {
@@ -855,6 +877,7 @@ public class ProjectService {
                 .canDelete(canDelete)
                 .build();
     }
+
 
 
 }

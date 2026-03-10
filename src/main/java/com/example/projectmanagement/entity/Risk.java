@@ -74,6 +74,9 @@ public class Risk {
 
     /* ========= AUDIT ========= */
 
+    @Column(name="created_by", updatable = false)
+    private Long createdBy;
+
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 

@@ -3,6 +3,9 @@ package com.example.projectmanagement.repository;
 import com.example.projectmanagement.entity.testing.TestRunCase;
 import com.example.projectmanagement.enums.TestRunCaseStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 import java.util.Optional;
@@ -29,5 +32,9 @@ public interface TestRunCaseRepository extends JpaRepository<TestRunCase, Long> 
     List<TestRunCase> findByAssigneeIdAndStatusNot(Long assigneeId, TestRunCaseStatus status);
 //    List<TestRunCase> findByRunId(Long runId);  // likely already exists, verify
 
+
+    @Modifying(clearAutomatically = true)
+    @Query("DELETE FROM TestRunCase t WHERE t.run.cycle.id = :cycleId")
+    void deleteByRunCycleId(@Param("cycleId") Long cycleId);
 
 }

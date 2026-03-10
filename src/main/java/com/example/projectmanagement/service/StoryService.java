@@ -122,7 +122,12 @@ public class StoryService {
                         .orElseThrow(() -> new RuntimeException("Status not found"))
         );
 
+
         Story saved = storyRepository.save(story);
+
+        if (saved.getEpic() != null) {
+            updateEpicStatus(saved.getEpic().getId());
+        }
 
         // -----------------------------
         // RETURN DTO
@@ -323,7 +328,9 @@ if (dto.getSprintId() != null) {
 }
 
         Story saved = storyRepository.save(story);
-
+        if (saved.getEpic() != null) {
+            updateEpicStatus(saved.getEpic().getId());
+        }
         // -----------------------------------------
         // RETURN DTO
         // -----------------------------------------
@@ -371,14 +378,24 @@ if (dto.getSprintId() != null) {
     }
 
     Story updatedStory = storyRepository.save(story);
+        if (story.getEpic() != null) {
+            updateEpicStatus(story.getEpic().getId());
+        }
     return convertToDto(updatedStory);
 }
 
     public void deleteStory(Long id) {
-        if (!storyRepository.existsById(id)) {
-            throw new RuntimeException("Story not found with id: " + id);
+
+        Story story = storyRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Story not found with id: " + id));
+
+        Long epicId = story.getEpic() != null ? story.getEpic().getId() : null;
+
+        storyRepository.delete(story);
+
+        if (epicId != null) {
+            updateEpicStatus(epicId);
         }
-        storyRepository.deleteById(id);
     }
 
     @Transactional(readOnly = true)
@@ -527,8 +544,26 @@ if (dto.getSprintId() != null) {
         // story.setEpicId(epicId);   // if you store FK separately
 
         storyRepository.save(story);
+        updateEpicStatus(storyId);
     }
 
+    public void updateEpicStatus(Long epicId){
 
+        if (epicId == null) return;
 
+        Status minStatus = storyRepository.findMinStatusByEpicId(epicId);
+
+        if (minStatus == null) return;
+
+        Epic epic = epicRepository.findEpicBasicById(epicId);
+
+        if (!epic.getStatus().getName().toLowerCase()
+                .equals(minStatus.getName().toLowerCase())) {
+
+            epic.setStatus(minStatus);
+            epicRepository.save(epic);
+
+            System.out.println("epic status updated");
+        }
+    }
 }

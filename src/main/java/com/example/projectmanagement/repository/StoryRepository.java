@@ -1,5 +1,6 @@
 package com.example.projectmanagement.repository;
 
+import com.example.projectmanagement.entity.Status;
 import com.example.projectmanagement.entity.Story;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -80,4 +81,16 @@ public interface StoryRepository extends JpaRepository<Story, Long> {
     boolean existsBySprintIdWithNoTasks(@Param("sprintId") Long sprintId);
 
     long countBySprintId(Long id);
+
+    @Query("""
+    SELECT s.status
+    FROM Story s
+    WHERE s.epic.id = :epicId
+    AND s.status.sortOrder = (
+        SELECT MIN(s2.status.sortOrder)
+        FROM Story s2
+        WHERE s2.epic.id = :epicId
+    )
+    """)
+    Status findMinStatusByEpicId(@Param("epicId") Long epicId);
 }

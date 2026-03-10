@@ -125,6 +125,8 @@ public class SprintService {
         // 5. Update sprint status and time
         sprint.setStatus(Sprint.SprintStatus.ACTIVE);
         sprint.setStartedAt(LocalDateTime.now());
+        // print sprint start date and time
+        System.out.println("Sprint started at: " + sprint.getStartedAt());
 
         // 6. Save and return
         Sprint updatedSprint = sprintRepository.save(sprint);
@@ -323,13 +325,14 @@ public SprintDto completeSprint(Long id) {
     }
 
     private void validateNoSprintOverlap(Long projectId, LocalDateTime startDate, LocalDateTime endDate, Long excludeId) {
-        List<Sprint> overlappingSprints = sprintRepository.findOverlappingSprints(projectId, startDate, endDate);
 
-        if (excludeId != null) {
-            overlappingSprints = overlappingSprints.stream()
-                    .filter(s -> !s.getId().equals(excludeId))
-                    .collect(Collectors.toList());
-        }
+        List<Sprint> overlappingSprints =
+                sprintRepository.findOverlappingSprints(projectId, startDate, endDate);
+
+        overlappingSprints = overlappingSprints.stream()
+                .filter(s -> s.getStatus() != Sprint.SprintStatus.COMPLETED) // ignore completed
+                .filter(s -> excludeId == null || !s.getId().equals(excludeId))
+                .collect(Collectors.toList());
 
         if (!overlappingSprints.isEmpty()) {
             throw new RuntimeException("A sprint already exists within this date range.");

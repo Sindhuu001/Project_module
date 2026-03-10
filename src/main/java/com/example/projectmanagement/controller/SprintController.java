@@ -111,22 +111,22 @@ public class SprintController {
     }
 
     @GetMapping("/overdue")
-   @PreAuthorize("hasAnyRole('Manager','Admin','Employee')")
+    @PreAuthorize("hasAnyRole('Manager','Admin','Employee')")
     public ResponseEntity<List<SprintDto>> getOverdueSprints() {
         List<SprintDto> sprints = sprintService.getOverdueSprints();
         return ResponseEntity.ok(sprints);
     }
 
     // Complete sprint (manager only)
-@PutMapping("/{id}/complete")
-@PreAuthorize("hasRole('Manager')")
-public ResponseEntity<SprintDto> completeSprint(
-        @PathVariable Long id,
-        @RequestParam(required = false) Long sprintId // next sprint ID (optional)
-) {
-    SprintDto updatedSprint = sprintService.completeSprint(id);
-    return ResponseEntity.ok(updatedSprint);
-}
+    @PutMapping("/{id}/complete")
+    @PreAuthorize("hasRole('Manager')")
+    public ResponseEntity<SprintDto> completeSprint(
+            @PathVariable Long id,
+            @RequestParam(required = false) Long sprintId // next sprint ID (optional)
+    ) {
+        SprintDto updatedSprint = sprintService.completeSprint(id);
+        return ResponseEntity.ok(updatedSprint);
+    }
 
     // Update sprint with User context
     @PutMapping("/{id}")

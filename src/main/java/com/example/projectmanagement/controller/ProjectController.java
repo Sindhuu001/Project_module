@@ -233,8 +233,8 @@ public class ProjectController {
     }
 
     @GetMapping("/{projectId}/stories")
-    public ResponseEntity<List<StoryDto>> getStoriesByProject(@PathVariable Long projectId) {
-        List<StoryDto> stories = storyService.getStoriesByProjectId(projectId);
+    public ResponseEntity<List<StoryViewDto>> getStoriesByProject(@PathVariable Long projectId) {
+        List<StoryViewDto> stories = storyService.getStoriesByProjectId(projectId);
         return ResponseEntity.ok(stories);
     }
 

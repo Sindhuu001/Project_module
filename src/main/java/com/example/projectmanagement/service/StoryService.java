@@ -188,7 +188,7 @@ public class StoryService {
     }
 
     @Transactional(readOnly = true)
-    public Page<StoryDto> getAllStories(Pageable pageable) {
+    public Page<StoryViewDto> getAllStories(Pageable pageable) {
         Map<Long, UserDto> userMap = userClient.findAll().stream()
                 .collect(Collectors.toMap(UserDto::getId, Function.identity()));
         return storyRepository.findAll(pageable)
@@ -203,7 +203,7 @@ public class StoryService {
     }
 
     @Transactional(readOnly = true)
-    public List<StoryDto> getStoriesByProjectId(Long projectId) {
+    public List<StoryViewDto> getStoriesByProjectId(Long projectId) {
         Map<Long, UserDto> userMap = userClient.findAll().stream()
                 .collect(Collectors.toMap(UserDto::getId, Function.identity()));
         return storyRepository.findByProjectId(projectId).stream()
@@ -399,7 +399,7 @@ if (dto.getSprintId() != null) {
     }
 
     @Transactional(readOnly = true)
-    public Page<StoryDto> searchStories(String title, Story.Priority priority, Long epicId, Long projectId, Long sprintId, Pageable pageable) {
+    public Page<StoryViewDto> searchStories(String title, Story.Priority priority, Long epicId, Long projectId, Long sprintId, Pageable pageable) {
         List<UserDto> allUsers = userClient.findAll();
         Map<Long, UserDto> userMap = allUsers.stream()
                 .collect(Collectors.toMap(UserDto::getId, Function.identity()));
@@ -459,17 +459,72 @@ if (dto.getSprintId() != null) {
         storyRepository.save(story);
     }
 
-    public StoryDto convertToDto1(Story story, Map<Long, UserDto> userMap) {
-        StoryDto dto = modelMapper.map(story, StoryDto.class);
-        dto.setEpicId(story.getEpic() != null ? story.getEpic().getId() : null);
-        dto.setReporterId(story.getReporterId() != null ? story.getReporterId() : null);
-        dto.setSprintId(story.getSprint() != null ? story.getSprint().getId() : null);
-        dto.setProjectId(story.getProject() != null ? story.getProject().getId() : null);
-        dto.setAssigneeId(story.getAssigneeId() != null ? story.getAssigneeId() : null);
-        dto.setAssignee(story.getAssigneeId() != null ? userMap.get(story.getAssigneeId()) : null);
-        dto.setReporter(story.getReporterId() != null ? userMap.get(story.getReporterId()) : null);
-        return dto;
+    public StoryViewDto convertToDto1(Story story, Map<Long, UserDto> userMap) {
+
+    StoryViewDto dto = new StoryViewDto();
+
+    dto.setId(story.getId());
+    dto.setTitle(story.getTitle());
+    dto.setDescription(story.getDescription());
+    dto.setAcceptanceCriteria(story.getAcceptanceCriteria());
+    dto.setStoryPoints(story.getStoryPoints());
+    dto.setPriority(story.getPriority().name());
+
+    // Status
+    if (story.getStatus() != null) {
+        dto.setStatusId(story.getStatus().getId());
+        dto.setStatusName(story.getStatus().getName());
     }
+
+    // Epic
+    if (story.getEpic() != null) {
+        dto.setEpicId(story.getEpic().getId());
+        dto.setEpicTitle(story.getEpic().getName());
+    }
+
+    // Project
+    if (story.getProject() != null) {
+        dto.setProjectId(story.getProject().getId());
+        dto.setProjectName(story.getProject().getName());
+    }
+
+    // Sprint
+    if (story.getSprint() != null) {
+        dto.setSprintId(story.getSprint().getId());
+        dto.setSprintName(story.getSprint().getName());
+    }
+
+    // Assignee (NO service call)
+    if (story.getAssigneeId() != null) {
+        UserDto assignee = userMap.get(story.getAssigneeId());
+        if (assignee != null) {
+            dto.setAssigneeId(assignee.getId());
+            dto.setAssigneeName(assignee.getName());
+        }
+    }
+
+    // Reporter (NO service call)
+    if (story.getReporterId() != null) {
+        UserDto reporter = userMap.get(story.getReporterId());
+        if (reporter != null) {
+            dto.setReporterId(reporter.getId());
+            dto.setReporterName(reporter.getName());
+        }
+    }
+
+    // Tasks
+    dto.setTaskIds(
+            story.getTasks()
+                 .stream()
+                 .map(Task::getId)
+                 .toList()
+    );
+
+    dto.setCreatedAt(story.getCreatedAt());
+    dto.setUpdatedAt(story.getUpdatedAt());
+
+    return dto;
+}
 
     public StoryViewDto convertToViewDto(Story story) {
         StoryViewDto dto = new StoryViewDto();

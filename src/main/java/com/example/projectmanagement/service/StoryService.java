@@ -122,7 +122,12 @@ public class StoryService {
                         .orElseThrow(() -> new RuntimeException("Status not found"))
         );
 
+
         Story saved = storyRepository.save(story);
+
+        if (saved.getEpic() != null) {
+            updateEpicStatus(saved.getEpic().getId());
+        }
 
         // -----------------------------
         // RETURN DTO
@@ -183,7 +188,7 @@ public class StoryService {
     }
 
     @Transactional(readOnly = true)
-    public Page<StoryDto> getAllStories(Pageable pageable) {
+    public Page<StoryViewDto> getAllStories(Pageable pageable) {
         Map<Long, UserDto> userMap = userClient.findAll().stream()
                 .collect(Collectors.toMap(UserDto::getId, Function.identity()));
         return storyRepository.findAll(pageable)
@@ -198,7 +203,7 @@ public class StoryService {
     }
 
     @Transactional(readOnly = true)
-    public List<StoryDto> getStoriesByProjectId(Long projectId) {
+    public List<StoryViewDto> getStoriesByProjectId(Long projectId) {
         Map<Long, UserDto> userMap = userClient.findAll().stream()
                 .collect(Collectors.toMap(UserDto::getId, Function.identity()));
         return storyRepository.findByProjectId(projectId).stream()
@@ -304,9 +309,28 @@ if (status.getSortOrder() == doneSortOrder) {
         } else {
             story.setEpic(null);
         }
+        // -----------------------------------------
+// VALIDATION: Sprint requires Epic
+// -----------------------------------------
+if (dto.getSprintId() != null && dto.getEpicId() == null) {
+    throw new IllegalArgumentException("Story must belong to an Epic before assigning to a Sprint");
+}
+
+// -----------------------------------------
+// SPRINT UPDATE (nullable)
+// -----------------------------------------
+if (dto.getSprintId() != null) {
+    Sprint sprint = sprintRepository.findById(dto.getSprintId())
+            .orElseThrow(() -> new ResourceNotFoundException("Sprint not found"));
+    story.setSprint(sprint);
+} else {
+    story.setSprint(null); // move to backlog
+}
 
         Story saved = storyRepository.save(story);
-
+        if (saved.getEpic() != null) {
+            updateEpicStatus(saved.getEpic().getId());
+        }
         // -----------------------------------------
         // RETURN DTO
         // -----------------------------------------
@@ -354,18 +378,28 @@ if (status.getSortOrder() == doneSortOrder) {
     }
 
     Story updatedStory = storyRepository.save(story);
+        if (story.getEpic() != null) {
+            updateEpicStatus(story.getEpic().getId());
+        }
     return convertToDto(updatedStory);
 }
 
     public void deleteStory(Long id) {
-        if (!storyRepository.existsById(id)) {
-            throw new RuntimeException("Story not found with id: " + id);
+
+        Story story = storyRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Story not found with id: " + id));
+
+        Long epicId = story.getEpic() != null ? story.getEpic().getId() : null;
+
+        storyRepository.delete(story);
+
+        if (epicId != null) {
+            updateEpicStatus(epicId);
         }
-        storyRepository.deleteById(id);
     }
 
     @Transactional(readOnly = true)
-    public Page<StoryDto> searchStories(String title, Story.Priority priority, Long epicId, Long projectId, Long sprintId, Pageable pageable) {
+    public Page<StoryViewDto> searchStories(String title, Story.Priority priority, Long epicId, Long projectId, Long sprintId, Pageable pageable) {
         List<UserDto> allUsers = userClient.findAll();
         Map<Long, UserDto> userMap = allUsers.stream()
                 .collect(Collectors.toMap(UserDto::getId, Function.identity()));
@@ -425,17 +459,72 @@ if (status.getSortOrder() == doneSortOrder) {
         storyRepository.save(story);
     }
 
-    public StoryDto convertToDto1(Story story, Map<Long, UserDto> userMap) {
-        StoryDto dto = modelMapper.map(story, StoryDto.class);
-        dto.setEpicId(story.getEpic() != null ? story.getEpic().getId() : null);
-        dto.setReporterId(story.getReporterId() != null ? story.getReporterId() : null);
-        dto.setSprintId(story.getSprint() != null ? story.getSprint().getId() : null);
-        dto.setProjectId(story.getProject() != null ? story.getProject().getId() : null);
-        dto.setAssigneeId(story.getAssigneeId() != null ? story.getAssigneeId() : null);
-        dto.setAssignee(story.getAssigneeId() != null ? userMap.get(story.getAssigneeId()) : null);
-        dto.setReporter(story.getReporterId() != null ? userMap.get(story.getReporterId()) : null);
-        return dto;
+    public StoryViewDto convertToDto1(Story story, Map<Long, UserDto> userMap) {
+
+    StoryViewDto dto = new StoryViewDto();
+
+    dto.setId(story.getId());
+    dto.setTitle(story.getTitle());
+    dto.setDescription(story.getDescription());
+    dto.setAcceptanceCriteria(story.getAcceptanceCriteria());
+    dto.setStoryPoints(story.getStoryPoints());
+    dto.setPriority(story.getPriority().name());
+
+    // Status
+    if (story.getStatus() != null) {
+        dto.setStatusId(story.getStatus().getId());
+        dto.setStatusName(story.getStatus().getName());
     }
+
+    // Epic
+    if (story.getEpic() != null) {
+        dto.setEpicId(story.getEpic().getId());
+        dto.setEpicTitle(story.getEpic().getName());
+    }
+
+    // Project
+    if (story.getProject() != null) {
+        dto.setProjectId(story.getProject().getId());
+        dto.setProjectName(story.getProject().getName());
+    }
+
+    // Sprint
+    if (story.getSprint() != null) {
+        dto.setSprintId(story.getSprint().getId());
+        dto.setSprintName(story.getSprint().getName());
+    }
+
+    // Assignee (NO service call)
+    if (story.getAssigneeId() != null) {
+        UserDto assignee = userMap.get(story.getAssigneeId());
+        if (assignee != null) {
+            dto.setAssigneeId(assignee.getId());
+            dto.setAssigneeName(assignee.getName());
+        }
+    }
+
+    // Reporter (NO service call)
+    if (story.getReporterId() != null) {
+        UserDto reporter = userMap.get(story.getReporterId());
+        if (reporter != null) {
+            dto.setReporterId(reporter.getId());
+            dto.setReporterName(reporter.getName());
+        }
+    }
+
+    // Tasks
+    dto.setTaskIds(
+            story.getTasks()
+                 .stream()
+                 .map(Task::getId)
+                 .toList()
+    );
+
+    dto.setCreatedAt(story.getCreatedAt());
+    dto.setUpdatedAt(story.getUpdatedAt());
+
+    return dto;
+}
 
     public StoryViewDto convertToViewDto(Story story) {
         StoryViewDto dto = new StoryViewDto();
@@ -510,8 +599,26 @@ if (status.getSortOrder() == doneSortOrder) {
         // story.setEpicId(epicId);   // if you store FK separately
 
         storyRepository.save(story);
+        updateEpicStatus(storyId);
     }
 
+    public void updateEpicStatus(Long epicId){
 
+        if (epicId == null) return;
 
+        Status minStatus = storyRepository.findMinStatusByEpicId(epicId);
+
+        if (minStatus == null) return;
+
+        Epic epic = epicRepository.findEpicBasicById(epicId);
+
+        if (!epic.getStatus().getName().toLowerCase()
+                .equals(minStatus.getName().toLowerCase())) {
+
+            epic.setStatus(minStatus);
+            epicRepository.save(epic);
+
+            System.out.println("epic status updated");
+        }
+    }
 }

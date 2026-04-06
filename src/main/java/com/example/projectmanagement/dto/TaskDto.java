@@ -46,7 +46,7 @@ public class TaskDto {
     private UserDto reporter;     // Full reporter info (id, name, username, email, etc.)
     private UserDto assignee;     // Full assignee info
     private ProjectDto project;   // Full project info
-    private StoryDto story;       // Linked story (if any)
+    private StoryViewDto story;       // Linked story (if any)
     private SprintDto sprint;     // Linked sprint (if any)
 
     // === Optional additional info (useful for frontend display) ===

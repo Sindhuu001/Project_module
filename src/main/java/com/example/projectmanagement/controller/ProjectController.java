@@ -185,6 +185,12 @@ public class ProjectController {
         return ResponseEntity.ok(projects);
     }
 
+    @GetMapping("/{id}/permissions")
+    public ResponseEntity<PermissionDto> getProjectPermissions(@PathVariable Long id, @CurrentUser UserDto currentUser) {
+        PermissionDto permissions = projectService.getProjectPermissions(id, currentUser.getId());
+        return ResponseEntity.ok(permissions);
+    }
+
 
     @GetMapping("/access")
     public ResponseEntity<List<ProjectSummary>> getAccessibleProjects(@CurrentUser UserDto user) {
@@ -227,8 +233,8 @@ public class ProjectController {
     }
 
     @GetMapping("/{projectId}/stories")
-    public ResponseEntity<List<StoryDto>> getStoriesByProject(@PathVariable Long projectId) {
-        List<StoryDto> stories = storyService.getStoriesByProjectId(projectId);
+    public ResponseEntity<List<StoryViewDto>> getStoriesByProject(@PathVariable Long projectId) {
+        List<StoryViewDto> stories = storyService.getStoriesByProjectId(projectId);
         return ResponseEntity.ok(stories);
     }
 

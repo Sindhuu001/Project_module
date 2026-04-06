@@ -44,8 +44,12 @@ public interface SprintRepository extends JpaRepository<Sprint, Long> {
     List<Sprint> findOverdueSprints(@Param("date") LocalDateTime date);
 
     // Check overlapping sprints
-    @Query("SELECT s FROM Sprint s WHERE s.project.id = :projectId " +
-            "AND (:startDate <= s.endDate AND :endDate >= s.startDate)")
+    @Query("""
+    SELECT s FROM Sprint s
+    WHERE s.project.id = :projectId
+    AND s.status <> 'COMPLETED'
+    AND (:startDate <= s.endDate AND :endDate >= s.startDate)
+    """)
     List<Sprint> findOverlappingSprints(@Param("projectId") Long projectId,
                                         @Param("startDate") LocalDateTime startDate,
                                         @Param("endDate") LocalDateTime endDate);

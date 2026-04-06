@@ -3,7 +3,9 @@ package com.example.projectmanagement.service;
 import com.example.projectmanagement.dto.testing.BulkAssignRequest;
 import com.example.projectmanagement.dto.testing.BulkExecutionRequest;
 import com.example.projectmanagement.dto.testing.CloneRunRequest;
+import com.example.projectmanagement.dto.testing.TestRunCaseResponse;
 import com.example.projectmanagement.dto.testing.TestRunSummaryResponse;
+import com.example.projectmanagement.dto.testing.TestRunCaseUpdateRequest;
 
 public interface TestRunCaseService {
     void bulkAssign(Long runId, BulkAssignRequest req, Long userId);
@@ -13,5 +15,9 @@ public interface TestRunCaseService {
     void bulkSkip(Long runId, BulkExecutionRequest req, Long userId);
 
     TestRunSummaryResponse cloneNextRun(Long cycleId, CloneRunRequest req, Long userId);
+
+    TestRunCaseResponse updateRunCase(Long runCaseId, TestRunCaseUpdateRequest request);
+
+    void deleteRunCase(Long runCaseId);
 
 }

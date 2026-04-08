@@ -1,0 +1,39 @@
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: project-management-system
+    ports:
+      - "8080:8080"
+ 
+    env_file:
+      - .env
+ 
+    restart: unless-stopped
+ 
+    networks:
+      - intranet-network
+ 
+    volumes:
+      - project-logs:/app/logs
+ 
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+ 
+ 
+# ✅ DEFINE NETWORK (THIS WAS MISSING)
+networks:
+  intranet-network:
+    driver: bridge
+ 
+ 
+# ✅ DEFINE VOLUME
+volumes:
+  project-logs:
+    driver: local
+ 

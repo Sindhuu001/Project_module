@@ -1,33 +1,8 @@
-pipeline {
-    agent any
-
-    environment {
-        IMAGE_NAME = "project_management_system"
-        VERSION = "${BUILD_NUMBER}"
-    }
-
-    stages {
-
-        stage('Build') {
-            steps {
-                sh 'mvn clean package -DskipTests'
-            }
-        }
-
-        stage('Docker Build') {
-            steps {
-                sh 'docker build -t $IMAGE_NAME:$VERSION .'
-            }
-        }
-
-        stage('Deploy') {
-            steps {
-                sh '''
-                docker compose down || true
-                docker compose up -d --build
-                '''
-            }
-        }
-
-    }
-}
+@Library('shared-lib') _
+ 
+buildPipeline(
+    repoUrl: 'https://github.com/PavesTechnologies/Project_Management_System.git',
+    envSecret: 'intranet/project_management_system/env',
+    jdk: 'jdk21',   // 🔥 change to jdk21 if needed
+    sonarProjectKey: 'Intranet-project-management-system'  // 🔥 dynamic
+)

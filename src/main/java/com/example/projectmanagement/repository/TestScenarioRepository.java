@@ -4,6 +4,10 @@ import com.example.projectmanagement.entity.testing.TestScenario;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 
@@ -22,4 +26,7 @@ public interface TestScenarioRepository extends JpaRepository<TestScenario, Long
 
     @Query("SELECT COUNT(ts) FROM TestScenario ts WHERE ts.testStory.id = :storyId")
     int countByTestStoryId(@Param("storyId") Long storyId);
+
+    @Transactional
+    void deleteByTestStoryId(Long testStoryId);
 }

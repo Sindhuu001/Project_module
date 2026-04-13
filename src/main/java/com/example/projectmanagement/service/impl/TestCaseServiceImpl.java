@@ -18,6 +18,8 @@ import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+// import com.example.projectmanagement.dto.testing.TestCaseRequest;
+import com.example.projectmanagement.dto.testing.TestCaseUpdateRequest;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -168,4 +170,77 @@ public List<TestCaseSummaryResponse> getCasesForProject(Long projectId) {
         //         })
         //         .toList();
         // }
+
+        // ---------------------------------------------------------
+    // UPDATE TEST CASE
+    // ---------------------------------------------------------
+    @Override
+    @Transactional
+    public TestCaseSummaryResponse updateTestCase(Long caseId, TestCaseUpdateRequest request, Long currentUserId) {
+        TestCase testCase = testCaseRepository.findById(caseId)
+                .orElseThrow(() -> new EntityNotFoundException("Test Case not found: " + caseId));
+
+        // 1. Update basic fields
+        testCase.setTitle(request.title());
+        testCase.setPreConditions(request.preConditions());
+        if (request.type() != null) testCase.setType(request.type());
+        if (request.priority() != null) testCase.setPriority(request.priority());
+        testCase.setUpdatedAt(LocalDateTime.now());
+
+        TestCase savedCase = testCaseRepository.save(testCase);
+
+        // 2. Clear existing steps to prevent orphaned rows
+        List<TestStep> existingSteps = testStepRepository.findByTestCaseIdOrderByStepNumberAsc(caseId);
+        testStepRepository.deleteAll(existingSteps);
+
+        // 3. Insert new steps from the request
+        int stepCount = 0;
+        List<TestStepCreateRequest> stepsInput = request.steps();
+        
+        if (stepsInput != null && !stepsInput.isEmpty()) {
+            List<TestStep> newSteps = new ArrayList<>(stepsInput.size());
+            int stepNumber = 1;
+            for (TestStepCreateRequest stepReq : stepsInput) {
+                TestStep step = TestStep.builder()
+                        .testCase(savedCase)
+                        .stepNumber(stepNumber++)
+                        .action(stepReq.action())
+                        .expectedResult(stepReq.expectedResult())
+                        .build();
+                newSteps.add(step);
+            }
+            testStepRepository.saveAll(newSteps); // batch insert
+            stepCount = newSteps.size();
+        }
+
+        // 4. Return updated summary
+        return new TestCaseSummaryResponse(
+                savedCase.getId(),
+                savedCase.getTitle(),
+                savedCase.getType().name(),
+                savedCase.getPriority().name(),
+                savedCase.getStatus(),
+                stepCount
+        );
+    }
+
+    // ---------------------------------------------------------
+    // DELETE TEST CASE
+    // ---------------------------------------------------------
+    @Override
+    @Transactional
+    public void deleteTestCase(Long caseId) {
+        // 1. Find the test case or throw an error if it doesn't exist
+        TestCase testCase = testCaseRepository.findById(caseId)
+                .orElseThrow(() -> new EntityNotFoundException("Test Case not found: " + caseId));
+
+        // 2. Delete associated steps first to avoid Foreign Key constraint violations
+        List<TestStep> existingSteps = testStepRepository.findByTestCaseIdOrderByStepNumberAsc(caseId);
+        if (!existingSteps.isEmpty()) {
+            testStepRepository.deleteAll(existingSteps);
+        }
+
+        // 3. Finally, delete the test case itself
+        testCaseRepository.delete(testCase);
+    }
 }

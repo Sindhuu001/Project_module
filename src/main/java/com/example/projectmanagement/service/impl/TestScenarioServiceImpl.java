@@ -20,6 +20,7 @@ import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.example.projectmanagement.dto.testing.TestScenarioUpdateRequest;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -119,5 +120,50 @@ public class TestScenarioServiceImpl implements TestScenarioService {
                 scenario.getLinkedUserStory() != null ? scenario.getLinkedUserStory().getId() : null,
                 caseCount
         );
+    }
+    @Override
+    @Transactional
+    public TestScenarioSummaryResponse updateScenario(Long id, TestScenarioUpdateRequest request, Long currentUserId) {
+        TestScenario scenario = testScenarioRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Test Scenario not found: " + id));
+
+        // Update fields if they are provided in the request
+        if (request.title() != null) {
+            scenario.setTitle(request.title());
+        }
+        if (request.description() != null) {
+            scenario.setDescription(request.description());
+        }
+        if (request.priority() != null) {
+            scenario.setPriority(request.priority());
+        }
+        if (request.status() != null) {
+            scenario.setStatus(request.status());
+        }
+
+        // Update auditing fields
+        // scenario.setUpdatedBy(currentUserId); // Uncomment if you have this field in your entity
+        scenario.setUpdatedAt(LocalDateTime.now());
+
+        // Because of JPA dirty checking, the entity will be updated automatically upon transaction commit.
+        // We just need to fetch the count and return the mapped DTO.
+        int caseCount = testCaseRepository.countByScenarioId(scenario.getId());
+        
+        return toDto(scenario, caseCount);
+    }
+
+    @Override
+    @Transactional
+    public void deleteScenario(Long id, Long currentUserId) {
+        TestScenario scenario = testScenarioRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Test Scenario not found: " + id));
+
+        // Optional safety check: Ensure you don't orphan or accidentally delete child test cases
+        int caseCount = testCaseRepository.countByScenarioId(id);
+        if (caseCount > 0) {
+            throw new IllegalStateException("Cannot delete Test Scenario because it contains " + caseCount + " active test cases. Delete them first.");
+        }
+
+        testScenarioRepository.delete(scenario);
     }
 }

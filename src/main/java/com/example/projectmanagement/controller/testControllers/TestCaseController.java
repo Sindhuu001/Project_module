@@ -10,6 +10,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import com.example.projectmanagement.dto.testing.TestCaseUpdateRequest;
 
 import java.util.List;
 
@@ -54,7 +55,30 @@ public class TestCaseController {
                 testCaseService.getCasesForProject(projectId)
         );
     }
+    // ---------------------------------------------------------
+    // UPDATE (EDIT)
+    // ---------------------------------------------------------
+    @PutMapping("/{caseId}")
+    public ResponseEntity<TestCaseSummaryResponse> updateTestCase(
+            @PathVariable Long caseId,
+            @Valid @RequestBody TestCaseUpdateRequest request, // Or reuse TestCaseCreateRequest if identical
+            @CurrentUser UserDto currentUser
+    ) {
+        // Passing the user ID in case your service tracks who updated the record
+        TestCaseSummaryResponse response = testCaseService.updateTestCase(caseId, request, currentUser.getId());
+        return ResponseEntity.ok(response);
+    }
 
+    // ---------------------------------------------------------
+    // DELETE
+    // ---------------------------------------------------------
+    @DeleteMapping("/{caseId}")
+    public ResponseEntity<Void> deleteTestCase(
+            @PathVariable("caseId") Long caseId 
+    ) {
+        testCaseService.deleteTestCase(caseId);
+        return ResponseEntity.noContent().build(); 
+    }
 
   
 

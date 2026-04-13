@@ -3,6 +3,7 @@ package com.example.projectmanagement.service;
 import com.example.projectmanagement.dto.testing.TestCaseCreateRequest;
 import com.example.projectmanagement.dto.testing.TestCaseDetailResponse;
 import com.example.projectmanagement.dto.testing.TestCaseSummaryResponse;
+import com.example.projectmanagement.dto.testing.TestCaseUpdateRequest;
 
 import java.util.List;
 
@@ -16,5 +17,8 @@ public interface TestCaseService {
     // List<TestCaseSummaryResponse> getCasesForProject(Long projectId);
 
     List<TestCaseSummaryResponse> getCasesForProject(Long projectId);
+    TestCaseSummaryResponse updateTestCase(Long caseId, TestCaseUpdateRequest request, Long currentUserId);
+
+    void deleteTestCase(Long caseId);
 }
 

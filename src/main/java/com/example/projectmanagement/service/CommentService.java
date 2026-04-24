@@ -105,19 +105,23 @@ public class CommentService {
 
     // ------------- Helpers -------------
     private Comment buildComment(Long userId, String content, Long parentId) {
-        Comment comment = new Comment();
-        comment.setUserId(userId);
-        comment.setContent(content);
-        comment.setCreatedAt(LocalDateTime.now());
+    Comment comment = new Comment();
+    comment.setUserId(userId);
+    comment.setContent(content);
+    comment.setCreatedAt(LocalDateTime.now());
+    
+    // Explicitly nullify other associations just to be safe
+    comment.setTask(null);
+    comment.setStory(null);
+    comment.setEpic(null);
 
-        if (parentId != null) {
-            Comment parent = commentRepository.findById(parentId)
-                    .orElseThrow(() -> new RuntimeException("Parent comment not found with ID: " + parentId));
-            comment.setParent(parent);
-        }
-
-        return comment;
+    if (parentId != null) {
+        Comment parent = commentRepository.findById(parentId)
+                .orElseThrow(() -> new RuntimeException("Parent comment not found"));
+        comment.setParent(parent);
     }
+    return comment;
+}
 
     private Task getTaskById(Long taskId) {
         return taskRepository.findById(taskId)

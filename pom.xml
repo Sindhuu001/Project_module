@@ -13,10 +13,10 @@
     </parent>
 
     <groupId>com.projectmanagement</groupId>
-    <artifactId>jira-backend</artifactId>
+    <artifactId>PMS-backend</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <name>jira-backend</name>
-    <description>Jira-like Project Management Backend</description>
+    <name>PMS-backend</name>
+    <description>Project Management Backend</description>
 
     <properties>
         <java.version>17</java.version>

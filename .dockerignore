@@ -1,0 +1,34 @@
+# Version control
+.git
+.gitignore
+
+# IDE files
+.idea
+*.iml
+.vscode
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Maven build output
+target/
+
+# Environment files — NEVER bake secrets into image
+.env
+*.env
+
+# Docs
+*.md
+README*
+
+# Docker files themselves
+Dockerfile*
+docker-compose*
+
+# Logs
+logs/
+*.log
+
+# Test reports
+**/surefire-reports

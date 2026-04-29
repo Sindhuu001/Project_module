@@ -1,39 +1,30 @@
-
 services:
   app:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: project-management-system
+#      target: production
+    image: pavesadmin/intranet-pms:latest
+    container_name: project-management
     ports:
       - "8080:8080"
- 
     env_file:
       - .env
- 
     restart: unless-stopped
- 
-    networks:
-      - intranet-network
- 
     volumes:
-      - project-logs:/app/logs
- 
+      - app-logs:/app/logs
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
       interval: 30s
       timeout: 10s
       retries: 3
- 
- 
-# ✅ DEFINE NETWORK (THIS WAS MISSING)
-networks:
-  intranet-network:
-    driver: bridge
- 
- 
-# ✅ DEFINE VOLUME
+      start_period: 60s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"
+
 volumes:
-  project-logs:
+  app-logs:
     driver: local
- 

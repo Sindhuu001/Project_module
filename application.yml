@@ -1,0 +1,105 @@
+spring:
+  application:
+    name: project-management-service
+
+  # Active profile is set by SPRING_PROFILES_ACTIVE env var.
+  # Each environment injects its own value via docker-compose.
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:dev}
+
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      maximum-pool-size: ${DB_POOL_SIZE:10}
+      minimum-idle: 2
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+      pool-name: ProjectManagementHikariPool
+
+  jpa:
+    hibernate:
+      ddl-auto: ${DB_DDL_AUTO:validate}
+    show-sql: ${DB_SHOW_SQL:false}
+    open-in-view: false       # Disable OSIV — prevents lazy loading issues in APIs
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQL8Dialect
+        format_sql: false
+        jdbc:
+          time_zone: UTC
+        order_inserts: true
+        order_updates: true
+        batch_versioned_data: true
+
+  cache:
+    type: caffeine
+    caffeine:
+      spec: maximumSize=${CACHE_MAX_SIZE:1000},expireAfterWrite=${CACHE_TTL_SECONDS:300}s
+
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+      fail-on-empty-beans: false
+    deserialization:
+      fail-on-unknown-properties: false
+    default-property-inclusion: non_null
+    time-zone: UTC
+
+  mvc:
+    throw-exception-if-no-handler-found: true
+
+  web:
+    resources:
+      add-mappings: false
+
+server:
+  port: ${SERVER_PORT:8080}
+  servlet:
+    context-path: /api
+  tomcat:
+    max-threads: 200
+    accept-count: 100
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: ${ACTUATOR_EXPOSURE:health}
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: when-authorized
+  health:
+    db:
+      enabled: true
+
+# Feign client config
+# URL is environment-specific — set via USER_SERVICE_URL env var.
+# Filled in once the user-management service is deployed.
+user:
+  service:
+    url: ${USER_SERVICE_URL:http://placeholder-replace-when-user-service-is-deployed}
+
+feign:
+  client:
+    config:
+      user-service:
+        connect-timeout: ${FEIGN_CONNECT_TIMEOUT:3000}
+        read-timeout: ${FEIGN_READ_TIMEOUT:5000}
+        logger-level: NONE
+
+logging:
+  level:
+    root: ${LOG_LEVEL_ROOT:WARN}
+    com.projectmanagement: ${LOG_LEVEL_APP:INFO}
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+  file:
+    name: /app/logs/application.log
+    max-size: 50MB
+    max-history: 30

@@ -17,5 +17,5 @@ public interface MitigationPlanRepository extends JpaRepository<MitigationPlan, 
     boolean existsByRiskAndIdNot(Risk risk, Long id);
     boolean existsByRiskAndMitigation(Risk risk, String mitigation);
 
-
+    void deleteByRiskIn(List<Risk> risks);
 }

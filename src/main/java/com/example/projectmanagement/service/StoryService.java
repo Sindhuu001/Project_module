@@ -21,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -54,6 +55,16 @@ public class StoryService {
 
     @Autowired
     private TaskRepository taskRepository;
+
+    @Autowired
+    private RiskLinkRepository riskLinkRepository;
+    @Autowired
+    private RiskRepository riskRepository;
+
+    @Autowired
+    private MitigationPlanRepository mitigationPlanRepository;
+    @Autowired
+    private RiskAttachmentRepository riskAttachmentRepository;
 
     @Transactional
     public StoryCreateDto createStory(StoryCreateDto dto, Long userId) {
@@ -384,12 +395,52 @@ if (dto.getSprintId() != null) {
     return convertToDto(updatedStory);
 }
 
+    @Transactional
     public void deleteStory(Long id) {
 
         Story story = storyRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Story not found with id: " + id));
 
         Long epicId = story.getEpic() != null ? story.getEpic().getId() : null;
+
+        /*
+         * DEMO BEHAVIOR:
+         * Currently, when a Story is deleted, all Risks linked to this Story
+         * are also deleted along with their child records:
+         * RiskLink, MitigationPlan, and RiskAttachment.
+         *
+         * TODO:
+         * In production, do not directly hard-delete Risks here.
+         * Instead:
+         * 1. Ask user whether to delete risks or only unlink them
+         * 2. Prefer soft delete for Risk records
+         * 3. If the Risk is linked to other Task/Epic/Sprint items,
+         *    only delete this RiskLink and keep the Risk
+         * 4. Preserve mitigation plans and attachments for audit/history if needed
+         */
+        List<RiskLink> riskLinks = riskLinkRepository.findByLinkedTypeAndLinkedId(
+                RiskLink.LinkedType.Story,
+                id
+        );
+
+        if (!riskLinks.isEmpty()) {
+
+            List<Risk> risksToDelete = riskLinks.stream()
+                    .map(RiskLink::getRisk)
+                    .filter(Objects::nonNull)
+                    .distinct()
+                    .toList();
+
+            // 1. Delete risk links first
+            riskLinkRepository.deleteAll(riskLinks);
+
+            // 2. Delete child records of risks before deleting risks
+            mitigationPlanRepository.deleteByRiskIn(risksToDelete);
+            riskAttachmentRepository.deleteByRiskIn(risksToDelete);
+
+            // 3. Delete associated risks
+            riskRepository.deleteAll(risksToDelete);
+        }
 
         storyRepository.delete(story);
 

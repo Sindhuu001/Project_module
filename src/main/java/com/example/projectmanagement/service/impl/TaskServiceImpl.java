@@ -57,8 +57,6 @@ public class TaskServiceImpl implements TaskService {
     @Autowired
     private UserClient userClient;
 
-    @Autowired
-    private com.example.projectmanagement.repository.RiskLinkRepository riskLinkRepository;
 
     // ---------- CRUD Operations ----------
 

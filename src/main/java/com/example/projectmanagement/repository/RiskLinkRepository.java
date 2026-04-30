@@ -23,7 +23,6 @@ public interface RiskLinkRepository extends JpaRepository<RiskLink, Long> {
     boolean existsByRiskAndLinkedTypeAndLinkedId(Risk risk, RiskLink.LinkedType linkedType, Long linkedId);
 
     // Find risk links referencing a specific linked entity
-    List<RiskLink> findByLinkedTypeAndLinkedId(RiskLink.LinkedType linkedType, Long linkedId);
 
     // Delete risk links referencing a specific linked entity
     void deleteByLinkedTypeAndLinkedId(RiskLink.LinkedType linkedType, Long linkedId);

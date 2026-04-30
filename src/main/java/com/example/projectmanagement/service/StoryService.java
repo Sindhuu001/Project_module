@@ -59,8 +59,6 @@ public class StoryService {
     private RiskLinkRepository riskLinkRepository;
 
     @Autowired
-    private RiskLinkRepository riskLinkRepository;
-    @Autowired
     private RiskRepository riskRepository;
 
     @Autowired

@@ -1,8 +1,6 @@
 package com.example.projectmanagement.service;
 
-import com.example.projectmanagement.dto.testing.ProjectTestDataResponse;
-import com.example.projectmanagement.dto.testing.TestStoryCreateRequest;
-import com.example.projectmanagement.dto.testing.TestStorySummaryResponse;
+import com.example.projectmanagement.dto.testing.*;
 
 import java.util.List;
 
@@ -15,4 +13,8 @@ public interface TestStoryService {
     List<TestStorySummaryResponse> getTestStoriesForUserStory(Long storyId);
 
     ProjectTestDataResponse getProjectTestData(Long projectId);
+
+    TestStorySummaryResponse updateTestStory(Long testStoryId, TestStoryUpdateRequest request, Long currentUserId);
+
+    void deleteTestStory(Long testStoryId);
 }

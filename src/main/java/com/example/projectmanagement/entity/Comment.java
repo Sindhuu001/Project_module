@@ -23,18 +23,18 @@ public class Comment {
 
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "task_id")
+    @JoinColumn(name = "task_id",nullable = true)
     private Task task;
 
     // @ManyToOne(fetch = FetchType.LAZY)
     // @JoinColumn(name = "story_id")
     // private Story story;
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "story_id", nullable = false)
+    @JoinColumn(name = "story_id", nullable = true)
     private Story story;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "epic_id")
+    @JoinColumn(name = "epic_id",nullable = true)
     private Epic epic;
 
     @ManyToOne(fetch = FetchType.LAZY)

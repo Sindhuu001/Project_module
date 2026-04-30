@@ -9,6 +9,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import com.example.projectmanagement.dto.testing.TestScenarioUpdateRequest;
 
 import java.util.List;
 
@@ -54,5 +55,24 @@ public class TestScenarioController {
         return ResponseEntity.ok(
                 scenarioService.getScenariosForUserStory(storyId)
         );
+    }
+    @PutMapping("/{id}")
+    public ResponseEntity<TestScenarioSummaryResponse> updateScenario(
+            @PathVariable Long id,
+            @Valid @RequestBody TestScenarioUpdateRequest request,
+            @CurrentUser UserDto currentUser
+    ) {
+        return ResponseEntity.ok(
+                scenarioService.updateScenario(id, request, currentUser.getId())
+        );
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteScenario(
+            @PathVariable Long id,
+            @CurrentUser UserDto currentUser
+    ) {
+        scenarioService.deleteScenario(id, currentUser.getId());
+        return ResponseEntity.noContent().build();
     }
 }

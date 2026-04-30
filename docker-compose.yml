@@ -5,6 +5,7 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: project-management-system
+    image: pavesadmin/intranet-pms:latest
     ports:
       - "8080:8080"
  

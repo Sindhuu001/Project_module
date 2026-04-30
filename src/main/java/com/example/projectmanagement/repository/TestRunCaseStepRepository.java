@@ -25,4 +25,12 @@ public interface TestRunCaseStepRepository extends JpaRepository<TestRunCaseStep
                 WHERE s.runCase.run.cycle.id = :cycleId
             """)
     void deleteByRunCycleId(@Param("cycleId") Long cycleId);
+
+    @Modifying
+    @Query("DELETE FROM TestRunCaseStep t WHERE t.runCase.run.id = :runId")
+    void deleteByRunCaseRunId(@Param("runId") Long runId);
+
+    @Modifying
+    @Query("DELETE FROM TestRunCaseStep t WHERE t.runCase.id = :runCaseId")
+    void deleteByRunCaseId(@Param("runCaseId") Long runCaseId);
 }

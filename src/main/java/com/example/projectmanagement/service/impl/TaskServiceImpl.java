@@ -14,7 +14,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.*;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -32,8 +34,6 @@ public class TaskServiceImpl implements TaskService {
     private SprintRepository sprintRepository;
     @Autowired
     private StatusRepository statusRepository;
-//    @Autowired
-//    private EpicRepository epicRepository;
     @Autowired
     private RiskLinkRepository riskLinkRepository;
     @Autowired
@@ -56,8 +56,9 @@ public class TaskServiceImpl implements TaskService {
     private StoryService storyService;
     @Autowired
     private UserClient userClient;
+
     @Autowired
-    private EpicService epicService;
+    private com.example.projectmanagement.repository.RiskLinkRepository riskLinkRepository;
 
     // ---------- CRUD Operations ----------
 
@@ -132,8 +133,7 @@ public class TaskServiceImpl implements TaskService {
                 Long storySprintId = task.getStory().getSprint().getId();
                 if (!storySprintId.equals(taskCreateDto.getSprintId())) {
                     throw new IllegalStateException(
-                            "Task cannot be assigned to a different sprint than its story"
-                    );
+                            "Task cannot be assigned to a different sprint than its story");
                 }
             }
 
@@ -158,8 +158,6 @@ public class TaskServiceImpl implements TaskService {
         return mapToDto(savedTask);
     }
 
-
-
     @Override
     public TaskViewDto getTaskById(Long id) {
         Task task = taskRepository.findById(id)
@@ -176,45 +174,9 @@ public class TaskServiceImpl implements TaskService {
 
         Long storyId = task.getStory() != null ? task.getStory().getId() : null;
 
-        /*
-         * DEMO BEHAVIOR:
-         * Currently, when a Task is deleted, all Risks linked to this Task
-         * are also deleted along with their child records:
-         * RiskLink, MitigationPlan, and RiskAttachment.
-         *
-         * TODO:
-         * In production, do not directly hard-delete Risks here.
-         * Instead:
-         * 1. Ask user whether to delete risks or only unlink them
-         * 2. Prefer soft delete for Risk records
-         * 3. If the Risk is linked to other Story/Epic/Sprint items,
-         *    only delete this RiskLink and keep the Risk
-         * 4. Preserve mitigation plans and attachments for audit/history if needed
-         */
-
-        List<RiskLink> riskLinks = riskLinkRepository.findByLinkedTypeAndLinkedId(
-                RiskLink.LinkedType.Task,
-                id
-        );
-
-        if (!riskLinks.isEmpty()) {
-
-            List<Risk> risksToDelete = riskLinks.stream()
-                    .map(RiskLink::getRisk)
-                    .filter(Objects::nonNull)
-                    .distinct()
-                    .toList();
-
-            // 1. Delete risk links first
-            riskLinkRepository.deleteAll(riskLinks);
-
-            // 2. Delete child records of risks
-            mitigationPlanRepository.deleteByRiskIn(risksToDelete);
-            riskAttachmentRepository.deleteByRiskIn(risksToDelete);
-
-            // 3. Delete risks
-            riskRepository.deleteAll(risksToDelete);
-        }
+        // Remove any risk links referencing this task
+        riskLinkRepository.deleteByLinkedTypeAndLinkedId(com.example.projectmanagement.entity.RiskLink.LinkedType.Task,
+                task.getId());
 
         taskRepository.delete(task);
 
@@ -239,13 +201,20 @@ public class TaskServiceImpl implements TaskService {
         Long projectOwnerId = project.getOwnerId();
 
         // 1️⃣ Update basic fields
-        if (dto.getTitle() != null) existingTask.setTitle(dto.getTitle());
-        if (dto.getDescription() != null) existingTask.setDescription(dto.getDescription());
-        if (dto.getPriority() != null) existingTask.setPriority(dto.getPriority());
-        if (dto.getStoryPoints() != null) existingTask.setStoryPoints(dto.getStoryPoints());
-        if (dto.getDueDate() != null) existingTask.setDueDate(dto.getDueDate());
-        if (dto.getStartDate() != null) existingTask.setStartDate(dto.getStartDate());
-        if (dto.getBillable() != null) existingTask.setBillable(dto.getBillable());
+        if (dto.getTitle() != null)
+            existingTask.setTitle(dto.getTitle());
+        if (dto.getDescription() != null)
+            existingTask.setDescription(dto.getDescription());
+        if (dto.getPriority() != null)
+            existingTask.setPriority(dto.getPriority());
+        if (dto.getStoryPoints() != null)
+            existingTask.setStoryPoints(dto.getStoryPoints());
+        if (dto.getDueDate() != null)
+            existingTask.setDueDate(dto.getDueDate());
+        if (dto.getStartDate() != null)
+            existingTask.setStartDate(dto.getStartDate());
+        if (dto.getBillable() != null)
+            existingTask.setBillable(dto.getBillable());
 
         // 2️⃣ Reporter
         if (dto.getReporterId() != null) {
@@ -292,8 +261,7 @@ public class TaskServiceImpl implements TaskService {
                 Long storySprintId = existingTask.getStory().getSprint().getId();
                 if (!storySprintId.equals(dto.getSprintId())) {
                     throw new IllegalStateException(
-                            "Task cannot be assigned to a different sprint than its story"
-                    );
+                            "Task cannot be assigned to a different sprint than its story");
                 }
             }
 
@@ -308,15 +276,14 @@ public class TaskServiceImpl implements TaskService {
 
         Task updatedTask = taskRepository.save(existingTask);
 
-        if (oldStoryId != null) updateStoryStatus(oldStoryId);
+        if (oldStoryId != null)
+            updateStoryStatus(oldStoryId);
 
         if (updatedTask.getStory() != null)
             updateStoryStatus(updatedTask.getStory().getId());
 
         return mapToDto(updatedTask);
     }
-
-
 
     // ---------- List & Summary ----------
 
@@ -623,6 +590,7 @@ public class TaskServiceImpl implements TaskService {
 
         return dto;
     }
+
     @Override
     public void assignStory(Long taskId, Long storyId) {
 
@@ -677,23 +645,23 @@ public class TaskServiceImpl implements TaskService {
         return toResponse(task);
     }
 
-
     private TaskResponse toResponse(Task t) {
         return new TaskResponse(
                 t.getId(),
                 t.getTitle(),
                 t.getSprint() != null ? t.getSprint().getId() : null,
                 t.getSprint() != null ? t.getSprint().getName() : null,
-                t.getStatus() != null ? t.getStatus().getName() : null
-        );
+                t.getStatus() != null ? t.getStatus().getName() : null);
     }
 
     private void updateStoryStatus(Long storyId) {
 
-        if (storyId == null) return;
+        if (storyId == null)
+            return;
 
         Status minStatus = taskRepository.findMinStatusByStoryId(storyId);
-        if (minStatus == null) return;
+        if (minStatus == null)
+            return;
 
         Story story = storyRepository.findById(storyId)
                 .orElseThrow(() -> new RuntimeException("Story not found"));

@@ -170,7 +170,7 @@ public class TestCycleServiceImpl implements TestCycleService {
                 testRunCaseStepRepository.flush();
 
                 // 2️⃣ Delete run cases
-                testRunCaseRepository.deleteByRunCycleId(cycleId);
+                testRunCaseRepository.deleteByRunId(cycleId);
                 testRunCaseRepository.flush();
 
                 // 3️⃣ Delete runs

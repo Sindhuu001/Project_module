@@ -1,6 +1,7 @@
 package com.example.projectmanagement.dto.testing;
 
 public record TestRunCaseResponse(
+        Long runCaseId,
         Long testCaseId,
         String title,
         String type,

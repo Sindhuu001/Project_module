@@ -16,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -172,9 +173,45 @@ public class TaskServiceImpl implements TaskService {
 
         Long storyId = task.getStory() != null ? task.getStory().getId() : null;
 
-        // Remove any risk links referencing this task
-        riskLinkRepository.deleteByLinkedTypeAndLinkedId(com.example.projectmanagement.entity.RiskLink.LinkedType.Task,
-                task.getId());
+        /*
+         * DEMO BEHAVIOR:
+         * Currently, when a Task is deleted, all Risks linked to this Task
+         * are also deleted along with their child records:
+         * RiskLink, MitigationPlan, and RiskAttachment.
+         *
+         * TODO:
+         * In production, do not directly hard-delete Risks here.
+         * Instead:
+         * 1. Ask user whether to delete risks or only unlink them
+         * 2. Prefer soft delete for Risk records
+         * 3. If the Risk is linked to other Story/Epic/Sprint items,
+         *    only delete this RiskLink and keep the Risk
+         * 4. Preserve mitigation plans and attachments for audit/history if needed
+         */
+
+        List<RiskLink> riskLinks = riskLinkRepository.findByLinkedTypeAndLinkedId(
+                RiskLink.LinkedType.Task,
+                id
+        );
+
+        if (!riskLinks.isEmpty()) {
+
+            List<Risk> risksToDelete = riskLinks.stream()
+                    .map(RiskLink::getRisk)
+                    .filter(Objects::nonNull)
+                    .distinct()
+                    .toList();
+
+            // 1. Delete risk links first
+            riskLinkRepository.deleteAll(riskLinks);
+
+            // 2. Delete child records of risks
+            mitigationPlanRepository.deleteByRiskIn(risksToDelete);
+            riskAttachmentRepository.deleteByRiskIn(risksToDelete);
+
+            // 3. Delete risks
+            riskRepository.deleteAll(risksToDelete);
+        }
 
         taskRepository.delete(task);
 

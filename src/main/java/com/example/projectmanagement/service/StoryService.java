@@ -66,6 +66,8 @@ public class StoryService {
     @Autowired
     private RiskAttachmentRepository riskAttachmentRepository;
 
+
+
     @Transactional
     public StoryCreateDto createStory(StoryCreateDto dto, Long userId) {
 
@@ -391,19 +393,45 @@ public class StoryService {
 
         Long epicId = story.getEpic() != null ? story.getEpic().getId() : null;
 
-        // 1) Remove any risk links that reference this story
-        riskLinkRepository.deleteByLinkedTypeAndLinkedId(com.example.projectmanagement.entity.RiskLink.LinkedType.Story,
-                story.getId());
+        /*
+         * DEMO BEHAVIOR:
+         * Currently, when a Story is deleted, all Risks linked to this Story
+         * are also deleted along with their child records:
+         * RiskLink, MitigationPlan, and RiskAttachment.
+         *
+         * TODO:
+         * In production, do not directly hard-delete Risks here.
+         * Instead:
+         * 1. Ask user whether to delete risks or only unlink them
+         * 2. Prefer soft delete for Risk records
+         * 3. If the Risk is linked to other Task/Epic/Sprint items,
+         *    only delete this RiskLink and keep the Risk
+         * 4. Preserve mitigation plans and attachments for audit/history if needed
+         */
+        List<RiskLink> riskLinks = riskLinkRepository.findByLinkedTypeAndLinkedId(
+                RiskLink.LinkedType.Story,
+                id
+        );
 
-        // 2) Also remove risk links referencing tasks that belong to this story
-        List<com.example.projectmanagement.entity.Task> tasks = taskRepository.findByStoryId(story.getId());
-        for (com.example.projectmanagement.entity.Task t : tasks) {
-            riskLinkRepository.deleteByLinkedTypeAndLinkedId(
-                    com.example.projectmanagement.entity.RiskLink.LinkedType.Task, t.getId());
+        if (!riskLinks.isEmpty()) {
+
+            List<Risk> risksToDelete = riskLinks.stream()
+                    .map(RiskLink::getRisk)
+                    .filter(Objects::nonNull)
+                    .distinct()
+                    .toList();
+
+            // 1. Delete risk links first
+            riskLinkRepository.deleteAll(riskLinks);
+
+            // 2. Delete child records of risks before deleting risks
+            mitigationPlanRepository.deleteByRiskIn(risksToDelete);
+            riskAttachmentRepository.deleteByRiskIn(risksToDelete);
+
+            // 3. Delete associated risks
+            riskRepository.deleteAll(risksToDelete);
         }
 
-        // 3) Finally delete the story (this will cascade-delete tasks/comments as
-        // configured)
         storyRepository.delete(story);
 
         if (epicId != null) {

@@ -10,4 +10,5 @@ import java.util.List;
 @Repository
 public interface RiskAttachmentRepository extends JpaRepository<RiskAttachment, Long> {
     List<RiskAttachment> findByRisk(Risk risk);
+    void deleteByRiskIn(List<Risk> risks);
 }

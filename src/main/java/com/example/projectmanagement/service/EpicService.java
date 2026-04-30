@@ -1,23 +1,21 @@
 package com.example.projectmanagement.service;
 
 import com.example.projectmanagement.dto.EpicDto;
-import com.example.projectmanagement.entity.Epic;
-import com.example.projectmanagement.entity.Project;
-
+import com.example.projectmanagement.entity.*;
+import com.example.projectmanagement.dto.*;
 //import com.example.projectmanagement.entity.Epic.EpicStatus;
 import com.example.projectmanagement.entity.Epic.Priority;
-import com.example.projectmanagement.entity.Status;
-import com.example.projectmanagement.repository.EpicRepository;
-import com.example.projectmanagement.repository.ProjectRepository;
+import com.example.projectmanagement.repository.*;
 
 
-import com.example.projectmanagement.repository.StatusRepository;
+import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -32,6 +30,18 @@ public class EpicService {
 
     @Autowired
     private StatusRepository statusRepository;
+
+    @Autowired
+    private RiskLinkRepository riskLinkRepository;
+
+    @Autowired
+    private RiskRepository riskRepository;
+
+    @Autowired
+    private MitigationPlanRepository mitigationPlanRepository;
+
+    @Autowired
+    private RiskAttachmentRepository riskAttachmentRepository;
 
 
 
@@ -116,12 +126,58 @@ public class EpicService {
 
 
     // ✅ Delete Epic
+    @Transactional
     public boolean deleteEpic(Long id) {
-        if (epicRepository.existsById(id)) {
-            epicRepository.deleteById(id);
-            return true;
+
+        Epic epic = epicRepository.findById(id)
+                .orElse(null);
+
+        if (epic == null) {
+            return false;
         }
-        return false;
+
+        /*
+         * DEMO BEHAVIOR:
+         * Currently, when an Epic is deleted, all Risks linked to this Epic
+         * are also deleted along with their child records:
+         * RiskLink, MitigationPlan, and RiskAttachment.
+         *
+         * TODO:
+         * In production, do not directly hard-delete Risks here.
+         * Instead:
+         * 1. Ask user whether to delete risks or only unlink them
+         * 2. Prefer soft delete for Risk records
+         * 3. If the Risk is linked to other Story/Task/Sprint items,
+         *    only delete this RiskLink and keep the Risk
+         * 4. Preserve mitigation plans and attachments for audit/history if needed
+         */
+        List<RiskLink> riskLinks = riskLinkRepository.findByLinkedTypeAndLinkedId(
+                RiskLink.LinkedType.Epic,
+                id
+        );
+
+        if (!riskLinks.isEmpty()) {
+
+            List<Risk> risksToDelete = riskLinks.stream()
+                    .map(RiskLink::getRisk)
+                    .filter(Objects::nonNull)
+                    .distinct()
+                    .toList();
+
+            // 1. Delete risk links first
+            riskLinkRepository.deleteAll(riskLinks);
+
+            // 2. Delete child records of risks before deleting risks
+            mitigationPlanRepository.deleteByRiskIn(risksToDelete);
+            riskAttachmentRepository.deleteByRiskIn(risksToDelete);
+
+            // 3. Delete associated risks
+            riskRepository.deleteAll(risksToDelete);
+        }
+
+        epicRepository.delete(epic);
+
+        return true;
     }
 
     // ✅ DTO Conversion

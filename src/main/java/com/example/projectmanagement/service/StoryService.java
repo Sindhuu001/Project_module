@@ -21,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -56,6 +57,16 @@ public class StoryService {
     private TaskRepository taskRepository;
     @Autowired
     private RiskLinkRepository riskLinkRepository;
+
+    @Autowired
+    private RiskLinkRepository riskLinkRepository;
+    @Autowired
+    private RiskRepository riskRepository;
+
+    @Autowired
+    private MitigationPlanRepository mitigationPlanRepository;
+    @Autowired
+    private RiskAttachmentRepository riskAttachmentRepository;
 
     @Transactional
     public StoryCreateDto createStory(StoryCreateDto dto, Long userId) {
@@ -374,6 +385,7 @@ public class StoryService {
         return convertToDto(updatedStory);
     }
 
+    @Transactional
     public void deleteStory(Long id) {
 
         Story story = storyRepository.findById(id)

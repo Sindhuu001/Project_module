@@ -15,6 +15,11 @@ import java.util.Set;
 public interface RiskLinkRepository extends JpaRepository<RiskLink, Long> {
     List<RiskLink> findByRisk(Risk risk);
 
+    List<RiskLink> findByLinkedTypeAndLinkedId(
+            RiskLink.LinkedType linkedType,
+            Long linkedId
+    );
+
     boolean existsByRiskAndLinkedTypeAndLinkedId(Risk risk, RiskLink.LinkedType linkedType, Long linkedId);
 
     // Find risk links referencing a specific linked entity

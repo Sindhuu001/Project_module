@@ -34,8 +34,15 @@ public class TaskServiceImpl implements TaskService {
     private SprintRepository sprintRepository;
     @Autowired
     private StatusRepository statusRepository;
-    // @Autowired
-    // private EpicRepository epicRepository;
+    @Autowired
+    private RiskLinkRepository riskLinkRepository;
+    @Autowired
+    private RiskRepository riskRepository;
+    @Autowired
+    private MitigationPlanRepository mitigationPlanRepository;
+    @Autowired
+    private RiskAttachmentRepository riskAttachmentRepository;
+
 
     @Autowired
     private ModelMapper modelMapper;
@@ -159,6 +166,7 @@ public class TaskServiceImpl implements TaskService {
     }
 
     @Override
+    @Transactional
     public void deleteTask(Long id) {
 
         Task task = taskRepository.findById(id)
@@ -172,7 +180,9 @@ public class TaskServiceImpl implements TaskService {
 
         taskRepository.delete(task);
 
-        updateStoryStatus(storyId);
+        if (storyId != null) {
+            updateStoryStatus(storyId);
+        }
     }
 
     @Override

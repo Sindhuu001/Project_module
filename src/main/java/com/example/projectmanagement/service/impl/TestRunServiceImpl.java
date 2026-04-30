@@ -11,9 +11,11 @@ import com.example.projectmanagement.entity.testing.TestRunCase;
 import com.example.projectmanagement.enums.TestCycleStatus;
 import com.example.projectmanagement.enums.TestRunCaseStatus;
 import com.example.projectmanagement.enums.TestRunStatus;
+import com.example.projectmanagement.repository.BugRepository;
 import com.example.projectmanagement.repository.TestCaseRepository;
 import com.example.projectmanagement.repository.TestCycleRepository;
 import com.example.projectmanagement.repository.TestRunCaseRepository;
+import com.example.projectmanagement.repository.TestRunCaseStepRepository;
 import com.example.projectmanagement.repository.TestRunRepository;
 import com.example.projectmanagement.service.TestRunService;
 import jakarta.persistence.EntityNotFoundException;
@@ -35,7 +37,9 @@ public class TestRunServiceImpl implements TestRunService {
     private final TestRunRepository testRunRepository;
     private final TestCycleRepository testCycleRepository;
     private final TestRunCaseRepository testRunCaseRepository;
+    private final TestRunCaseStepRepository testRunCaseStepRepository;
     private final TestCaseRepository testCaseRepository;
+    private final BugRepository bugRepository;
 
     @Override
     @Transactional
@@ -189,6 +193,7 @@ public class TestRunServiceImpl implements TestRunService {
         List<TestRunCase> runCases = testRunCaseRepository.findByRunId(runId);
         return runCases.stream()
                 .map(rc -> new TestRunCaseResponse(
+                        rc.getId(),
                         rc.getTestCase().getId(),
                         rc.getTestCase().getTitle(),
                         rc.getTestCase().getType().name(),
@@ -198,5 +203,69 @@ public class TestRunServiceImpl implements TestRunService {
                         rc.getStatus().name()
                 ))
                 .collect(Collectors.toList());
+    }
+
+
+    // ── Update ────────────────────────────────────────────────────────────────
+    @Override
+    @Transactional
+    public TestRunSummaryResponse updateRun(Long runId,
+                                            TestRunCreateRequest request,
+                                            Long currentUserId) {
+        TestRun run = testRunRepository.findById(runId)
+                .orElseThrow(() -> new EntityNotFoundException("Test Run not found: " + runId));
+
+        if (request.name() != null && !request.name().isBlank()) {
+            run.setName(request.name());
+        }
+        if (request.description() != null) {
+            run.setDescription(request.description());
+        }
+        if (request.status() != null) {
+            run.setStatus(request.status());
+        }
+
+        run.setUpdatedAt(LocalDateTime.now());
+        TestRun updated = testRunRepository.save(run);
+
+        int caseCount = testRunCaseRepository.countByRunId(runId);
+        int completedCount = testRunCaseRepository.countByRunIdAndStatus(
+                runId, TestRunCaseStatus.PASSED);
+
+        return new TestRunSummaryResponse(
+                updated.getId(),
+                updated.getName(),
+                updated.getDescription(),
+                updated.getStatus().name(),
+                updated.getCycle().getId(),
+                caseCount,
+                completedCount
+        );
+    }
+
+    // ── Delete ────────────────────────────────────────────────────────────────
+    @Override
+    @Transactional
+    public void deleteRun(Long runId) {
+        TestRun run = testRunRepository.findById(runId)
+                .orElseThrow(() -> new EntityNotFoundException("Test Run not found: " + runId));
+
+        // Step 1 — unlink bugs from steps
+        bugRepository.unlinkByRunCaseStepRunId(runId);
+
+        // Step 2 — unlink bugs from run cases
+        bugRepository.unlinkByRunCaseRunId(runId);
+
+        // Step 3 — unlink bugs from run itself
+        bugRepository.unlinkByRunId(runId);
+
+        // Step 4 — delete test_run_case_steps
+        testRunCaseStepRepository.deleteByRunCaseRunId(runId);
+
+        // Step 5 — delete test_run_cases
+        testRunCaseRepository.deleteByRunId(runId);
+
+        // Step 6 — delete the run
+        testRunRepository.delete(run);
     }
 }

@@ -8,6 +8,7 @@ import com.example.projectmanagement.entity.testing.TestStep;
 import com.example.projectmanagement.enums.TestRunCaseStatus;
 import com.example.projectmanagement.enums.TestRunStatus;
 import com.example.projectmanagement.enums.TestStepResultStatus;
+import com.example.projectmanagement.repository.BugRepository;
 import com.example.projectmanagement.repository.TestRunCaseRepository;
 import com.example.projectmanagement.repository.TestRunCaseStepRepository;
 import com.example.projectmanagement.repository.TestRunRepository;
@@ -19,6 +20,8 @@ import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.example.projectmanagement.dto.testing.TestRunCaseUpdateRequest;
+import com.example.projectmanagement.dto.testing.TestRunCaseResponse;
 
 import java.time.LocalDateTime;
 import java.util.*;
@@ -35,6 +38,7 @@ public class TestRunBulkServiceImpl implements TestRunBulkService {
     private final TestStepRepository testStepRepository;
     private final TestStepExecutionService testStepExecutionService; // to initialize steps
     private final BugService bugService;
+    private final BugRepository bugRepository;
 
     // ---------------- Bulk Assign ----------------
     @Override
@@ -277,5 +281,53 @@ public class TestRunBulkServiceImpl implements TestRunBulkService {
             run.setStatus(newStatus);
             testRunRepository.save(run);
         }
+    }
+    // ── Update RunCase ────────────────────────────────────────────────────────
+    @Override
+    @Transactional
+    public TestRunCaseResponse updateRunCase(Long runCaseId, TestRunCaseUpdateRequest request) {
+        TestRunCase runCase = testRunCaseRepository.findById(runCaseId)
+                .orElseThrow(() -> new EntityNotFoundException("TestRunCase not found: " + runCaseId));
+
+        if (request.status() != null) {
+            runCase.setStatus(request.status());
+        }
+        if (request.assigneeId() != null) {
+            runCase.setAssigneeId(request.assigneeId());
+        }
+
+        runCase.setLastExecutedAt(LocalDateTime.now());
+        TestRunCase updated = testRunCaseRepository.save(runCase);
+
+        return new TestRunCaseResponse(
+                updated.getId(),
+                updated.getTestCase().getId(),
+                updated.getTestCase().getTitle(),
+                updated.getTestCase().getType().name(),
+                updated.getTestCase().getPriority().name(),
+                updated.getTestCase().getStatus(),
+                updated.getAssigneeId(),
+                updated.getStatus().name()
+        );
+    }
+
+    // ── Delete RunCase ────────────────────────────────────────────────────────
+    @Override
+    @Transactional
+    public void deleteRunCase(Long runCaseId) {
+        TestRunCase runCase = testRunCaseRepository.findById(runCaseId)
+                .orElseThrow(() -> new EntityNotFoundException("TestRunCase not found: " + runCaseId));
+
+        // Step 1 — unlink bugs from steps of this runCase
+        bugRepository.unlinkByRunCaseStepRunCaseId(runCaseId);
+
+        // Step 2 — unlink bugs from this runCase directly
+        bugRepository.unlinkByRunCaseId(runCaseId);
+
+        // Step 3 — delete steps of this runCase
+        testRunCaseStepRepository.deleteByRunCaseId(runCaseId);
+
+        // Step 4 — delete the runCase itself
+        testRunCaseRepository.delete(runCase);
     }
 }

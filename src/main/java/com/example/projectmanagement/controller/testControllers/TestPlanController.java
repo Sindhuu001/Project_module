@@ -9,6 +9,13 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
+
+// Your custom security project package (for the User DTO and Custom Annotation)
+import com.example.projectmanagement.security.CurrentUser;
+import com.example.projectmanagement.dto.UserDto;
+
 
 import java.util.List;
 
@@ -21,6 +28,7 @@ public class TestPlanController {
 
     // Create test plan
     @PostMapping
+    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')") // Only allow MANAGER and GENERAL roles to access this endpoint
     public ResponseEntity<TestPlanSummaryResponse> createPlan(
             @Valid @RequestBody TestPlanCreateRequest request,
             @CurrentUser UserDto currentUser
@@ -31,6 +39,7 @@ public class TestPlanController {
 
     // Get plans for a project
     @GetMapping("/projects/{projectId}")
+    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')") // Only allow MANAGER and GENERAL roles to access this endpoint
     public ResponseEntity<List<TestPlanSummaryResponse>> getPlansForProject(
             @PathVariable Long projectId
     ) {
@@ -40,6 +49,7 @@ public class TestPlanController {
 
     // Get plan detail (with counts)
     @GetMapping("/{planId}")
+    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')") // Only allow MANAGER and GENERAL roles to access this endpoint
     public ResponseEntity<TestPlanSummaryResponse> getPlanDetail(
             @PathVariable Long planId
     ) {
@@ -47,11 +57,13 @@ public class TestPlanController {
         return ResponseEntity.ok(plan);
     }
      @DeleteMapping("/{planId}")
+    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')") // Only allow MANAGER and GENERAL roles to access this endpoint
     public ResponseEntity<Void> deleteTestPlan(@PathVariable Long planId) {
         testPlanService.deleteTestPlan(planId);
         return ResponseEntity.noContent().build();
     }
     @PutMapping("/update/{planId}")
+    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')") // Only allow MANAGER and GENERAL roles to access this endpoint
     public ResponseEntity<TestPlanSummaryResponse> updateTestPlan(
             @PathVariable Long planId,
             @Valid @RequestBody TestPlanCreateRequest request

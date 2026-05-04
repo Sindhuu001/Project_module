@@ -8,17 +8,26 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+// Spring Security Method Security
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
+
+// Your custom security project package (for the User DTO and Custom Annotation)
+import com.example.projectmanagement.security.CurrentUser;
+import com.example.projectmanagement.dto.UserDto;
 
 import java.security.Principal;
 
 @RestController
 @RequestMapping("/api/test-execution/test-runs/assign")
 @RequiredArgsConstructor
+
 public class AssignmentController {
 
     private final AssignmentService assignmentService;
 
     @PostMapping("/validate")
+    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')") // Only allow MANAGER and GENERAL roles to access this endpoint
     public ResponseEntity<AssignmentValidateResponse> validate(
             @Valid @RequestBody AssignmentValidateRequest req
     ) {
@@ -27,6 +36,7 @@ public class AssignmentController {
     }
 
     @PostMapping("/apply")
+    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')") // Only allow MANAGER and GENERAL roles to access this endpoint
     public ResponseEntity<AssignmentApplyResponse> apply(
             @Valid @RequestBody AssignmentApplyRequest req,
             @CurrentUser UserDto currentUser

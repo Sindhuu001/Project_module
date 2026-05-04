@@ -12,6 +12,12 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
+
+// Your custom security project package (for the User DTO and Custom Annotation)
+import com.example.projectmanagement.security.CurrentUser;
+import com.example.projectmanagement.dto.UserDto;
+
 @RestController
 @RequestMapping("/api/testing/bugs")
 @RequiredArgsConstructor
@@ -21,6 +27,7 @@ public class BugQueryController {
     private final BugService bugService;
 
     @GetMapping
+    
     public ResponseEntity<Page<BugResponse>> list(BugFilterRequest req) {
         int page = req.getPage();
         int size = req.getSize();

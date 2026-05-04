@@ -19,7 +19,13 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Map;
- 
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
+
+// Your custom security project package (for the User DTO and Custom Annotation)
+import com.example.projectmanagement.security.CurrentUser;
+import com.example.projectmanagement.dto.UserDto;
+
 @RestController
 @AuditLog(entity = "Story")
 @RequestMapping("/api/stories")
@@ -33,25 +39,28 @@ public class StoryController {
     private TaskService taskService;
 
     @PostMapping
+    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')")
     public ResponseEntity<StoryCreateDto> createStory(@Valid @RequestBody StoryCreateDto dto,@CurrentUser UserDto currentUser) {
         StoryCreateDto created = storyService.createStory(dto, currentUser.getId());
         return new ResponseEntity<>(created, HttpStatus.CREATED);
     }
 
     @GetMapping("/no-epic")
+    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')")
     public ResponseEntity<List<StoryDto>> getStoriesWithoutEpic(@RequestParam Long projectId) {
         List<StoryDto> stories = storyService.getStoriesWithoutEpic(projectId);
         return ResponseEntity.ok(stories);
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')")
     public ResponseEntity<StoryViewDto> getStoryById(@PathVariable Long id) {
         StoryViewDto story = storyService.getStoryViewById(id);
         return ResponseEntity.ok(story);
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('Manager','Admin','Employee')")
+    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')")
     public ResponseEntity<Page<StoryViewDto>> getAllStories(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
@@ -79,35 +88,36 @@ public class StoryController {
 
 
     @GetMapping("/{id}/tasks")
-    @PreAuthorize("hasAnyRole('Manager','Admin','Employee')")
+    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')")
     public ResponseEntity<List<TaskViewDto>> getStoryTasks(@PathVariable Long id) {
         List<TaskViewDto> tasks = taskService.getTasksByStoryNew(id);
         return ResponseEntity.ok(tasks);
     }
  
     @GetMapping("/status/{statusId}")
-    @PreAuthorize("hasAnyRole('Manager','Admin','Employee')")
+    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')")
     public ResponseEntity<List<StoryViewDto>> getStoriesByStatus(@PathVariable Long statusId) {
         List<StoryViewDto> stories = storyService.getStoriesByStatus(statusId);
         return ResponseEntity.ok(stories);
     }
  
     @GetMapping("/assignee/{assigneeId}")
-    @PreAuthorize("hasAnyRole('Manager','Admin','Employee')")
+    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')")
     public ResponseEntity<List<StoryDto>> getStoriesByAssignee(@PathVariable Long assigneeId) {
         List<StoryDto> stories = storyService.getStoriesByAssignee(assigneeId);
         return ResponseEntity.ok(stories);
     }
 
     @GetMapping("/epic/{epicId}")
-    @PreAuthorize("hasAnyRole('Manager','Admin','Employee')")
+    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')")
     public ResponseEntity<List<StoryViewDto>> getStoriesByEpic(@PathVariable Long epicId) {
         List<StoryViewDto> stories = storyService.getStoriesByEpic(epicId);
         return ResponseEntity.ok(stories);
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('Manager')")
+    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')")
+
     public ResponseEntity<StoryCreateDto> updateStory(
             @PathVariable Long id,
             @Valid @RequestBody StoryCreateDto storyCreateDto) {
@@ -117,7 +127,7 @@ public class StoryController {
     }
 
     @PatchMapping("/{storyId}/status")
-    @PreAuthorize("hasAnyRole('Manager','Employee')")
+    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')")
     public ResponseEntity<StoryDto> updateStoryStatus(@PathVariable Long storyId, @RequestBody Map<String, Long> payload) {
         Long statusId = payload.get("statusId");
         if (statusId == null) {
@@ -128,18 +138,20 @@ public class StoryController {
     }
  
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('Manager')")
+    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')")
     public ResponseEntity<Void> deleteStory(@PathVariable Long id) {
         storyService.deleteStory(id);
         return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/sprint/{sprintId}")
+    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')")
     public ResponseEntity<List<StoryViewDto>> getStoriesBySprint(@PathVariable Long sprintId) {
         return ResponseEntity.ok(storyService.getStoriesBySprint(sprintId));
     }
 
     @PutMapping("/{storyId}/assign-sprint")
+    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')")
     public ResponseEntity<String> assignStoryToSprint(
             @PathVariable Long storyId,
             @RequestBody(required = false) Map<String, Long> request) {
@@ -148,6 +160,7 @@ public class StoryController {
         return ResponseEntity.ok("Sprint assignment updated successfully.");
     }
     @PutMapping("/{storyId}/assign-epic/{epicId}")
+    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')")
     public ResponseEntity<String> assignEpicToStory(
             @PathVariable Long storyId,
             @PathVariable Long epicId) {

@@ -19,28 +19,29 @@ import java.util.List;
 @RequestMapping("/api/users")
 @CrossOrigin
 public class UserController {
-    
+
     @Autowired
     private UserService userService;
-    
+
     @Autowired
     private TaskService taskService;
-    
+
     // @PostMapping
-    // public ResponseEntity<UserDto> createUser(@Valid @RequestBody UserDto userDto) {
-    //     UserDto createdUser = userService.createUser(userDto);
-    //     return new ResponseEntity<>(createdUser, HttpStatus.CREATED);
+    // public ResponseEntity<UserDto> createUser(@Valid @RequestBody UserDto
+    // userDto) {
+    // UserDto createdUser = userService.createUser(userDto);
+    // return new ResponseEntity<>(createdUser, HttpStatus.CREATED);
     // }
-    
+
     @GetMapping("/{id}")
-   @PreAuthorize("hasAnyRole('Manager','Admin','Employee')")
+    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')")
     public ResponseEntity<UserDto> getUserById(@PathVariable Long id) {
         UserDto user = userService.getUserById(id);
         return ResponseEntity.ok(user);
     }
-    
+
     @GetMapping
-   @PreAuthorize("hasAnyRole('Manager','Admin','Employee')")
+    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')")
     public ResponseEntity<Page<UserDto>> getAllUsers(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "100") int size,
@@ -48,46 +49,45 @@ public class UserController {
             @RequestParam(defaultValue = "asc") String sortDir,
             @RequestParam(required = false) String name,
             @RequestParam(required = false) String role) {
-        
-        Sort sort = sortDir.equalsIgnoreCase("desc") ? 
-                Sort.by(sortBy).descending() : Sort.by(sortBy).ascending();
+
+        Sort sort = sortDir.equalsIgnoreCase("desc") ? Sort.by(sortBy).descending() : Sort.by(sortBy).ascending();
         Pageable pageable = PageRequest.of(page, size, sort);
 
         Page<UserDto> users = userService.searchUsers(name, role, pageable);
         return ResponseEntity.ok(users);
     }
-    
+
     @GetMapping("/role/{role}")
     public ResponseEntity<List<UserDto>> getUsersByRole(@PathVariable String role) {
         List<UserDto> users = userService.getUsersByRole(role);
         return ResponseEntity.ok(users);
     }
-    
+
     // @GetMapping("/project/{projectId}")
-    // public ResponseEntity<List<UserDto>> getUsersByProject(@PathVariable Long projectId) {
-    //     List<UserDto> users = userService.getUsersByProject(projectId);
-    //     return ResponseEntity.ok(users);
+    // public ResponseEntity<List<UserDto>> getUsersByProject(@PathVariable Long
+    // projectId) {
+    // List<UserDto> users = userService.getUsersByProject(projectId);
+    // return ResponseEntity.ok(users);
     // }
-    
+
     @GetMapping("/{userId}/tasks")
-   @PreAuthorize("hasAnyRole('Manager','Admin','Employee')")
+    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')")
     public ResponseEntity<List<TaskDto>> getUserTasks(@PathVariable Long userId) {
         List<TaskDto> tasks = taskService.getTasksByAssignee(userId);
         return ResponseEntity.ok(tasks);
     }
-    
-//     @PutMapping("/{id}")
-// public ResponseEntity<UserDto> updateUser(@PathVariable Long id, @RequestBody UserDto userDto) {
-//     UserDto updated = userService.updateUser(id, userDto);
-//     return ResponseEntity.ok(updated);
-// }
 
-    
-    // @DeleteMapping("/{id}")
-    // public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
-    //     userService.deleteUser(id);
-    //     return ResponseEntity.noContent().build();
+    // @PutMapping("/{id}")
+    // public ResponseEntity<UserDto> updateUser(@PathVariable Long id, @RequestBody
+    // UserDto userDto) {
+    // UserDto updated = userService.updateUser(id, userDto);
+    // return ResponseEntity.ok(updated);
     // }
 
-    
+    // @DeleteMapping("/{id}")
+    // public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
+    // userService.deleteUser(id);
+    // return ResponseEntity.noContent().build();
+    // }
+
 }

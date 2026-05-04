@@ -1,4 +1,4 @@
- package com.example.projectmanagement.entity;
+package com.example.projectmanagement.entity;
 
 // import jakarta.persistence.*;
 // import jakarta.validation.constraints.Email;
@@ -13,7 +13,7 @@
 // @Entity
 // @Table(name = "users")
 // public class User {
-    
+
 //     @Id
 //     @GeneratedValue(strategy = GenerationType.IDENTITY)
 //     private Long id;
@@ -48,45 +48,50 @@
 //     @Column(name = "updated_at")
 //     private LocalDateTime updatedAt;
 
-    // Enum inside the class
-    public enum UserRole {
-        ADMIN, DEVELOPER, TESTER, PRODUCT_OWNER, SCRUM_MASTER
-    }
+// Enum inside the class
+public enum UserRole {
+    MANAGER, GENERAL
+}
 
-//     // Constructors
-//     public User() {}
+// // Constructors
+// public User() {}
 
-//     public User(String name, String email, UserRole role) {
-//         this.name = name;
-//         this.email = email;
-//         this.role = role;
-//     }
+// public User(String name, String email, UserRole role) {
+// this.name = name;
+// this.email = email;
+// this.role = role;
+// }
 
-//     // Getters and Setters
-//     public Long getId() { return id; }
-//     public void setId(Long id) { this.id = id; }
+// // Getters and Setters
+// public Long getId() { return id; }
+// public void setId(Long id) { this.id = id; }
 
-//     public String getName() { return name; }
-//     public void setName(String name) { this.name = name; }
+// public String getName() { return name; }
+// public void setName(String name) { this.name = name; }
 
-//     public String getEmail() { return email; }
-//     public void setEmail(String email) { this.email = email; }
+// public String getEmail() { return email; }
+// public void setEmail(String email) { this.email = email; }
 
-//     public UserRole getRole() { return role; }
-//     public void setRole(UserRole role) { this.role = role; }
+// public UserRole getRole() { return role; }
+// public void setRole(UserRole role) { this.role = role; }
 
-//     public List<Task> getAssignedTasks() { return assignedTasks; }
-//     public void setAssignedTasks(List<Task> assignedTasks) { this.assignedTasks = assignedTasks; }
+// public List<Task> getAssignedTasks() { return assignedTasks; }
+// public void setAssignedTasks(List<Task> assignedTasks) { this.assignedTasks =
+// assignedTasks; }
 
-//     public List<Task> getReportedTasks() { return reportedTasks; }
-//     public void setReportedTasks(List<Task> reportedTasks) { this.reportedTasks = reportedTasks; }
+// public List<Task> getReportedTasks() { return reportedTasks; }
+// public void setReportedTasks(List<Task> reportedTasks) { this.reportedTasks =
+// reportedTasks; }
 
-//     // public List<Project> getProjects() { return projects; }
-//     // public void setProjects(List<Project> projects) { this.projects = projects; }
+// // public List<Project> getProjects() { return projects; }
+// // public void setProjects(List<Project> projects) { this.projects =
+// projects; }
 
-//     public LocalDateTime getCreatedAt() { return createdAt; }
-//     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+// public LocalDateTime getCreatedAt() { return createdAt; }
+// public void setCreatedAt(LocalDateTime createdAt) { this.createdAt =
+// createdAt; }
 
-//     public LocalDateTime getUpdatedAt() { return updatedAt; }
-//     public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
+// public LocalDateTime getUpdatedAt() { return updatedAt; }
+// public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt =
+// updatedAt; }
 // }

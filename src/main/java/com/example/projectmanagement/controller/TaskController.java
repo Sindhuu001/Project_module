@@ -19,6 +19,13 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
+
+// Your custom security project package (for the User DTO and Custom Annotation)
+import com.example.projectmanagement.security.CurrentUser;
+import com.example.projectmanagement.dto.UserDto;
+
 
 @RestController
 @RequestMapping("/api/tasks")
@@ -33,8 +40,9 @@ public class TaskController {
     // Existing CRUD endpoints (untouched)
     // ------------------------------
     @PostMapping
-    @PreAuthorize("hasRole('Manager')")
-    public ResponseEntity<TaskCreateDto> createTask(@Valid @RequestBody TaskCreateDto taskCreateDto, @CurrentUser UserDto currentUser) {
+    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')")
+    public ResponseEntity<TaskCreateDto> createTask(@Valid @RequestBody TaskCreateDto taskCreateDto,
+            @CurrentUser UserDto currentUser) {
         // taskCreateDto.setCreatedBy(currentUser.getId());
         System.out.println("Current User ID: " + currentUser.getId());
         TaskCreateDto createdTask = taskService.createTask(taskCreateDto, currentUser.getId());
@@ -42,14 +50,14 @@ public class TaskController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('Manager','Admin','Employee')")
+    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')")
     public ResponseEntity<TaskViewDto> getTaskById(@PathVariable Long id) {
         TaskViewDto task = taskService.getTaskById(id);
         return ResponseEntity.ok(task);
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('Manager','Admin','Employee')")
+    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')")
     public ResponseEntity<Page<TaskViewDto>> getAllTasks(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
@@ -68,7 +76,7 @@ public class TaskController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('Manager','Employee')")
+    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')")
     public ResponseEntity<TaskCreateDto> updateTask(
             @PathVariable Long id,
             @Valid @RequestBody TaskUpdateDto taskUpdateDto) {
@@ -78,13 +86,14 @@ public class TaskController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('Manager')")
+    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')")
     public ResponseEntity<Void> deleteTask(@PathVariable Long id) {
         taskService.deleteTask(id);
         return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/user/{userId}/tasks")
+    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')")
     public ResponseEntity<List<TaskTimesheetDto>> getTasksByUser(
             @PathVariable Long userId) {
         return ResponseEntity.ok(taskService.getTimesheetsTasksByAssignee(userId));
@@ -95,7 +104,7 @@ public class TaskController {
     // ------------------------------
 
     @GetMapping("/backlog")
-    @PreAuthorize("hasAnyRole('Manager','Admin','Employee')")
+    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')")
     public ResponseEntity<List<TaskViewDto>> getBacklogTasks() {
         List<TaskViewDto> tasks = taskService.getBacklogTasks().stream()
                 .map(task -> taskService.getTaskById(task.getId()))
@@ -104,7 +113,7 @@ public class TaskController {
     }
 
     @GetMapping("/status/{statusId}")
-    @PreAuthorize("hasAnyRole('Manager','Admin','Employee')")
+    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')")
     public ResponseEntity<List<TaskViewDto>> getTasksByStatus(@PathVariable Long statusId) {
         List<TaskViewDto> tasks = taskService.getTasksByStatus(statusId).stream()
                 .map(task -> taskService.getTaskById(task.getId()))
@@ -113,12 +122,14 @@ public class TaskController {
     }
 
     @GetMapping("/status/{statusId}/count")
+    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')")
     public ResponseEntity<Long> getDoneTaskCount(@PathVariable Long statusId) {
         long count = taskService.countTasksByStatus(statusId);
         return ResponseEntity.ok(count);
     }
 
     @PatchMapping("/{taskId}/status")
+    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')")
     public ResponseEntity<TaskStatusUpdateDto> updateTaskStatus(
             @PathVariable Long taskId,
             @RequestBody Map<String, Long> payload) {
@@ -133,21 +144,23 @@ public class TaskController {
     }
 
     @GetMapping("/story/{storyId}/count")
-    @PreAuthorize("hasAnyRole('Manager','Admin','Employee')")
+    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')")
     public ResponseEntity<?> getTaskCountByStory(@PathVariable Long storyId) {
         long count = taskService.countTasksByStoryId(storyId);
         return ResponseEntity.ok(Map.of("storyId", storyId, "taskCount", count));
     }
 
     @GetMapping("/assignee/{assigneeId}")
-    @PreAuthorize("hasAnyRole('Manager','Admin','Employee')")
+    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')")
     public ResponseEntity<List<TaskViewDto>> getTasksByAssignee(@PathVariable Long assigneeId) {
         List<TaskViewDto> tasks = taskService.getTasksByAssignee(assigneeId).stream()
                 .map(task -> taskService.getTaskById(task.getId()))
                 .toList();
         return ResponseEntity.ok(tasks);
     }
+
     @PutMapping("/{taskId}/assign-story/{storyId}")
+    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')")
     public ResponseEntity<String> assignStoryToTask(
             @PathVariable Long taskId,
             @PathVariable Long storyId) {
@@ -157,6 +170,7 @@ public class TaskController {
     }
 
     @PatchMapping("/{taskId}/assign-sprint/{sprintId}")
+    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')")
     public ResponseEntity<TaskResponse> assignTaskToSprint(
             @PathVariable Long taskId,
             @PathVariable(required = false) String sprintId) {
@@ -172,6 +186,5 @@ public class TaskController {
 
         return ResponseEntity.ok(taskService.assignTaskToSprint(taskId, sprintIdLong));
     }
-
 
 }

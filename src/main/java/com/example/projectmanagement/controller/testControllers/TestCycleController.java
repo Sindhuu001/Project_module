@@ -9,6 +9,13 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
+
+// Your custom security project package (for the User DTO and Custom Annotation)
+import com.example.projectmanagement.security.CurrentUser;
+import com.example.projectmanagement.dto.UserDto;
+
 
 import java.util.List;
 
@@ -20,6 +27,7 @@ public class TestCycleController {
     private final TestCycleService testCycleService;
 
     @PostMapping
+    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')") // Only allow MANAGER and GENERAL roles to access this endpoint
     public ResponseEntity<TestCycleSummaryResponse> createCycle(
             @Valid @RequestBody TestCycleCreateRequest request,
             @CurrentUser UserDto currentUser
@@ -29,6 +37,7 @@ public class TestCycleController {
     }
 
     @GetMapping("/projects/{projectId}")
+    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')") // Only allow MANAGER and GENERAL roles to access this endpoint
     public ResponseEntity<List<TestCycleSummaryResponse>> getCyclesForProject(
             @PathVariable Long projectId
     ) {
@@ -37,6 +46,7 @@ public class TestCycleController {
     }
 
     @GetMapping("/{cycleId}")
+    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')") // Only allow MANAGER and GENERAL roles to access this endpoint
     public ResponseEntity<TestCycleSummaryResponse> getCycleDetail(
             @PathVariable Long cycleId
     ) {
@@ -45,12 +55,14 @@ public class TestCycleController {
     }
 
     @GetMapping("/getall")
+    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')") // Only allow MANAGER and GENERAL roles to access this endpoint
     public ResponseEntity<List<TestCycleSummaryResponse>> getAllCycles() {
         List<TestCycleSummaryResponse> cycles = testCycleService.getAllCycles();
         return ResponseEntity.ok(cycles);
     }
 
     @PutMapping("/{cycleId}")
+    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')") // Only allow MANAGER and GENERAL roles to access this endpoint
     public ResponseEntity<TestCycleSummaryResponse> updateCycle(
             @PathVariable Long cycleId,
             @Valid @RequestBody TestCycleCreateRequest request,
@@ -61,6 +73,7 @@ public class TestCycleController {
     }
 
     @DeleteMapping("/{cycleId}")
+    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')") // Only allow MANAGER and GENERAL roles to access this endpoint
     public ResponseEntity<Void> deleteCycle(
             @PathVariable Long cycleId
     ) {

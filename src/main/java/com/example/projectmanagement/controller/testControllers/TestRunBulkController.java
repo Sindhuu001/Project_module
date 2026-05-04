@@ -13,6 +13,14 @@ import org.springframework.web.bind.annotation.*;
 import com.example.projectmanagement.security.CurrentUser;
 
 import java.security.Principal;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
+
+// Your custom security project package (for the User DTO and Custom Annotation)
+import com.example.projectmanagement.security.CurrentUser;
+import com.example.projectmanagement.dto.UserDto;
+
+
 
 @RestController
 @RequestMapping("/api/test-execution/test-runs")
@@ -23,6 +31,7 @@ public class TestRunBulkController {
 
     // Bulk assign run-cases to a tester (overwrites)
     @PostMapping("/{runId}/bulk-assign")
+    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')") // Only allow MANAGER and GENERAL roles to access this endpoint
     public ResponseEntity<Void> bulkAssign(
             @PathVariable Long runId,
             @Valid @RequestBody BulkAssignRequest req,
@@ -35,6 +44,7 @@ public class TestRunBulkController {
 
     // Bulk mark PASS
     @PostMapping("/{runId}/bulk-pass")
+    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')") // Only allow MANAGER and GENERAL roles to access this endpoint
     public ResponseEntity<Void> bulkPass(
             @PathVariable Long runId,
             @Valid @RequestBody BulkExecutionRequest req,
@@ -47,6 +57,7 @@ public class TestRunBulkController {
 
     // Bulk mark SKIP
     @PostMapping("/{runId}/bulk-skip")
+    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')") // Only allow MANAGER and GENERAL roles to access this endpoint
     public ResponseEntity<Void> bulkSkip(
             @PathVariable Long runId,
             @Valid @RequestBody BulkExecutionRequest req,
@@ -59,6 +70,7 @@ public class TestRunBulkController {
 
     // Clone next run within cycle (returns new run summary)
     @PostMapping("/cycles/{cycleId}/clone-next-run")
+    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')") // Only allow MANAGER and GENERAL roles to access this endpoint
     public ResponseEntity<TestRunSummaryResponse> cloneNextRun(
             @PathVariable Long cycleId,
             @Valid @RequestBody CloneRunRequest req,

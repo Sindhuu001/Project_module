@@ -9,6 +9,13 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
+
+// Your custom security project package (for the User DTO and Custom Annotation)
+import com.example.projectmanagement.security.CurrentUser;
+import com.example.projectmanagement.dto.UserDto;
+
 
 import java.util.List;
 
@@ -20,6 +27,7 @@ public class TestStepController {
     private final TestStepService testStepService;
 
     @GetMapping("/test-cases/{caseId}")
+        @PreAuthorize("hasAnyRole('MANAGER','GENERAL')") // Only allow MANAGER and GENERAL roles to access this endpoint
     public ResponseEntity<List<TestStepResponse>> getStepsForCase(
             @PathVariable Long caseId
     ) {
@@ -29,6 +37,7 @@ public class TestStepController {
     }
 
     @PostMapping("/test-cases/{caseId}")
+        @PreAuthorize("hasAnyRole('MANAGER','GENERAL')") // Only allow MANAGER and GENERAL roles to access this endpoint
     public ResponseEntity<List<TestStepResponse>> addStepsToCase(
             @PathVariable Long caseId,
             @Valid @RequestBody List<TestStepCreateRequest> steps
@@ -39,6 +48,7 @@ public class TestStepController {
     }
 
     @PutMapping("/{stepId}")
+        @PreAuthorize("hasAnyRole('MANAGER','GENERAL')") // Only allow MANAGER and GENERAL roles to access this endpoint
     public ResponseEntity<TestStepResponse> updateStep(
             @PathVariable Long stepId,
             @Valid @RequestBody TestStepCreateRequest request
@@ -49,6 +59,7 @@ public class TestStepController {
     }
 
     @PutMapping("/test-cases/{caseId}/reorder")
+        @PreAuthorize("hasAnyRole('MANAGER','GENERAL')") // Only allow MANAGER and GENERAL roles to access this endpoint
     public ResponseEntity<List<TestStepResponse>> reorderSteps(
             @PathVariable Long caseId,
             @Valid @RequestBody TestStepsReorderRequest request

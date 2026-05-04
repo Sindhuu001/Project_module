@@ -18,6 +18,13 @@ import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
 import java.time.LocalDateTime;
 import java.util.List;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
+
+// Your custom security project package (for the User DTO and Custom Annotation)
+import com.example.projectmanagement.security.CurrentUser;
+import com.example.projectmanagement.dto.UserDto;
+
 
 @RestController
 @AuditLog(entity = "Sprint")
@@ -38,6 +45,7 @@ public class SprintController {
     // Create Sprint with User context
     @PostMapping
     //@PreAuthorize("hasRole('Manager')")
+        @PreAuthorize("hasAnyRole('MANAGER')")
     public ResponseEntity<SprintDto> createSprint(@Valid @RequestBody SprintDto sprintDto,
                                                   @CurrentUser UserDto currentUser) {
                 
@@ -46,14 +54,14 @@ public class SprintController {
     }
 
     @GetMapping("/{id}")
-   @PreAuthorize("hasAnyRole('Manager','Admin','Employee')")
+   @PreAuthorize("hasAnyRole('MANAGER','GENERAL')")
     public ResponseEntity<SprintDto> getSprintById(@PathVariable Long id) {
         SprintDto sprint = sprintService.getSprintById(id);
         return ResponseEntity.ok(sprint);
     }
 
     @GetMapping
-   @PreAuthorize("hasAnyRole('Manager','Admin','Employee')")
+   @PreAuthorize("hasAnyRole('MANAGER','GENERAL')")
     public ResponseEntity<Page<SprintDto>> getAllSprints(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
@@ -69,7 +77,7 @@ public class SprintController {
     }
 
     @GetMapping("/{sprintId}/tasks")
-    @PreAuthorize("hasAnyRole('Manager','Admin','Employee')")
+    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')")
     public ResponseEntity<List<TaskDto.Summary>> getTaskSummaries(@PathVariable Long sprintId) {
         return ResponseEntity.ok(taskService.getTaskSummariesBySprintId(sprintId));
     }
@@ -97,21 +105,21 @@ public class SprintController {
     // }
 
     @GetMapping("/status/{status}")
-   @PreAuthorize("hasAnyRole('Manager','Admin','Employee')")
+   @PreAuthorize("hasAnyRole('MANAGER','GENERAL')")
     public ResponseEntity<List<SprintDto>> getSprintsByStatus(@PathVariable Sprint.SprintStatus status) {
         List<SprintDto> sprints = sprintService.getSprintsByStatus(status);
         return ResponseEntity.ok(sprints);
     }
 
     @GetMapping("/active/project/{projectId}")
-    @PreAuthorize("hasAnyRole('Manager','Admin','Employee')")
+    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')")
     public ResponseEntity<List<SprintDto>> getActiveSprintsByProject(@PathVariable Long projectId) {
         List<SprintDto> sprints = sprintService.getActiveSprintsByProject(projectId);
         return ResponseEntity.ok(sprints);
     }
 
     @GetMapping("/overdue")
-    @PreAuthorize("hasAnyRole('Manager','Admin','Employee')")
+    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')")
     public ResponseEntity<List<SprintDto>> getOverdueSprints() {
         List<SprintDto> sprints = sprintService.getOverdueSprints();
         return ResponseEntity.ok(sprints);
@@ -119,7 +127,7 @@ public class SprintController {
 
     // Complete sprint (manager only)
     @PutMapping("/{id}/complete")
-    @PreAuthorize("hasRole('Manager')")
+    @PreAuthorize("hasRole('MANAGER')")
     public ResponseEntity<SprintDto> completeSprint(
             @PathVariable Long id,
             @RequestParam(required = false) Long sprintId // next sprint ID (optional)
@@ -130,13 +138,13 @@ public class SprintController {
 
     // Update sprint with User context
     @PutMapping("/{id}")
-   @PreAuthorize("hasRole('Manager')")
+   @PreAuthorize("hasRole('MANAGER')")
     public ResponseEntity<SprintDto> updateSprint(@PathVariable Long id, @Valid @RequestBody SprintDto sprintDto) {
         SprintDto updatedSprint = sprintService.updateSprint(id, sprintDto); // ✅ Only 2 parameters
         return ResponseEntity.ok(updatedSprint);
     }
     @PutMapping("/{id}/start")
-   @PreAuthorize("hasRole('Manager')")
+   @PreAuthorize("hasRole('MANAGER')")
     public ResponseEntity<SprintDto> startSprint(@PathVariable Long id) {
         System.out.println("Hit /api/sprints/" + id + "/start endpoint");
         SprintDto updatedSprint = sprintService.startSprint(id);
@@ -145,7 +153,7 @@ public class SprintController {
 
     // Delete sprint with User context
     @DeleteMapping("/{id}")
-   @PreAuthorize("hasRole('Manager')")
+   @PreAuthorize("hasRole('MANAGER')")
     public ResponseEntity<Void> deleteSprint(@PathVariable Long id, @CurrentUser UserDto currentUser) {
         UserDto currentUserId = userService.getUserWithRoles(currentUser.getId());
         sprintService.deleteSprint(id, currentUserId.getId());
@@ -155,6 +163,7 @@ public class SprintController {
 
     // Frontend calls to know whether to popup
     @GetMapping("/{id}/popup-status")
+    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')")
     public ResponseEntity<SprintPopupResponse> getPopupStatus(@PathVariable("id") Long sprintId) {
         SprintPopupResponse resp = sprintService.checkSprintPopup(sprintId);
         return ResponseEntity.ok(resp);
@@ -162,6 +171,7 @@ public class SprintController {
 
     // Frontend calls after user chooses an option
     @PostMapping("/{id}/finish")
+    @PreAuthorize("hasRole('MANAGER')")
     public ResponseEntity<String> finishSprint(
             @PathVariable("id") Long sprintId,
             @RequestParam("option") String option // NEXT_SPRINT or BACKLOG
@@ -171,6 +181,7 @@ public class SprintController {
     }
 
     @GetMapping("/{sprintId}/burndown")
+    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')")
 public SprintBurndownResponse getBurndownChart(@PathVariable Long sprintId) {
     return sprintService.getSprintBurndown(sprintId);
 }

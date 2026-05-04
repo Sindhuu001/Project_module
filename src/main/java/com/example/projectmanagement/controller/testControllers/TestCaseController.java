@@ -14,6 +14,13 @@ import com.example.projectmanagement.dto.testing.TestCaseUpdateRequest;
 
 import java.util.List;
 
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
+
+// Your custom security project package (for the User DTO and Custom Annotation)
+import com.example.projectmanagement.security.CurrentUser;
+import com.example.projectmanagement.dto.UserDto;
+
 @RestController
 @RequestMapping("/api/test-design/test-cases")
 @RequiredArgsConstructor
@@ -22,6 +29,7 @@ public class TestCaseController {
     private final TestCaseService testCaseService;
 
     @PostMapping
+    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')") // Only allow MANAGER and GENERAL roles to access this endpoint
     public ResponseEntity<TestCaseSummaryResponse> createTestCase(
             @Valid @RequestBody TestCaseCreateRequest request,
             @CurrentUser UserDto currentUser
@@ -31,6 +39,7 @@ public class TestCaseController {
     }
 
     @GetMapping("/scenarios/{scenarioId}")
+    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')") // Only allow MANAGER and GENERAL roles to access this endpoint
     public ResponseEntity<List<TestCaseSummaryResponse>> getCasesForScenario(
             @PathVariable Long scenarioId
     ) {
@@ -40,6 +49,7 @@ public class TestCaseController {
     }
 
     @GetMapping("/{caseId}")
+    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')") // Only allow MANAGER and GENERAL roles to access this endpoint
     public ResponseEntity<TestCaseDetailResponse> getCaseDetail(
             @PathVariable Long caseId
     ) {
@@ -48,6 +58,7 @@ public class TestCaseController {
         );
     }
     @GetMapping("/getcases/{projectId}")
+    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')") // Only allow MANAGER and GENERAL roles to access this endpoint
     public ResponseEntity<List<TestCaseSummaryResponse>> getCasesForProject(
             @PathVariable Long projectId
     ) {
@@ -59,6 +70,7 @@ public class TestCaseController {
     // UPDATE (EDIT)
     // ---------------------------------------------------------
     @PutMapping("/{caseId}")
+    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')") // Only allow MANAGER and GENERAL roles to access this endpoint
     public ResponseEntity<TestCaseSummaryResponse> updateTestCase(
             @PathVariable Long caseId,
             @Valid @RequestBody TestCaseUpdateRequest request, // Or reuse TestCaseCreateRequest if identical
@@ -73,6 +85,7 @@ public class TestCaseController {
     // DELETE
     // ---------------------------------------------------------
     @DeleteMapping("/{caseId}")
+    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')") // Only allow MANAGER and GENERAL roles to access this endpoint
     public ResponseEntity<Void> deleteTestCase(
             @PathVariable("caseId") Long caseId 
     ) {

@@ -14,6 +14,13 @@ import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
 import java.util.List;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
+
+// Your custom security project package (for the User DTO and Custom Annotation)
+import com.example.projectmanagement.security.CurrentUser;
+import com.example.projectmanagement.dto.UserDto;
+
 
 @RestController
 @RequestMapping("/api/test-design/test-stories")
@@ -23,6 +30,7 @@ public class TestStoryController {
     private final TestStoryService testStoryService;
 
     @PostMapping
+    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')")
     public ResponseEntity<TestStorySummaryResponse> createTestStory(
             @Valid @RequestBody TestStoryCreateRequest request,
             @CurrentUser UserDto currentUser) {
@@ -33,6 +41,7 @@ public class TestStoryController {
 
     // Test stories for project
     @GetMapping("/projects/{projectId}")
+    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')")
     public ResponseEntity<List<TestStorySummaryResponse>> getTestStoriesForProject(
             @PathVariable Long projectId) {
         List<TestStorySummaryResponse> stories = testStoryService.getTestStoriesForProject(projectId);
@@ -41,6 +50,7 @@ public class TestStoryController {
 
     // Test stories for a user story
     @GetMapping("/stories/{storyId}")
+    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')")
     public ResponseEntity<List<TestStorySummaryResponse>> getTestStoriesForUserStory(
             @PathVariable Long storyId) {
         List<TestStorySummaryResponse> stories = testStoryService.getTestStoriesForUserStory(storyId);
@@ -48,11 +58,13 @@ public class TestStoryController {
     }
 
     @GetMapping("/project-test-data/{projectId}")
+    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')")
     public ResponseEntity<ProjectTestDataResponse> getProjectTestData(@PathVariable Long projectId) {
         return ResponseEntity.ok(testStoryService.getProjectTestData(projectId));
     }
 
     @PutMapping("/project-test-data/{testStoryId}")
+    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')")
     public ResponseEntity<TestStorySummaryResponse> updateTestStory(
             @PathVariable Long testStoryId,
             @Valid @RequestBody TestStoryUpdateRequest request,
@@ -62,6 +74,7 @@ public class TestStoryController {
     }
 
     @DeleteMapping("/project-test-data/{testStoryId}")
+    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')")
     public ResponseEntity<Void> deleteTestStory(@PathVariable Long testStoryId) {
         testStoryService.deleteTestStory(testStoryId);
         return ResponseEntity.noContent().build();

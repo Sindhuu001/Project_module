@@ -9,6 +9,12 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
+
+// Your custom security project package (for the User DTO and Custom Annotation)
+import com.example.projectmanagement.security.CurrentUser;
+import com.example.projectmanagement.dto.UserDto;
 
 @RestController
 @RequestMapping("/api/test-execution/cases")
@@ -18,6 +24,7 @@ public class TestCaseExecutionController {
     private final TestCaseExecutionService service;
 
     @PostMapping("/pass")
+    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')") // Only allow MANAGER and GENERAL roles to access this endpoint
     public ResponseEntity<TestCaseExecutionResponse> passCase(
             @Valid @RequestBody TestCaseExecutionRequest req,
             @CurrentUser UserDto currentUser
@@ -26,6 +33,7 @@ public class TestCaseExecutionController {
     }
 
     @PostMapping("/fail")
+    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')") // Only allow MANAGER and GENERAL roles to access this endpoint
     public ResponseEntity<TestCaseExecutionResponse> failCase(
             @Valid @RequestBody TestCaseExecutionRequest req,
             @CurrentUser UserDto currentUser
@@ -34,6 +42,7 @@ public class TestCaseExecutionController {
     }
 
     @PostMapping("/block")
+    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')") // Only allow MANAGER and GENERAL roles to access this endpoint
     public ResponseEntity<TestCaseExecutionResponse> blockCase(
             @Valid @RequestBody TestCaseExecutionRequest req,
             @CurrentUser UserDto currentUser
@@ -42,6 +51,7 @@ public class TestCaseExecutionController {
     }
 
     @PostMapping("/skip")
+    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')") // Only allow MANAGER and GENERAL roles to access this endpoint
     public ResponseEntity<TestCaseExecutionResponse> skipCase(
             @Valid @RequestBody TestCaseExecutionRequest req,
             @CurrentUser UserDto currentUser

@@ -39,5 +39,29 @@ public interface BugRepository extends JpaRepository<Bug, Long>, JpaSpecificatio
 
     List<Bug> findByAssignedTo(Long assigneeId);
 
+    // when a run is deleted, unlink any bugs referencing it
+    @Modifying
+    @Query("UPDATE Bug b SET b.testRun = null WHERE b.testRun.id = :runId")
+    void unlinkByRunId(@Param("runId") Long runId);
+     
+    // when a run case is deleted, unlink any bugs referencing it
+    @Modifying
+    @Query("UPDATE Bug b SET b.runCase = null WHERE b.runCase.run.id = :runId")
+    void unlinkByRunCaseRunId(@Param("runId") Long runId);
+
+    // when a run case step is deleted, unlink any bugs referencing it
+    @Modifying
+    @Query("UPDATE Bug b SET b.runCaseStep = null WHERE b.runCaseStep.runCase.run.id = :runId")
+    void unlinkByRunCaseStepRunId(@Param("runId") Long runId);
+
+    // when a specific runCase is deleted, unlink bugs referencing its steps
+    @Modifying
+    @Query("UPDATE Bug b SET b.runCaseStep = null WHERE b.runCaseStep.runCase.id = :runCaseId")
+    void unlinkByRunCaseStepRunCaseId(@Param("runCaseId") Long runCaseId);
+
+    // when a specific runCase is deleted, unlink bugs referencing it directly
+    @Modifying
+    @Query("UPDATE Bug b SET b.runCase = null WHERE b.runCase.id = :runCaseId")
+    void unlinkByRunCaseId(@Param("runCaseId") Long runCaseId);
 
 }

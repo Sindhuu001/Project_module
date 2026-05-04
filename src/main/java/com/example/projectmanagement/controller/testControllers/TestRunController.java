@@ -74,4 +74,21 @@ public class TestRunController {
     public ResponseEntity<List<TestRunCaseResponse>> getTestCasesForRun(@PathVariable Long runId) {
         return ResponseEntity.ok(testRunService.getTestCasesForRun(runId));
     }
+
+    @PutMapping("/{runId}")
+    public ResponseEntity<TestRunSummaryResponse> updateRun(
+            @PathVariable Long runId,
+            @Valid @RequestBody TestRunCreateRequest request,
+            @CurrentUser UserDto currentUser
+    ) {
+        return ResponseEntity.ok(testRunService.updateRun(runId, request, currentUser.getId()));
+    }
+
+    @DeleteMapping("/{runId}")
+    public ResponseEntity<Void> deleteRun(
+            @PathVariable Long runId
+    ) {
+        testRunService.deleteRun(runId);
+        return ResponseEntity.noContent().build();
+    }
 }

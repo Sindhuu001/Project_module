@@ -15,32 +15,40 @@ import java.util.Set;
 public interface RiskLinkRepository extends JpaRepository<RiskLink, Long> {
     List<RiskLink> findByRisk(Risk risk);
 
-    boolean existsByRiskAndLinkedTypeAndLinkedId(Risk risk, RiskLink.LinkedType linkedType, Long linkedId);
-
-    @Query("""
-    SELECT new com.example.projectmanagement.dto.IssueTypeRiskCountDTO(
-        rl.linkedType,
-        COUNT(rl.id)
-    )
-    FROM RiskLink rl
-    WHERE rl.risk.projectId = :projectId
-    GROUP BY rl.linkedType
-""")
-    List<IssueTypeRiskCountDTO> countRisksByIssueType(
-            @Param("projectId") Long projectId
+    List<RiskLink> findByLinkedTypeAndLinkedId(
+            RiskLink.LinkedType linkedType,
+            Long linkedId
     );
 
+    boolean existsByRiskAndLinkedTypeAndLinkedId(Risk risk, RiskLink.LinkedType linkedType, Long linkedId);
+
+    // Find risk links referencing a specific linked entity
+
+    // Delete risk links referencing a specific linked entity
+    void deleteByLinkedTypeAndLinkedId(RiskLink.LinkedType linkedType, Long linkedId);
+
     @Query("""
-    SELECT rl FROM RiskLink rl
-    WHERE
-        (rl.linkedType = 'Sprint' AND rl.linkedId = :sprintId)
-     OR (rl.linkedType = 'Story' AND rl.linkedId IN :storyIds)
-     OR (rl.linkedType = 'Task'  AND rl.linkedId IN :taskIds)
-""")
+                SELECT new com.example.projectmanagement.dto.IssueTypeRiskCountDTO(
+                    rl.linkedType,
+                    COUNT(rl.id)
+                )
+                FROM RiskLink rl
+                WHERE rl.risk.projectId = :projectId
+                GROUP BY rl.linkedType
+            """)
+    List<IssueTypeRiskCountDTO> countRisksByIssueType(
+            @Param("projectId") Long projectId);
+
+    @Query("""
+                SELECT rl FROM RiskLink rl
+                WHERE
+                    (rl.linkedType = 'Sprint' AND rl.linkedId = :sprintId)
+                 OR (rl.linkedType = 'Story' AND rl.linkedId IN :storyIds)
+                 OR (rl.linkedType = 'Task'  AND rl.linkedId IN :taskIds)
+            """)
     List<RiskLink> findRelevantSprintRiskLinks(
             @Param("sprintId") Long sprintId,
             @Param("storyIds") List<Long> storyIds,
-            @Param("taskIds") Set<Long> taskIds
-    );
+            @Param("taskIds") Set<Long> taskIds);
 
 }

@@ -12,6 +12,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import com.example.projectmanagement.service.UserService;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -35,6 +36,13 @@ public class RiskServiceImpl implements RiskService {
 
     @Autowired
     private UserService userService;
+
+    @Autowired
+    private RiskLinkRepository riskLinkRepository;
+    @Autowired
+    private MitigationPlanRepository mitigationPlanRepository;
+    @Autowired
+    private RiskAttachmentRepository riskAttachmentRepository;
 
     @Override
     public RiskResponse createRisk(RiskRequest request,Long createdBy) {
@@ -102,9 +110,33 @@ public class RiskServiceImpl implements RiskService {
     }
 
     @Override
+    @Transactional
     public void deleteRisk(Long id) {
+
         Risk risk = riskRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Risk not found with ID: " + id));
+
+        /*
+         * DEMO BEHAVIOR:
+         * Hard-deletes Risk and all direct child records.
+         *
+         * TODO:
+         * In production, prefer soft delete for Risk records
+         * because risks, mitigation plans, and attachments may be needed
+         * for audit/history.
+         */
+
+        // 1. Delete risk links first
+        List<RiskLink> riskLinks = riskLinkRepository.findByRisk(risk);
+        if (!riskLinks.isEmpty()) {
+            riskLinkRepository.deleteAll(riskLinks);
+        }
+
+        // 2. Delete child records before deleting risk
+        mitigationPlanRepository.deleteByRiskIn(List.of(risk));
+        riskAttachmentRepository.deleteByRiskIn(List.of(risk));
+
+        // 3. Delete risk
         riskRepository.delete(risk);
     }
 

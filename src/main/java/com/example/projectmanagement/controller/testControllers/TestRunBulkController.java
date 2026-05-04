@@ -4,7 +4,10 @@ import com.example.projectmanagement.dto.UserDto;
 import com.example.projectmanagement.dto.testing.BulkAssignRequest;
 import com.example.projectmanagement.dto.testing.BulkExecutionRequest;
 import com.example.projectmanagement.dto.testing.CloneRunRequest;
+import com.example.projectmanagement.dto.testing.TestRunCaseResponse;
+import com.example.projectmanagement.dto.testing.TestRunCaseUpdateRequest;
 import com.example.projectmanagement.dto.testing.TestRunSummaryResponse;
+import com.example.projectmanagement.dto.testing.TestRunCaseUpdateRequest;
 import com.example.projectmanagement.service.TestRunBulkService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -80,5 +83,23 @@ public class TestRunBulkController {
         TestRunSummaryResponse resp = bulkService.cloneNextRun(cycleId, req, userId);
         return ResponseEntity.ok(resp);
     }
+    // ── Update RunCase ────────────────────────────────────────────────────────
+    @PutMapping("/run-cases/{runCaseId}")
+    public ResponseEntity<TestRunCaseResponse> updateRunCase(
+            @PathVariable Long runCaseId,
+            @Valid @RequestBody TestRunCaseUpdateRequest request
+    ) {
+        return ResponseEntity.ok(bulkService.updateRunCase(runCaseId, request));
+    }
+
+    // ── Delete RunCase ────────────────────────────────────────────────────────
+    @DeleteMapping("/run-cases/{runCaseId}")
+    public ResponseEntity<Void> deleteRunCase(
+            @PathVariable Long runCaseId
+    ) {
+        bulkService.deleteRunCase(runCaseId);
+        return ResponseEntity.noContent().build();
+    }
 }
+        
 

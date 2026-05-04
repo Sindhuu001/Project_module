@@ -17,4 +17,8 @@ public interface TestRunService {
     TestRunSummaryResponse getRunDetail(Long runId);
 
     List<com.example.projectmanagement.dto.testing.TestRunCaseResponse> getTestCasesForRun(Long runId);
+
+    TestRunSummaryResponse updateRun(Long runId, TestRunCreateRequest request, Long currentUserId);
+
+    void deleteRun(Long runId);
 }

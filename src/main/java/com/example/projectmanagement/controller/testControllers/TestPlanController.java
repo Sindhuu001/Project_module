@@ -16,7 +16,6 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 import com.example.projectmanagement.security.CurrentUser;
 import com.example.projectmanagement.dto.UserDto;
 
-
 import java.util.List;
 
 @RestController
@@ -28,46 +27,49 @@ public class TestPlanController {
 
     // Create test plan
     @PostMapping
-    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')") // Only allow MANAGER and GENERAL roles to access this endpoint
+    @PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')") // Only allow PROJECT_MANAGER and GENERAL roles to access
+                                                             // this endpoint
     public ResponseEntity<TestPlanSummaryResponse> createPlan(
             @Valid @RequestBody TestPlanCreateRequest request,
-            @CurrentUser UserDto currentUser
-    ) {
+            @CurrentUser UserDto currentUser) {
         TestPlanSummaryResponse response = testPlanService.createPlan(request, currentUser.getId());
         return ResponseEntity.ok(response);
     }
 
     // Get plans for a project
     @GetMapping("/projects/{projectId}")
-    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')") // Only allow MANAGER and GENERAL roles to access this endpoint
+    @PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')") // Only allow PROJECT_MANAGER and GENERAL roles to access
+                                                             // this endpoint
     public ResponseEntity<List<TestPlanSummaryResponse>> getPlansForProject(
-            @PathVariable Long projectId
-    ) {
+            @PathVariable Long projectId) {
         List<TestPlanSummaryResponse> plans = testPlanService.getPlansForProject(projectId);
         return ResponseEntity.ok(plans);
     }
 
     // Get plan detail (with counts)
     @GetMapping("/{planId}")
-    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')") // Only allow MANAGER and GENERAL roles to access this endpoint
+    @PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')") // Only allow PROJECT_MANAGER and GENERAL roles to access
+                                                             // this endpoint
     public ResponseEntity<TestPlanSummaryResponse> getPlanDetail(
-            @PathVariable Long planId
-    ) {
+            @PathVariable Long planId) {
         TestPlanSummaryResponse plan = testPlanService.getPlanDetail(planId);
         return ResponseEntity.ok(plan);
     }
-     @DeleteMapping("/{planId}")
-    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')") // Only allow MANAGER and GENERAL roles to access this endpoint
+
+    @DeleteMapping("/{planId}")
+    @PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')") // Only allow PROJECT_MANAGER and GENERAL roles to access
+                                                             // this endpoint
     public ResponseEntity<Void> deleteTestPlan(@PathVariable Long planId) {
         testPlanService.deleteTestPlan(planId);
         return ResponseEntity.noContent().build();
     }
+
     @PutMapping("/update/{planId}")
-    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')") // Only allow MANAGER and GENERAL roles to access this endpoint
+    @PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')") // Only allow PROJECT_MANAGER and GENERAL roles to access
+                                                             // this endpoint
     public ResponseEntity<TestPlanSummaryResponse> updateTestPlan(
             @PathVariable Long planId,
-            @Valid @RequestBody TestPlanCreateRequest request
-    ) {
+            @Valid @RequestBody TestPlanCreateRequest request) {
         // Assuming you have an updatePlan method in your service
         TestPlanSummaryResponse updatedPlan = testPlanService.updatePlan(planId, request);
         return ResponseEntity.ok(updatedPlan);

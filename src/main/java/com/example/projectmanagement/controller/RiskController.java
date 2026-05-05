@@ -16,7 +16,6 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 import com.example.projectmanagement.security.CurrentUser;
 import com.example.projectmanagement.dto.UserDto;
 
-
 @RestController
 @RequestMapping("/api/risks")
 public class RiskController {
@@ -27,21 +26,21 @@ public class RiskController {
     /* ---------- CREATE ---------- */
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')")
-    public RiskResponse createRisk(@RequestBody RiskRequest request,@CurrentUser UserDto currentUser) {
-        return riskService.createRisk(request,currentUser.getId());
+    @PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')")
+    public RiskResponse createRisk(@RequestBody RiskRequest request, @CurrentUser UserDto currentUser) {
+        return riskService.createRisk(request, currentUser.getId());
     }
 
     /* ---------- READ (OLD – KEEP FOR BACKWARD COMPATIBILITY) ---------- */
 
     @GetMapping("/project/{projectId}")
-    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')")
+    @PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')")
     public List<RiskResponse> getRisksByProject(@PathVariable Long projectId) {
         return riskService.getRisksByProject(projectId);
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')")
+    @PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')")
     public RiskResponse getRisk(@PathVariable Long id) {
         return riskService.getRiskById(id);
     }
@@ -49,48 +48,42 @@ public class RiskController {
     /* ---------- ✅ NEW PAGINATED + LINKED API ---------- */
 
     @GetMapping("/linked")
-    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')")
+    @PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')")
     public RiskResponseDTO getRisksWithPagination(
             @RequestParam Long projectId,
             @RequestParam(required = false) RiskLink.LinkedType linkedType,
             @RequestParam(required = false) Long linkedId,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size,
-            @RequestParam(required = false) String severity
-    ) {
+            @RequestParam(required = false) String severity) {
         return riskService.getRisksWithPagination(
-                projectId, linkedType, linkedId, page, size, severity
-        );
+                projectId, linkedType, linkedId, page, size, severity);
     }
-
 
     /* ---------- UPDATE ---------- */
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')")
+    @PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')")
     public RiskResponse updateRisk(
             @PathVariable Long id,
-            @RequestBody RiskRequest request
-    ) {
+            @RequestBody RiskRequest request) {
         return riskService.updateRisk(id, request);
     }
 
     @PatchMapping("/{id}/status")
-    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')")
+    @PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')")
     public RiskResponse updateRiskStatus(
             @PathVariable Long id,
-            @RequestBody RiskStatusUpdateRequest request
-    ) {
+            @RequestBody RiskStatusUpdateRequest request) {
         return riskService.updateStatus(id, request);
     }
 
     /* ---------- DELETE ---------- */
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')")
+    @PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')")
     public void deleteRisk(@PathVariable Long id) {
         riskService.deleteRisk(id);
     }
-
 
 }

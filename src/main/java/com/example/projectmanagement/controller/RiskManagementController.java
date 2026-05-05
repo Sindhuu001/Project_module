@@ -21,7 +21,6 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 import com.example.projectmanagement.security.CurrentUser;
 import com.example.projectmanagement.dto.UserDto;
 
-
 @RestController
 @RequestMapping("/api/risk/category")
 @RequiredArgsConstructor
@@ -32,43 +31,40 @@ public class RiskManagementController {
 
     // CREATE
     @PostMapping
-    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')")
+    @PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')")
     public ResponseEntity<RiskCategoryResponse> createRiskCategory(
-            @Valid @RequestBody RiskCategoryCreateRequest request
-    ) {
+            @Valid @RequestBody RiskCategoryCreateRequest request) {
         return new ResponseEntity<>(
                 riskCategoryService.createCategory(request),
-                HttpStatus.CREATED
-        );
+                HttpStatus.CREATED);
     }
 
     // GET ALL
     @GetMapping
-    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')")
+    @PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')")
     public ResponseEntity<List<RiskCategoryResponse>> getAllCategories() {
         return ResponseEntity.ok(riskCategoryService.getAllCategories());
     }
 
     // GET BY ID
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')")
+    @PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')")
     public ResponseEntity<RiskCategoryResponse> getCategoryById(@PathVariable Long id) {
         return ResponseEntity.ok(riskCategoryService.getCategoryById(id));
     }
 
     // UPDATE
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')")
+    @PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')")
     public ResponseEntity<RiskCategoryResponse> updateCategory(
             @PathVariable Long id,
-            @Valid @RequestBody RiskCategoryCreateRequest request
-    ) {
+            @Valid @RequestBody RiskCategoryCreateRequest request) {
         return ResponseEntity.ok(riskCategoryService.updateCategory(id, request));
     }
 
     // DELETE
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')")
+    @PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')")
     public ResponseEntity<Void> deleteCategory(@PathVariable Long id) {
         riskCategoryService.deleteCategory(id);
         return ResponseEntity.noContent().build();

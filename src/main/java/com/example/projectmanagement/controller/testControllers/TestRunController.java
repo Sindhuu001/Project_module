@@ -18,7 +18,6 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 import com.example.projectmanagement.security.CurrentUser;
 import com.example.projectmanagement.dto.UserDto;
 
-
 import java.util.List;
 
 @RestController
@@ -29,48 +28,46 @@ public class TestRunController {
     private final TestRunService testRunService;
 
     @PostMapping
-        @PreAuthorize("hasAnyRole('MANAGER','GENERAL')") // Only allow MANAGER and GENERAL roles to access this endpoint
+    @PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')") // Only allow PROJECT_MANAGER and GENERAL roles to access
+                                                             // this endpoint
     public ResponseEntity<TestRunSummaryResponse> createRun(
             @Valid @RequestBody TestRunCreateRequest request,
-            @CurrentUser UserDto currentUser
-    ) {
+            @CurrentUser UserDto currentUser) {
         return ResponseEntity.ok(
-                testRunService.createRun(request, currentUser.getId())
-        );
+                testRunService.createRun(request, currentUser.getId()));
     }
 
     @PostMapping("/{runId}/add-cases")
-        @PreAuthorize("hasAnyRole('MANAGER','GENERAL')") // Only allow MANAGER and GENERAL roles to access this endpoint
+    @PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')") // Only allow PROJECT_MANAGER and GENERAL roles to access
+                                                             // this endpoint
     public ResponseEntity<Void> addCasesToRun(
             @PathVariable Long runId,
-            @Valid @RequestBody AddCasesToRunRequest request
-    ) {
+            @Valid @RequestBody AddCasesToRunRequest request) {
         testRunService.addTestCasesToRun(runId, request);
         return ResponseEntity.ok().build();
     }
 
     @GetMapping("/cycles/{cycleId}")
-    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')") // Only allow MANAGER and GENERAL roles to access this endpoint
+    @PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')") // Only allow PROJECT_MANAGER and GENERAL roles to access
+                                                             // this endpoint
     public ResponseEntity<List<TestRunSummaryResponse>> getRunsForCycle(
-            @PathVariable Long cycleId
-    ) {
+            @PathVariable Long cycleId) {
         return ResponseEntity.ok(
-                testRunService.getRunsForCycle(cycleId)
-        );
+                testRunService.getRunsForCycle(cycleId));
     }
 
     @GetMapping("/{runId}")
-    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')") // Only allow MANAGER and GENERAL roles to access this endpoint
+    @PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')") // Only allow PROJECT_MANAGER and GENERAL roles to access
+                                                             // this endpoint
     public ResponseEntity<TestRunSummaryResponse> getRunDetail(
-            @PathVariable Long runId
-    ) {
+            @PathVariable Long runId) {
         return ResponseEntity.ok(
-                testRunService.getRunDetail(runId)
-        );
+                testRunService.getRunDetail(runId));
     }
 
     @GetMapping("/{runId}/cases")
-        @PreAuthorize("hasAnyRole('MANAGER','GENERAL')") // Only allow MANAGER and GENERAL roles to access this endpoint
+    @PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')") // Only allow PROJECT_MANAGER and GENERAL roles to access
+                                                             // this endpoint
     public ResponseEntity<List<TestRunCaseResponse>> getTestCasesForRun(@PathVariable Long runId) {
         return ResponseEntity.ok(testRunService.getTestCasesForRun(runId));
     }
@@ -79,15 +76,13 @@ public class TestRunController {
     public ResponseEntity<TestRunSummaryResponse> updateRun(
             @PathVariable Long runId,
             @Valid @RequestBody TestRunCreateRequest request,
-            @CurrentUser UserDto currentUser
-    ) {
+            @CurrentUser UserDto currentUser) {
         return ResponseEntity.ok(testRunService.updateRun(runId, request, currentUser.getId()));
     }
 
     @DeleteMapping("/{runId}")
     public ResponseEntity<Void> deleteRun(
-            @PathVariable Long runId
-    ) {
+            @PathVariable Long runId) {
         testRunService.deleteRun(runId);
         return ResponseEntity.noContent().build();
     }

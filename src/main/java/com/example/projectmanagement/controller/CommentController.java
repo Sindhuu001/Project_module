@@ -15,7 +15,6 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 import com.example.projectmanagement.security.CurrentUser;
 import com.example.projectmanagement.dto.UserDto;
 
-
 @RestController
 @CrossOrigin
 @RequestMapping("/api/comments")
@@ -27,7 +26,7 @@ public class CommentController {
     // ----------------- Add Comments -----------------
 
     @PostMapping("/task/{taskId}")
-    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')")
+    @PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')")
     public ResponseEntity<CommentDto> addCommentToTask(
             @PathVariable Long taskId,
             @RequestBody CommentDto commentDto) {
@@ -36,7 +35,7 @@ public class CommentController {
     }
 
     @PostMapping("/story/{storyId}")
-    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')")
+    @PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')")
     public ResponseEntity<CommentDto> addCommentToStory(
             @PathVariable Long storyId,
             @RequestBody CommentDto commentDto) {
@@ -45,7 +44,7 @@ public class CommentController {
     }
 
     @PostMapping("/epic/{epicId}")
-    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')")
+    @PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')")
     public ResponseEntity<CommentDto> addCommentToEpic(
             @PathVariable Long epicId,
             @RequestBody CommentDto commentDto) {
@@ -56,19 +55,19 @@ public class CommentController {
     // ----------------- Get Comments -----------------
 
     @GetMapping("/task/{taskId}")
-    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')")
+    @PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')")
     public ResponseEntity<List<CommentDto>> getCommentsByTask(@PathVariable Long taskId) {
         return ResponseEntity.ok(commentService.getCommentsByTaskId(taskId));
     }
 
     @GetMapping("/story/{storyId}")
-    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')")
+    @PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')")
     public ResponseEntity<List<CommentDto>> getCommentsByStory(@PathVariable Long storyId) {
         return ResponseEntity.ok(commentService.getCommentsByStoryId(storyId));
     }
 
     @GetMapping("/epic/{epicId}")
-    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')")
+    @PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')")
     public ResponseEntity<List<CommentDto>> getCommentsByEpic(@PathVariable Long epicId) {
         return ResponseEntity.ok(commentService.getCommentsByEpicId(epicId));
     }
@@ -76,7 +75,7 @@ public class CommentController {
     // ----------------- Replies -----------------
 
     @GetMapping("/replies/{parentId}")
-    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')")
+    @PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')")
     public ResponseEntity<List<CommentDto>> getReplies(@PathVariable Long parentId) {
         return ResponseEntity.ok(commentService.getRepliesByParentId(parentId));
     }
@@ -84,7 +83,7 @@ public class CommentController {
     // ----------------- Delete -----------------
 
     @DeleteMapping("/{commentId}")
-    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')")
+    @PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')")
     public ResponseEntity<Void> deleteComment(
             @PathVariable Long commentId,
             @RequestParam Long userId) {

@@ -27,23 +27,25 @@ public class AssignmentController {
     private final AssignmentService assignmentService;
 
     @PostMapping("/validate")
-    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')") // Only allow MANAGER and GENERAL roles to access this endpoint
+    @PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')") // Only allow PROJECT_MANAGER and GENERAL roles to access
+                                                             // this endpoint
     public ResponseEntity<AssignmentValidateResponse> validate(
-            @Valid @RequestBody AssignmentValidateRequest req
-    ) {
+            @Valid @RequestBody AssignmentValidateRequest req) {
         AssignmentValidateResponse resp = assignmentService.validateAssignment(req);
         return ResponseEntity.ok(resp);
     }
 
     @PostMapping("/apply")
-    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')") // Only allow MANAGER and GENERAL roles to access this endpoint
+    @PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')") // Only allow PROJECT_MANAGER and GENERAL roles to access
+                                                             // this endpoint
     public ResponseEntity<AssignmentApplyResponse> apply(
             @Valid @RequestBody AssignmentApplyRequest req,
-            @CurrentUser UserDto currentUser
-    ) {
-        // currentUserId could be logged in user — used for auditing (not strictly required here)
-//        currentUser.getId()
-//        Long currentUserId = prin == null ? null : Long.parseLong(principal.getName());
+            @CurrentUser UserDto currentUser) {
+        // currentUserId could be logged in user — used for auditing (not strictly
+        // required here)
+        // currentUser.getId()
+        // Long currentUserId = prin == null ? null :
+        // Long.parseLong(principal.getName());
         AssignmentApplyResponse resp = assignmentService.applyAssignment(req, currentUser.getId());
         return ResponseEntity.ok(resp);
     }

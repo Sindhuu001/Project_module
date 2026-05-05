@@ -8,7 +8,7 @@ This document describes the role-based authentication system implemented for the
 
 The application supports two primary roles:
 
-### 1. MANAGER
+### 1. PROJECT_MANAGER
 
 - Full access to all resources
 - Can create, update, and delete projects
@@ -34,7 +34,7 @@ The JWT token should include a `roles` claim with an array of roles:
 {
   "sub": "user@example.com",
   "name": "John Doe",
-  "roles": ["MANAGER"],
+  "roles": ["PROJECT_MANAGER"],
   "iat": 1234567890,
   "exp": 1234571490
 }
@@ -48,7 +48,7 @@ The JWT token should include a `roles` claim with an array of roles:
 
 Example:
 
-- JWT role: `MANAGER` → Spring Authority: `ROLE_MANAGER`
+- JWT role: `PROJECT_MANAGER` → Spring Authority: `ROLE_PROJECT_MANAGER`
 - JWT role: `GENERAL` → Spring Authority: `ROLE_GENERAL`
 
 ## Endpoint Authorization
@@ -57,17 +57,17 @@ Example:
 
 All controller endpoints use `@PreAuthorize` annotations to enforce role-based access control:
 
-#### Manager-Only Operations
+#### PROJECT_MANAGER-Only Operations
 
 ```java
-@PreAuthorize("hasRole('MANAGER')")
+@PreAuthorize("hasRole('PROJECT_MANAGER')")
 public ResponseEntity<ProjectDto> createProject(@RequestBody ProjectDto projectDto)
 ```
 
-#### Both Manager and General Users
+#### Both PROJECT_MANAGER and General Users
 
 ```java
-@PreAuthorize("hasAnyRole('MANAGER','GENERAL')")
+@PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')")
 public ResponseEntity<List<ProjectDto>> getAllProjects()
 ```
 
@@ -96,18 +96,18 @@ CREATE TABLE users (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-ALTER TABLE users ADD CHECK (role IN ('MANAGER', 'GENERAL'));
+ALTER TABLE users ADD CHECK (role IN ('PROJECT_MANAGER', 'GENERAL'));
 ```
 
 ## Usage Examples
 
 ### JWT Token Claim Examples
 
-#### Manager User
+#### PROJECT_MANAGER User
 
 ```json
 {
-  "roles": ["MANAGER"]
+  "roles": ["PROJECT_MANAGER"]
 }
 ```
 
@@ -122,8 +122,8 @@ ALTER TABLE users ADD CHECK (role IN ('MANAGER', 'GENERAL'));
 ### Testing with cURL
 
 ```bash
-# Test as MANAGER
-curl -H "Authorization: Bearer <MANAGER_JWT_TOKEN>" \
+# Test as PROJECT_MANAGER
+curl -H "Authorization: Bearer <PROJECT_MANAGER_JWT_TOKEN>" \
   http://localhost:8080/api/projects
 
 # Test as GENERAL
@@ -157,7 +157,7 @@ When a user lacks the required role, the application returns:
 ### UserRole Enum
 
 - Location: `com.example.projectmanagement.entity.UserRole`
-- Values: `MANAGER`, `GENERAL`
+- Values: `PROJECT_MANAGER`, `GENERAL`
 
 ### Security Configuration
 
@@ -187,7 +187,7 @@ When a user lacks the required role, the application returns:
 ### Users getting 403 Forbidden
 
 - Verify JWT token contains `roles` claim
-- Check that role matches `MANAGER` or `GENERAL` exactly
+- Check that role matches `PROJECT_MANAGER` or `GENERAL` exactly
 - Verify Securityconfig is properly enabled with `@EnableMethodSecurity`
 
 ### Roles not being recognized
@@ -200,4 +200,4 @@ When a user lacks the required role, the application returns:
 
 - Some endpoints may not have authorization checks
 - Add annotations based on business requirements
-- Follow the pattern: `@PreAuthorize("hasRole('MANAGER')")` or `hasAnyRole('MANAGER','GENERAL')`
+- Follow the pattern: `@PreAuthorize("hasRole('PROJECT_MANAGER')")` or `hasAnyRole('PROJECT_MANAGER','GENERAL')`

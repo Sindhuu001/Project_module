@@ -16,7 +16,6 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 import com.example.projectmanagement.security.CurrentUser;
 import com.example.projectmanagement.dto.UserDto;
 
-
 @RestController
 @RequestMapping("/api/risk-links")
 public class RiskLinkController {
@@ -25,38 +24,36 @@ public class RiskLinkController {
     private RiskLinkService linkService;
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')")
+    @PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')")
     public ResponseEntity<RiskLinkResponse> create(@RequestBody RiskLinkRequest request) {
         return ResponseEntity.ok(linkService.createLink(request));
     }
 
     @PatchMapping("/{id}")
-    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')")
+    @PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')")
     public ResponseEntity<RiskLinkResponse> update(@PathVariable Long id, @RequestBody RiskLinkRequest request) {
         return ResponseEntity.ok(linkService.updateLink(id, request));
     }
 
     @GetMapping("/risk/{riskId}")
-    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')")
+    @PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')")
     public ResponseEntity<List<RiskLinkResponse>> getByRisk(@PathVariable Long riskId) {
         return ResponseEntity.ok(linkService.getLinksByRiskId(riskId));
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')")
+    @PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         linkService.deleteLink(id);
         return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/{projectId}/risk-summary/by-issue-type")
-    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')")
+    @PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')")
     public ResponseEntity<List<IssueTypeRiskCountDTO>> getRiskSummaryByIssueType(
-            @PathVariable Long projectId
-    ) {
+            @PathVariable Long projectId) {
         return ResponseEntity.ok(
-                linkService.getRiskCountByIssueType(projectId)
-        );
+                linkService.getRiskCountByIssueType(projectId));
     }
 
 }

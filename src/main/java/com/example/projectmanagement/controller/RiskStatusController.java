@@ -19,7 +19,6 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 import com.example.projectmanagement.security.CurrentUser;
 import com.example.projectmanagement.dto.UserDto;
 
-
 @RestController
 @RequestMapping("/api")
 public class RiskStatusController {
@@ -29,56 +28,50 @@ public class RiskStatusController {
 
     // CREATE
     @PostMapping("/risk-statuses")
-    @PreAuthorize("hasAnyRole('Manager','GENERAL')")
+    @PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')")
     public ResponseEntity<RiskStatusResponse> createRiskStatus(
-            @RequestBody RiskStatusCreateRequest request
-    ) {
+            @RequestBody RiskStatusCreateRequest request) {
         return ResponseEntity.ok(riskStatusService.createRiskStatus(request));
     }
 
     @GetMapping("/risk-statuses/{id}")
-    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')")
+    @PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')")
     public ResponseEntity<RiskStatus> getRiskStatus(
-            @PathVariable Long id
-    ) {
+            @PathVariable Long id) {
         return ResponseEntity.ok(riskStatusService.getRiskStatus(id));
     }
 
-
     // READ: GET by project
     @GetMapping("/projects/{projectId}/risk-statuses")
-    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')")
+    @PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')")
     public ResponseEntity<List<RiskStatusResponse>> getRiskStatusesByProject(@PathVariable Long projectId) {
         return ResponseEntity.ok(riskStatusService.getRiskStatusesByProject(projectId));
     }
 
     // UPDATE
     @PutMapping("/risk-statuses/{id}")
-    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')")
+    @PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')")
     public ResponseEntity<RiskStatusResponse> updateRiskStatus(
             @PathVariable Long id,
-            @RequestBody RiskStatusCreateRequest request
-    ) {
+            @RequestBody RiskStatusCreateRequest request) {
         return ResponseEntity.ok(riskStatusService.updateRiskStatus(id, request));
     }
 
     // DELETE
     @DeleteMapping("/risk-statuses/{id}")
-    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')")
+    @PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')")
     public ResponseEntity<?> deleteRiskStatus(
             @PathVariable Long id,
-            @RequestParam(required = false) Long newStatusId
-    ) {
+            @RequestParam(required = false) Long newStatusId) {
         riskStatusService.deleteRiskStatus(id, newStatusId);
         return ResponseEntity.ok().build();
     }
 
     // REORDER
     @PostMapping("/risk-statuses/reorder")
-    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')")
+    @PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')")
     public ResponseEntity<List<RiskStatusResponse>> reorderRiskStatuses(
-            @RequestBody Map<Long, Integer> newOrder
-    ) {
+            @RequestBody Map<Long, Integer> newOrder) {
         return ResponseEntity.ok(riskStatusService.reorderRiskStatuses(newOrder));
     }
 }

@@ -31,8 +31,9 @@ public class MyWorkResponseDto {
     // ── Test work (separate section for QA users) ─────────────────────────────
     private List<TestWorkItemDto> testWork;
 
-    // ── Manager accountability items (items created by user, assigned to others)
-    private List<WorkItemDto> managerItems;
+    // ── PROJECT_MANAGER accountability items (items created by user, assigned to
+    // others)
+    private List<WorkItemDto> PROJECT_MANAGERItems;
 
     // ─────────────────────────────────────────────────────────────────────────
 
@@ -41,11 +42,11 @@ public class MyWorkResponseDto {
     @AllArgsConstructor
     @NoArgsConstructor
     public static class ProjectWorkGroup {
-        private Long   projectId;
+        private Long projectId;
         private String projectName;
-        private String urgencyFlag;   // "OVERDUE" | "DUE_TODAY" | "DUE_THIS_WEEK" | "NONE"
-        private int    overdueCount;
-        private int    dueTodayCount;
+        private String urgencyFlag; // "OVERDUE" | "DUE_TODAY" | "DUE_THIS_WEEK" | "NONE"
+        private int overdueCount;
+        private int dueTodayCount;
         private List<WorkItemDto> items;
     }
 }

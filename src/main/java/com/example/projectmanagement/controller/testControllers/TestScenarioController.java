@@ -19,7 +19,6 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 import com.example.projectmanagement.security.CurrentUser;
 import com.example.projectmanagement.dto.UserDto;
 
-
 @RestController
 @RequestMapping("/api/test-design/scenarios")
 @RequiredArgsConstructor
@@ -28,63 +27,59 @@ public class TestScenarioController {
     private final TestScenarioService scenarioService;
 
     @PostMapping
-        @PreAuthorize("hasAnyRole('MANAGER','GENERAL')") // Only allow MANAGER and GENERAL roles to access this endpoint
+    @PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')") // Only allow PROJECT_MANAGER and GENERAL roles to access
+                                                             // this endpoint
     public ResponseEntity<TestScenarioSummaryResponse> createScenario(
             @Valid @RequestBody TestScenarioCreateRequest request,
-            @CurrentUser UserDto currentUser
-    ) {
+            @CurrentUser UserDto currentUser) {
         return ResponseEntity.ok(
-                scenarioService.createScenario(request, currentUser.getId())
-        );
+                scenarioService.createScenario(request, currentUser.getId()));
     }
 
     @GetMapping("/plans/{planId}")
-        @PreAuthorize("hasAnyRole('MANAGER','GENERAL')") // Only allow MANAGER and GENERAL roles to access this endpoint
+    @PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')") // Only allow PROJECT_MANAGER and GENERAL roles to access
+                                                             // this endpoint
     public ResponseEntity<List<TestScenarioSummaryResponse>> getScenariosForPlan(
-            @PathVariable Long planId
-    ) {
+            @PathVariable Long planId) {
         return ResponseEntity.ok(
-                scenarioService.getScenariosForPlan(planId)
-        );
+                scenarioService.getScenariosForPlan(planId));
     }
 
     @GetMapping("/test-stories/{testStoryId}")
-        @PreAuthorize("hasAnyRole('MANAGER','GENERAL')") // Only allow MANAGER and GENERAL roles to access this endpoint
+    @PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')") // Only allow PROJECT_MANAGER and GENERAL roles to access
+                                                             // this endpoint
     public ResponseEntity<List<TestScenarioSummaryResponse>> getScenariosForTestStory(
-            @PathVariable Long testStoryId
-    ) {
+            @PathVariable Long testStoryId) {
         return ResponseEntity.ok(
-                scenarioService.getScenariosForTestStory(testStoryId)
-        );
+                scenarioService.getScenariosForTestStory(testStoryId));
     }
 
     @GetMapping("/stories/{storyId}")
-        @PreAuthorize("hasAnyRole('MANAGER','GENERAL')") // Only allow MANAGER and GENERAL roles to access this endpoint
+    @PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')") // Only allow PROJECT_MANAGER and GENERAL roles to access
+                                                             // this endpoint
     public ResponseEntity<List<TestScenarioSummaryResponse>> getScenariosForUserStory(
-            @PathVariable Long storyId
-    ) {
+            @PathVariable Long storyId) {
         return ResponseEntity.ok(
-                scenarioService.getScenariosForUserStory(storyId)
-        );
+                scenarioService.getScenariosForUserStory(storyId));
     }
+
     @PutMapping("/{id}")
-        @PreAuthorize("hasAnyRole('MANAGER','GENERAL')") // Only allow MANAGER and GENERAL roles to access this endpoint
+    @PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')") // Only allow PROJECT_MANAGER and GENERAL roles to access
+                                                             // this endpoint
     public ResponseEntity<TestScenarioSummaryResponse> updateScenario(
             @PathVariable Long id,
             @Valid @RequestBody TestScenarioUpdateRequest request,
-            @CurrentUser UserDto currentUser
-    ) {
+            @CurrentUser UserDto currentUser) {
         return ResponseEntity.ok(
-                scenarioService.updateScenario(id, request, currentUser.getId())
-        );
+                scenarioService.updateScenario(id, request, currentUser.getId()));
     }
 
     @DeleteMapping("/{id}")
-        @PreAuthorize("hasAnyRole('MANAGER','GENERAL')") // Only allow MANAGER and GENERAL roles to access this endpoint
+    @PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')") // Only allow PROJECT_MANAGER and GENERAL roles to access
+                                                             // this endpoint
     public ResponseEntity<Void> deleteScenario(
             @PathVariable Long id,
-            @CurrentUser UserDto currentUser
-    ) {
+            @CurrentUser UserDto currentUser) {
         scenarioService.deleteScenario(id, currentUser.getId());
         return ResponseEntity.noContent().build();
     }

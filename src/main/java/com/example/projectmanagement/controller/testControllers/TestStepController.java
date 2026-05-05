@@ -1,6 +1,5 @@
 package com.example.projectmanagement.controller.testControllers;
 
-
 import com.example.projectmanagement.dto.testing.TestStepCreateRequest;
 import com.example.projectmanagement.dto.testing.TestStepResponse;
 import com.example.projectmanagement.dto.testing.TestStepsReorderRequest;
@@ -16,7 +15,6 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 import com.example.projectmanagement.security.CurrentUser;
 import com.example.projectmanagement.dto.UserDto;
 
-
 import java.util.List;
 
 @RestController
@@ -27,45 +25,41 @@ public class TestStepController {
     private final TestStepService testStepService;
 
     @GetMapping("/test-cases/{caseId}")
-        @PreAuthorize("hasAnyRole('MANAGER','GENERAL')") // Only allow MANAGER and GENERAL roles to access this endpoint
+    @PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')") // Only allow PROJECT_MANAGER and GENERAL roles to access
+                                                             // this endpoint
     public ResponseEntity<List<TestStepResponse>> getStepsForCase(
-            @PathVariable Long caseId
-    ) {
+            @PathVariable Long caseId) {
         return ResponseEntity.ok(
-                testStepService.getStepsForCase(caseId)
-        );
+                testStepService.getStepsForCase(caseId));
     }
 
     @PostMapping("/test-cases/{caseId}")
-        @PreAuthorize("hasAnyRole('MANAGER','GENERAL')") // Only allow MANAGER and GENERAL roles to access this endpoint
+    @PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')") // Only allow PROJECT_MANAGER and GENERAL roles to access
+                                                             // this endpoint
     public ResponseEntity<List<TestStepResponse>> addStepsToCase(
             @PathVariable Long caseId,
-            @Valid @RequestBody List<TestStepCreateRequest> steps
-    ) {
+            @Valid @RequestBody List<TestStepCreateRequest> steps) {
         return ResponseEntity.ok(
-                testStepService.addStepsToCase(caseId, steps)
-        );
+                testStepService.addStepsToCase(caseId, steps));
     }
 
     @PutMapping("/{stepId}")
-        @PreAuthorize("hasAnyRole('MANAGER','GENERAL')") // Only allow MANAGER and GENERAL roles to access this endpoint
+    @PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')") // Only allow PROJECT_MANAGER and GENERAL roles to access
+                                                             // this endpoint
     public ResponseEntity<TestStepResponse> updateStep(
             @PathVariable Long stepId,
-            @Valid @RequestBody TestStepCreateRequest request
-    ) {
+            @Valid @RequestBody TestStepCreateRequest request) {
         return ResponseEntity.ok(
-                testStepService.updateStep(stepId, request)
-        );
+                testStepService.updateStep(stepId, request));
     }
 
     @PutMapping("/test-cases/{caseId}/reorder")
-        @PreAuthorize("hasAnyRole('MANAGER','GENERAL')") // Only allow MANAGER and GENERAL roles to access this endpoint
+    @PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')") // Only allow PROJECT_MANAGER and GENERAL roles to access
+                                                             // this endpoint
     public ResponseEntity<List<TestStepResponse>> reorderSteps(
             @PathVariable Long caseId,
-            @Valid @RequestBody TestStepsReorderRequest request
-    ) {
+            @Valid @RequestBody TestStepsReorderRequest request) {
         return ResponseEntity.ok(
-                testStepService.reorderSteps(caseId, request)
-        );
+                testStepService.reorderSteps(caseId, request));
     }
 }

@@ -50,7 +50,7 @@ package com.example.projectmanagement.entity;
 
 // Enum inside the class
 public enum UserRole {
-    MANAGER, GENERAL
+    PROJECT_MANAGER, GENERAL
 }
 
 // // Constructors

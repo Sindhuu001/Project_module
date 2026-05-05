@@ -20,30 +20,27 @@ import com.example.projectmanagement.dto.UserDto;
 @RequiredArgsConstructor
 public class RiskLeftPanelController {
 
-    private final RiskIssueQueryService service;
+        private final RiskIssueQueryService service;
 
-    @GetMapping("/issues")
-    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')")
-    public Page<RiskIssueSummaryDTO> getIssuesWithRisks(
-            @PathVariable Long projectId,
-            @RequestParam(required = false) LinkedType issueType, // ✅ OPTIONAL
-            @RequestParam(required = false) String issueStatus,
-            @RequestParam(required = false) Long sprintId,
-            Pageable pageable
-    ) {
+        @GetMapping("/issues")
+        @PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')")
+        public Page<RiskIssueSummaryDTO> getIssuesWithRisks(
+                        @PathVariable Long projectId,
+                        @RequestParam(required = false) LinkedType issueType, // ✅ OPTIONAL
+                        @RequestParam(required = false) String issueStatus,
+                        @RequestParam(required = false) Long sprintId,
+                        Pageable pageable) {
 
-        // ✅ enforce safe pageable (avoid invalid sort)
-        Pageable safePageable = PageRequest.of(
-                pageable.getPageNumber(),
-                pageable.getPageSize()
-        );
+                // ✅ enforce safe pageable (avoid invalid sort)
+                Pageable safePageable = PageRequest.of(
+                                pageable.getPageNumber(),
+                                pageable.getPageSize());
 
-        return service.getIssuesWithRisks(
-                projectId,
-                issueType,       // ✅ can be null → ALL
-                issueStatus,
-                sprintId,
-                safePageable
-        );
-    }
+                return service.getIssuesWithRisks(
+                                projectId,
+                                issueType, // ✅ can be null → ALL
+                                issueStatus,
+                                sprintId,
+                                safePageable);
+        }
 }

@@ -23,7 +23,6 @@ import com.example.projectmanagement.dto.UserDto;
 
 import java.util.List;
 
-
 @RestController
 @RequestMapping("/api/testing/bugs")
 @RequiredArgsConstructor
@@ -32,45 +31,47 @@ public class BugController {
     private final BugService bugService;
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')") // Only allow MANAGER and GENERAL roles to access this endpoint
+    @PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')") // Only allow PROJECT_MANAGER and GENERAL roles to access
+                                                             // this endpoint
     public ResponseEntity<BugResponse> createBug(
             @Valid @RequestBody BugCreateRequest req,
-            @CurrentUser UserDto currentUser
-    ) {
+            @CurrentUser UserDto currentUser) {
         BugResponse resp = bugService.createBug(req, currentUser.getId());
         return ResponseEntity.ok(resp);
     }
 
     @PutMapping("/{bugId}/status")
-    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')") // Only allow MANAGER and GENERAL roles to access this endpoint
+    @PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')") // Only allow PROJECT_MANAGER and GENERAL roles to access
+                                                             // this endpoint
     public ResponseEntity<BugResponse> updateStatus(
             @PathVariable Long bugId,
             @Valid @RequestBody BugStatusUpdateRequest req,
-            @CurrentUser UserDto currentUser
-    ) {
+            @CurrentUser UserDto currentUser) {
         BugResponse resp = bugService.updateBugStatus(bugId, req, currentUser.getId());
         return ResponseEntity.ok(resp);
     }
 
     @PutMapping("/{bugId}/assign")
-    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')") // Only allow MANAGER and GENERAL roles to access this endpoint
+    @PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')") // Only allow PROJECT_MANAGER and GENERAL roles to access
+                                                             // this endpoint
     public ResponseEntity<BugResponse> assignBug(
             @PathVariable Long bugId,
-            @Valid @RequestBody BugAssignRequest req
-    ) {
+            @Valid @RequestBody BugAssignRequest req) {
         BugResponse resp = bugService.assignBug(bugId, req);
         return ResponseEntity.ok(resp);
     }
 
     @GetMapping("/{bugId}")
-    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')") // Only allow MANAGER and GENERAL roles to access this endpoint
+    @PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')") // Only allow PROJECT_MANAGER and GENERAL roles to access
+                                                             // this endpoint
     public ResponseEntity<BugDetailResponse> getBugById(@PathVariable Long bugId) {
         BugDetailResponse bug = bugService.getBugById(bugId);
         return ResponseEntity.ok(bug);
     }
 
     @GetMapping("/projects/{projectId}")
-    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')") // Only allow MANAGER and GENERAL roles to access this endpoint
+    @PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')") // Only allow PROJECT_MANAGER and GENERAL roles to access
+                                                             // this endpoint
     public ResponseEntity<Page<BugResponse>> getBugsByProject(
             @PathVariable Long projectId,
             @RequestParam(defaultValue = "0") int page,
@@ -80,7 +81,8 @@ public class BugController {
     }
 
     @GetMapping("/projects/{projectId}/summaries")
-    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')") // Only allow MANAGER and GENERAL roles to access this endpoint
+    @PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')") // Only allow PROJECT_MANAGER and GENERAL roles to access
+                                                             // this endpoint
     public ResponseEntity<List<BugSummaryResponse>> getBugSummariesByProject(
             @PathVariable Long projectId) {
         List<BugSummaryResponse> bugs = bugService.findBugSummariesByProjectId(projectId);

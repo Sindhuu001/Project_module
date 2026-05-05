@@ -23,8 +23,6 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 import com.example.projectmanagement.security.CurrentUser;
 import com.example.projectmanagement.dto.UserDto;
 
-
-
 @RestController
 @RequestMapping("/api/test-execution/test-runs")
 @RequiredArgsConstructor
@@ -34,38 +32,38 @@ public class TestRunBulkController {
 
     // Bulk assign run-cases to a tester (overwrites)
     @PostMapping("/{runId}/bulk-assign")
-    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')") // Only allow MANAGER and GENERAL roles to access this endpoint
+    @PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')") // Only allow PROJECT_MANAGER and GENERAL roles to access
+                                                             // this endpoint
     public ResponseEntity<Void> bulkAssign(
             @PathVariable Long runId,
             @Valid @RequestBody BulkAssignRequest req,
-            @CurrentUser UserDto currentUser
-    ) {
-//        Long userId = principal == null ? null : Long.parseLong(principal.getName());
+            @CurrentUser UserDto currentUser) {
+        // Long userId = principal == null ? null : Long.parseLong(principal.getName());
         bulkService.bulkAssign(runId, req, currentUser.getId());
         return ResponseEntity.ok().build();
     }
 
     // Bulk mark PASS
     @PostMapping("/{runId}/bulk-pass")
-    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')") // Only allow MANAGER and GENERAL roles to access this endpoint
+    @PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')") // Only allow PROJECT_MANAGER and GENERAL roles to access
+                                                             // this endpoint
     public ResponseEntity<Void> bulkPass(
             @PathVariable Long runId,
             @Valid @RequestBody BulkExecutionRequest req,
-            @CurrentUser UserDto currentUser
-    ) {
-//        Long userId = principal == null ? null : Long.parseLong(principal.getName());
+            @CurrentUser UserDto currentUser) {
+        // Long userId = principal == null ? null : Long.parseLong(principal.getName());
         bulkService.bulkPass(runId, req, currentUser.getId());
         return ResponseEntity.ok().build();
     }
 
     // Bulk mark SKIP
     @PostMapping("/{runId}/bulk-skip")
-    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')") // Only allow MANAGER and GENERAL roles to access this endpoint
+    @PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')") // Only allow PROJECT_MANAGER and GENERAL roles to access
+                                                             // this endpoint
     public ResponseEntity<Void> bulkSkip(
             @PathVariable Long runId,
             @Valid @RequestBody BulkExecutionRequest req,
-            Principal principal
-    ) {
+            Principal principal) {
         Long userId = principal == null ? null : Long.parseLong(principal.getName());
         bulkService.bulkSkip(runId, req, userId);
         return ResponseEntity.ok().build();
@@ -73,33 +71,30 @@ public class TestRunBulkController {
 
     // Clone next run within cycle (returns new run summary)
     @PostMapping("/cycles/{cycleId}/clone-next-run")
-    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')") // Only allow MANAGER and GENERAL roles to access this endpoint
+    @PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')") // Only allow PROJECT_MANAGER and GENERAL roles to access
+                                                             // this endpoint
     public ResponseEntity<TestRunSummaryResponse> cloneNextRun(
             @PathVariable Long cycleId,
             @Valid @RequestBody CloneRunRequest req,
-            Principal principal
-    ) {
+            Principal principal) {
         Long userId = principal == null ? null : Long.parseLong(principal.getName());
         TestRunSummaryResponse resp = bulkService.cloneNextRun(cycleId, req, userId);
         return ResponseEntity.ok(resp);
     }
+
     // ── Update RunCase ────────────────────────────────────────────────────────
     @PutMapping("/run-cases/{runCaseId}")
     public ResponseEntity<TestRunCaseResponse> updateRunCase(
             @PathVariable Long runCaseId,
-            @Valid @RequestBody TestRunCaseUpdateRequest request
-    ) {
+            @Valid @RequestBody TestRunCaseUpdateRequest request) {
         return ResponseEntity.ok(bulkService.updateRunCase(runCaseId, request));
     }
 
     // ── Delete RunCase ────────────────────────────────────────────────────────
     @DeleteMapping("/run-cases/{runCaseId}")
     public ResponseEntity<Void> deleteRunCase(
-            @PathVariable Long runCaseId
-    ) {
+            @PathVariable Long runCaseId) {
         bulkService.deleteRunCase(runCaseId);
         return ResponseEntity.noContent().build();
     }
 }
-        
-

@@ -26,7 +26,6 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 import com.example.projectmanagement.security.CurrentUser;
 import com.example.projectmanagement.dto.UserDto;
 
-
 @RestController
 @RequestMapping("/api/tasks")
 @CrossOrigin
@@ -40,7 +39,7 @@ public class TaskController {
     // Existing CRUD endpoints (untouched)
     // ------------------------------
     @PostMapping
-    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')")
+    @PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')")
     public ResponseEntity<TaskCreateDto> createTask(@Valid @RequestBody TaskCreateDto taskCreateDto,
             @CurrentUser UserDto currentUser) {
         // taskCreateDto.setCreatedBy(currentUser.getId());
@@ -50,14 +49,14 @@ public class TaskController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')")
+    @PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')")
     public ResponseEntity<TaskViewDto> getTaskById(@PathVariable Long id) {
         TaskViewDto task = taskService.getTaskById(id);
         return ResponseEntity.ok(task);
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')")
+    @PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')")
     public ResponseEntity<Page<TaskViewDto>> getAllTasks(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
@@ -76,7 +75,7 @@ public class TaskController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')")
+    @PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')")
     public ResponseEntity<TaskCreateDto> updateTask(
             @PathVariable Long id,
             @Valid @RequestBody TaskUpdateDto taskUpdateDto) {
@@ -86,14 +85,14 @@ public class TaskController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')")
+    @PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')")
     public ResponseEntity<Void> deleteTask(@PathVariable Long id) {
         taskService.deleteTask(id);
         return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/user/{userId}/tasks")
-    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')")
+    @PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')")
     public ResponseEntity<List<TaskTimesheetDto>> getTasksByUser(
             @PathVariable Long userId) {
         return ResponseEntity.ok(taskService.getTimesheetsTasksByAssignee(userId));
@@ -104,7 +103,7 @@ public class TaskController {
     // ------------------------------
 
     @GetMapping("/backlog")
-    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')")
+    @PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')")
     public ResponseEntity<List<TaskViewDto>> getBacklogTasks() {
         List<TaskViewDto> tasks = taskService.getBacklogTasks().stream()
                 .map(task -> taskService.getTaskById(task.getId()))
@@ -113,7 +112,7 @@ public class TaskController {
     }
 
     @GetMapping("/status/{statusId}")
-    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')")
+    @PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')")
     public ResponseEntity<List<TaskViewDto>> getTasksByStatus(@PathVariable Long statusId) {
         List<TaskViewDto> tasks = taskService.getTasksByStatus(statusId).stream()
                 .map(task -> taskService.getTaskById(task.getId()))
@@ -122,14 +121,14 @@ public class TaskController {
     }
 
     @GetMapping("/status/{statusId}/count")
-    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')")
+    @PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')")
     public ResponseEntity<Long> getDoneTaskCount(@PathVariable Long statusId) {
         long count = taskService.countTasksByStatus(statusId);
         return ResponseEntity.ok(count);
     }
 
     @PatchMapping("/{taskId}/status")
-    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')")
+    @PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')")
     public ResponseEntity<TaskStatusUpdateDto> updateTaskStatus(
             @PathVariable Long taskId,
             @RequestBody Map<String, Long> payload) {
@@ -144,14 +143,14 @@ public class TaskController {
     }
 
     @GetMapping("/story/{storyId}/count")
-    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')")
+    @PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')")
     public ResponseEntity<?> getTaskCountByStory(@PathVariable Long storyId) {
         long count = taskService.countTasksByStoryId(storyId);
         return ResponseEntity.ok(Map.of("storyId", storyId, "taskCount", count));
     }
 
     @GetMapping("/assignee/{assigneeId}")
-    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')")
+    @PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')")
     public ResponseEntity<List<TaskViewDto>> getTasksByAssignee(@PathVariable Long assigneeId) {
         List<TaskViewDto> tasks = taskService.getTasksByAssignee(assigneeId).stream()
                 .map(task -> taskService.getTaskById(task.getId()))
@@ -160,7 +159,7 @@ public class TaskController {
     }
 
     @PutMapping("/{taskId}/assign-story/{storyId}")
-    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')")
+    @PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')")
     public ResponseEntity<String> assignStoryToTask(
             @PathVariable Long taskId,
             @PathVariable Long storyId) {
@@ -170,7 +169,7 @@ public class TaskController {
     }
 
     @PatchMapping("/{taskId}/assign-sprint/{sprintId}")
-    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')")
+    @PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')")
     public ResponseEntity<TaskResponse> assignTaskToSprint(
             @PathVariable Long taskId,
             @PathVariable(required = false) String sprintId) {

@@ -2,6 +2,7 @@ package com.example.projectmanagement.controller;
 
 import com.example.projectmanagement.dto.TaskDto;
 import com.example.projectmanagement.dto.UserDto;
+import com.example.projectmanagement.dto.UserSummaryDto;
 // import com.example.projectmanagement.security.CurrentUser;
 import com.example.projectmanagement.service.TaskService;
 import com.example.projectmanagement.service.UserService;
@@ -34,14 +35,14 @@ public class UserController {
     // }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')")
+    @PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')")
     public ResponseEntity<UserDto> getUserById(@PathVariable Long id) {
         UserDto user = userService.getUserById(id);
         return ResponseEntity.ok(user);
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')")
+    @PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')")
     public ResponseEntity<Page<UserDto>> getAllUsers(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "100") int size,
@@ -71,7 +72,7 @@ public class UserController {
     // }
 
     @GetMapping("/{userId}/tasks")
-    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')")
+    @PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')")
     public ResponseEntity<List<TaskDto>> getUserTasks(@PathVariable Long userId) {
         List<TaskDto> tasks = taskService.getTasksByAssignee(userId);
         return ResponseEntity.ok(tasks);
@@ -89,5 +90,30 @@ public class UserController {
     // userService.deleteUser(id);
     // return ResponseEntity.noContent().build();
     // }
+
+    // Add these to your UserController class
+
+@GetMapping("/resource-managers")
+@PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')")
+public ResponseEntity<List<UserSummaryDto>> getResourceManagers() {
+    // Matches "Resource_Manager" from your backend snippet
+    List<UserSummaryDto> users = userService.getLightweightUsersByRoleName("Resource_Manager");
+    return ResponseEntity.ok(users);
+}
+
+@GetMapping("/delivery-owners")
+@PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')")
+public ResponseEntity<List<UserSummaryDto>> getDeliveryOwners() {
+    // Assuming the role is named "Delivery_Owner" in that system
+    List<UserSummaryDto> users = userService.getLightweightUsersByRoleName("Delivery_Manager");
+    return ResponseEntity.ok(users);
+}
+@GetMapping("/project_manager")
+@PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')")
+public ResponseEntity<List<UserSummaryDto>> getProjectManagers() {
+    // Assuming the role is named "Project_Manager" in that system
+    List<UserSummaryDto> users = userService.getLightweightUsersByRoleName("Project_Manager");
+    return ResponseEntity.ok(users);
+}
 
 }

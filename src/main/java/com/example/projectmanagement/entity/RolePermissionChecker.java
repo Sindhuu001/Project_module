@@ -8,19 +8,19 @@ import lombok.Data;
 public class RolePermissionChecker {
 
     public static boolean canUpdateTask(List<String> roles) {
-        return roles.contains("General") || roles.contains("Manager") || roles.contains("Admin");
+        return roles.contains("General") || roles.contains("PROJECT_MANAGER") || roles.contains("Admin");
     }
 
     public static boolean canStartSprint(List<String> roles) {
-        return roles.contains("Manager");
+        return roles.contains("PROJECT_MANAGER");
     }
 
     public static boolean canDeleteSprint(List<String> roles) {
-        return roles.contains("Manager") || roles.contains("Admin");
+        return roles.contains("PROJECT_MANAGER") || roles.contains("Admin");
     }
 
     public static boolean canCreateSprint(List<String> roles) {
-        return roles.contains("Manager") || roles.contains("Admin");
+        return roles.contains("PROJECT_MANAGER") || roles.contains("Admin");
     }
 
     // Add more methods as needed

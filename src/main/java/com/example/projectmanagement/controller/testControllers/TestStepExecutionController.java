@@ -28,27 +28,25 @@ public class TestStepExecutionController {
     private final TestStepExecutionService service;
 
     @GetMapping("/run-cases/{runCaseId}/steps")
-    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')")
+    @PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')")
     public ResponseEntity<List<TestRunCaseStepResponse>> getStepsForRunCase(@PathVariable Long runCaseId) {
         return ResponseEntity.ok(service.getStepsForRunCase(runCaseId));
     }
 
     @PostMapping("/steps/execute")
-    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')")
+    @PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')")
     public ResponseEntity<TestRunCaseStepResponse> executeStep(
             @Valid @RequestBody TestStepExecutionRequest request,
-            @CurrentUser UserDto currentUser
-    ) {
+            @CurrentUser UserDto currentUser) {
         return ResponseEntity.ok(service.executeStep(request, currentUser.getId()));
     }
 
     @PostMapping("/run-cases/{runCaseId}/ad-hoc-steps")
-    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')")
+    @PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')")
     public ResponseEntity<TestRunCaseStepResponse> addAdHocStep(
             @PathVariable Long runCaseId,
             @Valid @RequestBody AddAdHocStepRequest request,
-            @CurrentUser UserDto currentUser
-    ) {
+            @CurrentUser UserDto currentUser) {
         return ResponseEntity.ok(service.addAdHocStep(runCaseId, request, currentUser.getId()));
     }
 }

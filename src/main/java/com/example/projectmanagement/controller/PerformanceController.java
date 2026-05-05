@@ -30,7 +30,7 @@ public class PerformanceController {
     }
 
     @GetMapping("/employees")
-    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')")
+    @PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')")
     public ResponseEntity<List<EmployeePerformanceDto>> getAllEmployeePerformance() {
         List<EmployeePerformanceDto> result = performanceService.getAllEmployeePerformance();
         return ResponseEntity.ok(result);

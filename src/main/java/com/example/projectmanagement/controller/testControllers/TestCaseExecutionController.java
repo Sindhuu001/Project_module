@@ -24,38 +24,38 @@ public class TestCaseExecutionController {
     private final TestCaseExecutionService service;
 
     @PostMapping("/pass")
-    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')") // Only allow MANAGER and GENERAL roles to access this endpoint
+    @PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')") // Only allow PROJECT_MANAGER and GENERAL roles to access
+                                                             // this endpoint
     public ResponseEntity<TestCaseExecutionResponse> passCase(
             @Valid @RequestBody TestCaseExecutionRequest req,
-            @CurrentUser UserDto currentUser
-    ) {
+            @CurrentUser UserDto currentUser) {
         return ResponseEntity.ok(service.passCase(req, currentUser.getId()));
     }
 
     @PostMapping("/fail")
-    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')") // Only allow MANAGER and GENERAL roles to access this endpoint
+    @PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')") // Only allow PROJECT_MANAGER and GENERAL roles to access
+                                                             // this endpoint
     public ResponseEntity<TestCaseExecutionResponse> failCase(
             @Valid @RequestBody TestCaseExecutionRequest req,
-            @CurrentUser UserDto currentUser
-    ) {
+            @CurrentUser UserDto currentUser) {
         return ResponseEntity.ok(service.failCase(req, currentUser.getId()));
     }
 
     @PostMapping("/block")
-    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')") // Only allow MANAGER and GENERAL roles to access this endpoint
+    @PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')") // Only allow PROJECT_MANAGER and GENERAL roles to access
+                                                             // this endpoint
     public ResponseEntity<TestCaseExecutionResponse> blockCase(
             @Valid @RequestBody TestCaseExecutionRequest req,
-            @CurrentUser UserDto currentUser
-    ) {
+            @CurrentUser UserDto currentUser) {
         return ResponseEntity.ok(service.blockCase(req, currentUser.getId()));
     }
 
     @PostMapping("/skip")
-    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')") // Only allow MANAGER and GENERAL roles to access this endpoint
+    @PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')") // Only allow PROJECT_MANAGER and GENERAL roles to access
+                                                             // this endpoint
     public ResponseEntity<TestCaseExecutionResponse> skipCase(
             @Valid @RequestBody TestCaseExecutionRequest req,
-            @CurrentUser UserDto currentUser
-    ) {
+            @CurrentUser UserDto currentUser) {
         return ResponseEntity.ok(service.skipCase(req, currentUser.getId()));
     }
 }

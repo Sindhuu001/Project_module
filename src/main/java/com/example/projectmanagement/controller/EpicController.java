@@ -24,7 +24,8 @@ public class EpicController {
 
     // Create new Epic
     @PostMapping
-    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')") // Only allow MANAGER and GENERAL roles to access this endpoint
+    @PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')") // Only allow PROJECT_MANAGER and GENERAL roles to access
+                                                             // this endpoint
     public ResponseEntity<EpicDto> createEpic(@RequestBody EpicDto epicDto, @CurrentUser UserDto currentUser) {
         EpicDto createdEpic = epicService.createEpic(epicDto, currentUser.getId());
         System.out.println("*********audit log created for epic***********");
@@ -33,14 +34,14 @@ public class EpicController {
 
     // Get all epics
     @GetMapping
-    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')")
+    @PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')")
     public ResponseEntity<List<EpicDto>> getAllEpics() {
         return ResponseEntity.ok(epicService.getAllEpics());
     }
 
     // Get epic by ID
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')")
+    @PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')")
     public ResponseEntity<EpicDto> getEpicById(@PathVariable Long id) {
         EpicDto epicDto = epicService.getEpicById(id);
         if (epicDto != null) {
@@ -52,7 +53,7 @@ public class EpicController {
 
     // Update epic
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')")
+    @PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')")
     public ResponseEntity<EpicDto> updateEpic(@PathVariable Long id, @RequestBody EpicDto epicDto) {
         EpicDto updatedEpic = epicService.updateEpic(id, epicDto);
         if (updatedEpic != null) {
@@ -64,7 +65,7 @@ public class EpicController {
 
     // Delete epic
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')")
+    @PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')")
     public ResponseEntity<Void> deleteEpic(@PathVariable Long id) {
         boolean deleted = epicService.deleteEpic(id);
         if (deleted) {
@@ -76,7 +77,7 @@ public class EpicController {
 
     // Get epics by project ID
     @GetMapping("/project/{projectId}")
-    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')")
+    @PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')")
     public ResponseEntity<List<EpicDto>> getEpicsByProjectId(@PathVariable Long projectId) {
         return ResponseEntity.ok(epicService.getEpicsByProjectId(projectId));
     }

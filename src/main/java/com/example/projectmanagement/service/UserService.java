@@ -19,6 +19,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import com.example.projectmanagement.dto.UserSummaryDto;
+import com.example.projectmanagement.service.CachedUserService;
 
 @Service
 @RequiredArgsConstructor
@@ -26,8 +28,8 @@ public class UserService {
 
     private final UserClient userClient;
 
-    @Autowired
-    private CachedUserService cachedUserService;
+    
+    private final CachedUserService cachedUserService;
 
     // ✅ Get single user with roles
     public UserDto getUserWithRoles(Long id) {
@@ -102,6 +104,29 @@ public class UserService {
 
         return new PageImpl<>(filtered.subList(start, end), pageable, filtered.size());
     }
+    // Add this import at the top
+
+    // Inside UserService class
+    public List<UserSummaryDto> getLightweightUsersByRoleName(String roleName) {
+        // 1. Get the list of user_ids from the external backend
+        List<Map<String, Object>> externalResponse = userClient.getUsersByExternalRole(roleName);
+
+        if (externalResponse == null || externalResponse.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        // 2. For each user_id, get the name using your existing cache logic
+        return externalResponse.stream()
+                .map(item -> {
+                    Long id = Long.valueOf(item.get("user_id").toString());
+                    // Using your existing getUserById which uses the cache
+                    UserDto fullUser = getUserById(id);
+                    String name = (fullUser != null) ? fullUser.getName() : "Unknown User";
+
+                    return new UserSummaryDto(id, name);
+                })
+                .collect(Collectors.toList());
+    }
 
     // ✅ Users by role
     public List<UserDto> getUsersByRole(String role) {
@@ -115,4 +140,5 @@ public class UserService {
         }
         return filtered;
     }
+
 }

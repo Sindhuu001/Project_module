@@ -13,7 +13,6 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 import com.example.projectmanagement.security.CurrentUser;
 import com.example.projectmanagement.dto.UserDto;
 
-
 @RestController
 @RequestMapping("/api/my-work")
 @CrossOrigin
@@ -27,7 +26,7 @@ public class MyWorkController {
      * Called once on page load; React Query handles caching + revalidation.
      */
     @GetMapping
-    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')")
+    @PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')")
     public ResponseEntity<MyWorkResponseDto> getMyWork(@RequestParam Long userId) {
         return ResponseEntity.ok(myWorkService.getMyWork(userId));
     }
@@ -38,7 +37,7 @@ public class MyWorkController {
      * Separate endpoint keeps the main payload lean.
      */
     @GetMapping("/completed")
-    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')")
+    @PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')")
     public ResponseEntity<MyWorkResponseDto> getMyWorkCompleted(@RequestParam Long userId) {
         return ResponseEntity.ok(myWorkService.getMyWorkCompleted(userId));
     }

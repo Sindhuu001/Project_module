@@ -8,9 +8,12 @@ import com.example.projectmanagement.ExternalDTO.ExternalRolesResponse;
 
 import java.util.List;
 
+// import org.hibernate.mapping.Map;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestParam;
+import java.util.Map;
 
 @FeignClient(
     name = "user-service",
@@ -28,4 +31,7 @@ public interface UserClient {
 
      @GetMapping("admin/users/id/roles")
     List<UserDto> findAll();
+    // Inside UserClient.java
+@GetMapping("/admin/roles/users/role_name")
+List<Map<String, Object>> getUsersByExternalRole(@RequestParam("role_name") String roleName);
 }

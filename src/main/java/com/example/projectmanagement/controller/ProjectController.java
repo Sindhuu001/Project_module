@@ -45,7 +45,7 @@ public class ProjectController {
     // ✅ CREATE a new project
 
     @PostMapping
-    @PreAuthorize("hasRole('MANAGER')")
+    @PreAuthorize("hasRole('PROJECT_MANAGER')")
     public ResponseEntity<ProjectDto> createProject(@Valid @RequestBody ProjectDto projectDto) {
         System.out.println("*********Entering Create Project *****");
         ProjectDto createdProject = projectService.createProject(projectDto);
@@ -53,7 +53,7 @@ public class ProjectController {
     }
 
     @GetMapping("/project-risk-status/{id}")
-    @PreAuthorize("hasRole('MANAGER', 'GENERAL')")
+    @PreAuthorize("hasAnyRole('PROJECT_MANAGER', 'GENERAL')")
     public ResponseEntity<ProjectRiskSummaryDTO> getProjectRisk(@PathVariable Long id) {
         System.out.println("*********Entering Project Risk Level*****");
         ProjectRiskSummaryDTO projectRisk = projectService.getProjectRisk(id);
@@ -61,7 +61,7 @@ public class ProjectController {
     }
 
     @PatchMapping("/{id}/risk-level")
-    @PreAuthorize("hasRole('MANAGER', 'GENERAL')")
+    @PreAuthorize("hasRole('PROJECT_MANAGER', 'GENERAL')")
     public ResponseEntity<ProjectDto> updateProjectRiskLevel(
             @PathVariable Long id,
             @Valid @RequestBody ProjectRiskUpdateDto request) {
@@ -72,7 +72,7 @@ public class ProjectController {
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')")
+    @PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')")
     public ResponseEntity<List<ProjectDto>> getAllProjects() {
         long start = System.currentTimeMillis();
         List<ProjectDto> projects = projectService.getAllProjects();
@@ -89,7 +89,7 @@ public class ProjectController {
 
     // ✅ GET project by ID
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')")
+    @PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')")
     public ResponseEntity<ProjectDto> getProjectById(@PathVariable Long id) {
         ProjectDto project = projectService.getProjectById(id);
         return ResponseEntity.ok(project);
@@ -97,14 +97,14 @@ public class ProjectController {
 
     // GET full project data for edit modal
     @GetMapping("/{id}/edit")
-    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')")
+    @PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')")
     public ResponseEntity<ProjectEditDto> getProjectForEdit(@PathVariable Long id) {
         ProjectEditDto dto = projectService.getProjectForEdit(id);
         return ResponseEntity.ok(dto);
     }
 
     @GetMapping("tms")
-    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')")
+    @PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')")
     public ResponseEntity<List<ProjectTimesheetDto>> getAllTmsProjects() {
         long start = System.currentTimeMillis();
         List<ProjectTimesheetDto> projects = projectService.getAllTmsProjects();
@@ -115,7 +115,7 @@ public class ProjectController {
 
     // ✅ UPDATE project
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('MANAGER')")
+    @PreAuthorize("hasRole('PROJECT_MANAGER')")
     public ResponseEntity<ProjectDto> updateProject(@PathVariable Long id,
             @Valid @RequestBody ProjectDto updatedProjectDto) {
         ProjectDto updated = projectService.updateProject(id, updatedProjectDto);
@@ -123,7 +123,7 @@ public class ProjectController {
     }
 
     @PatchMapping("/api/projects/{projectId}/unarchive")
-    @PreAuthorize("hasRole('MANAGER', 'GENERAL')")
+    @PreAuthorize("hasRole('PROJECT_MANAGER', 'GENERAL')")
     public ResponseEntity<ProjectDto> unarchiveProject(@PathVariable Long projectId) {
         ProjectDto dto = projectService.unarchiveProject(projectId);
         return ResponseEntity.ok(dto);
@@ -131,7 +131,7 @@ public class ProjectController {
 
     // ✅ DELETE project
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('MANAGER')")
+    @PreAuthorize("hasRole('PROJECT_MANAGER')")
     public ResponseEntity<Void> deleteProject(@PathVariable Long id) {
         projectService.deleteProject(id);
         return ResponseEntity.noContent().build();
@@ -139,7 +139,7 @@ public class ProjectController {
 
     // ✅ GET Epics by project ID
     @GetMapping("/{id}/epics")
-    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')")
+    @PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')")
     public ResponseEntity<List<EpicDto>> getProjectEpics(@PathVariable Long id) {
         List<EpicDto> epics = epicService.getEpicsByProjectId(id);
         return ResponseEntity.ok(epics);
@@ -147,7 +147,7 @@ public class ProjectController {
 
     // ✅ GET Sprints by project ID
     @GetMapping("/{id}/sprints")
-    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')")
+    @PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')")
     public ResponseEntity<List<SprintDto>> getProjectSprints(@PathVariable Long id) {
         List<SprintDto> sprints = sprintService.getSprintsByProject(id);
         return ResponseEntity.ok(sprints);
@@ -155,14 +155,14 @@ public class ProjectController {
 
     // ✅ GET Tasks by project ID
     @GetMapping("/{projectId}/tasks")
-    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')")
+    @PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')")
     public ResponseEntity<List<TaskViewDto>> getProjectTasks(@PathVariable Long projectId) {
         List<TaskViewDto> tasks = taskService.getTasksByProjectId(projectId);
         return ResponseEntity.ok(tasks);
     }
 
     @GetMapping("/sprint/{sprintId}/tasks")
-    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')")
+    @PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')")
     public ResponseEntity<List<TaskViewDto>> getSprintTasks(@PathVariable Long sprintId) {
         List<TaskViewDto> tasks = taskService.getTasksBySprintId(sprintId);
         return ResponseEntity.ok(tasks);
@@ -170,7 +170,7 @@ public class ProjectController {
 
     // ✅ GET Projects by Owner
     @GetMapping("/owner")
-    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')")
+    @PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')")
     public ResponseEntity<List<ProjectTimesheetDto>> getProjectsByOwner(@CurrentUser UserDto currentUser) {
         System.out
                 .println("******Current User:******** " + currentUser.getName() + ", Roles: " + currentUser.getRoles());
@@ -181,8 +181,8 @@ public class ProjectController {
     }
 
     @GetMapping("/my-projects")
-    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')")
-    
+    @PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')")
+
     public ResponseEntity<List<ProjectPermissionDto>> getMyAssociatedProjects(
             @CurrentUser UserDto currentUser) {
 
@@ -192,7 +192,7 @@ public class ProjectController {
     }
 
     @GetMapping("/{id}/permissions")
-    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')")
+    @PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')")
     public ResponseEntity<PermissionDto> getProjectPermissions(@PathVariable Long id,
             @CurrentUser UserDto currentUser) {
         PermissionDto permissions = projectService.getProjectPermissions(id, currentUser.getId());
@@ -200,14 +200,14 @@ public class ProjectController {
     }
 
     @GetMapping("/access")
-    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')")
+    @PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')")
     public ResponseEntity<List<ProjectSummary>> getAccessibleProjects(@CurrentUser UserDto user) {
         List<ProjectSummary> projects = projectService.getAccessibleProjects(user.getId());
         return ResponseEntity.ok(projects);
     }
 
     @GetMapping("/owner/{ownerId}")
-    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')")
+    @PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')")
     public ResponseEntity<List<Map<String, Object>>> getActiveProjectsByOwnerId(@PathVariable Long ownerId) {
         List<Map<String, Object>> activeProjects = projectService.getActiveProjectsByOwner1(ownerId);
         return ResponseEntity.ok(activeProjects);
@@ -215,7 +215,7 @@ public class ProjectController {
 
     // ✅ GET Projects by Member
     @GetMapping("/member/{userId}")
-    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')")
+    @PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')")
     public ResponseEntity<List<ProjectDto>> getProjectsByMember(@PathVariable Long userId) {
         List<ProjectDto> projects = projectService.getProjectsByMember(userId);
         return ResponseEntity.ok(projects);
@@ -223,7 +223,7 @@ public class ProjectController {
 
     // ✅ Add member to a project
     @PutMapping("/{projectId}/members/{userId}")
-    @PreAuthorize("hasRole('MANAGER')")
+    @PreAuthorize("hasRole('PROJECT_MANAGER')")
 
     public ResponseEntity<ProjectDto> addMemberToProject(@PathVariable Long projectId,
             @PathVariable Long userId) {
@@ -232,7 +232,7 @@ public class ProjectController {
     }
 
     // ✅ Remove member from project
-    @PreAuthorize("hasRole('MANAGER')")
+    @PreAuthorize("hasRole('PROJECT_MANAGER')")
     @DeleteMapping("/{projectId}/members/{userId}")
     public ResponseEntity<ProjectDto> removeMemberFromProject(@PathVariable Long projectId,
             @PathVariable Long userId) {
@@ -241,20 +241,20 @@ public class ProjectController {
     }
 
     @GetMapping("/{projectId}/stories")
-    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')")
+    @PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')")
     public ResponseEntity<List<StoryViewDto>> getStoriesByProject(@PathVariable Long projectId) {
         List<StoryViewDto> stories = storyService.getStoriesByProjectId(projectId);
         return ResponseEntity.ok(stories);
     }
 
     @GetMapping("/projects-tasks")
-    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')")
+    @PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')")
     public List<ProjectTasksDto> getProjectsWithTasks() {
         return projectService.getAllProjectsWithTasks();
     }
 
     @GetMapping("/get_project_info")
-    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')")
+    @PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')")
     public ResponseEntity<List<ProjectIdName>> getAllProjectInfo() {
         List<ProjectIdName> projects = projectService.getAllProjectInfo();
         if (projects.isEmpty()) {
@@ -264,7 +264,7 @@ public class ProjectController {
     }
 
     @GetMapping("/member/{userId}/active-projects")
-    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')")
+    @PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')")
     public ResponseEntity<List<ProjectIdName>> getActiveProjectsByMember(@PathVariable Long userId) {
         List<ProjectIdName> projects = projectService.getActiveProjectsByMember(userId);
         if (projects.isEmpty()) {
@@ -274,14 +274,14 @@ public class ProjectController {
     }
 
     @GetMapping("{id}/members")
-    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')")
+    @PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')")
     public ResponseEntity<List<UserDto>> getProjectMembers(@PathVariable Long id) {
         List<UserDto> members = projectService.getProjectMembers(id);
         return ResponseEntity.ok(members);
     }
 
     @GetMapping("{id}/members-with-owner")
-    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')")
+    @PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')")
     public ResponseEntity<List<UserDto>> getProjectMembersWithOwner(@PathVariable Long id) {
         List<UserDto> members = projectService.getProjectMembers(id);
         UserDto owner = projectService.getProjectOwner(id);
@@ -299,7 +299,7 @@ public class ProjectController {
     }
 
     @GetMapping("/owner/period")
-    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')")
+    @PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')")
     public ResponseEntity<List<ProjectDto>> getProjectsByOwner(@CurrentUser UserDto currentUser,
             @RequestParam String month, @RequestParam int year) {
         String period = month + "-" + year;

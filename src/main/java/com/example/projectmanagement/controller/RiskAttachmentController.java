@@ -23,20 +23,20 @@ public class RiskAttachmentController {
     private RiskAttachmentService attachmentService;
 
     @PostMapping("/upload")
-    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')")
+    @PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')")
 
     public ResponseEntity<RiskAttachmentResponse> upload(@RequestBody RiskAttachmentRequest request) {
         return ResponseEntity.ok(attachmentService.uploadAttachment(request));
     }
 
     @GetMapping("/risk/{riskId}")
-    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')")
+    @PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')")
     public ResponseEntity<List<RiskAttachmentResponse>> getByRisk(@PathVariable Long riskId) {
         return ResponseEntity.ok(attachmentService.getAttachmentsByRiskId(riskId));
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyRole('MANAGER','GENERAL')")
+    @PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         attachmentService.deleteAttachment(id);
         return ResponseEntity.noContent().build();

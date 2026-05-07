@@ -13,16 +13,31 @@ import jakarta.servlet.http.HttpServletRequest;
 @Configuration
 public class FeignConfig {
 
+    private final TokenStore tokenStore;
+
+    public FeignConfig(TokenStore tokenStore) {
+        this.tokenStore = tokenStore;
+    }
+
     @Bean
     public RequestInterceptor requestInterceptor() {
         return (RequestTemplate template) -> {
+            String authHeader = null;
+
+            // Try to get token from the current HTTP request (regular user calls)
             RequestAttributes requestAttributes = RequestContextHolder.getRequestAttributes();
             if (requestAttributes instanceof ServletRequestAttributes) {
                 HttpServletRequest request = ((ServletRequestAttributes) requestAttributes).getRequest();
-                String authHeader = request.getHeader("Authorization");
-                if (authHeader != null) {
-                    template.header("Authorization", authHeader);
-                }
+                authHeader = request.getHeader("Authorization");
+            }
+
+            // Fall back to the last captured token (for scheduled polling jobs)
+            if (authHeader == null) {
+                authHeader = tokenStore.get();
+            }
+
+            if (authHeader != null) {
+                template.header("Authorization", authHeader);
             }
         };
     }

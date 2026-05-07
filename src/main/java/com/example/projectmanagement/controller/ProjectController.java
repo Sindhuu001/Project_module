@@ -2,6 +2,7 @@ package com.example.projectmanagement.controller;
 
 import com.example.projectmanagement.ExternalDTO.ProjectIdName;
 import com.example.projectmanagement.ExternalDTO.ProjectTasksDto;
+import com.example.projectmanagement.ExternalDTO.RmsResourceDto;
 import com.example.projectmanagement.audit.annotation.AuditLog;
 import com.example.projectmanagement.dto.*;
 import com.example.projectmanagement.security.CurrentUser;
@@ -20,6 +21,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+
 
 @RestController
 @AuditLog(entity = "project")
@@ -277,6 +279,13 @@ public class ProjectController {
     @PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')")
     public ResponseEntity<List<UserDto>> getProjectMembers(@PathVariable Long id) {
         List<UserDto> members = projectService.getProjectMembers(id);
+        return ResponseEntity.ok(members);
+    }
+
+    @GetMapping("/{id}/rms-members")
+    @PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')")
+    public ResponseEntity<List<RmsResourceDto>> getProjectMembersFromRms(@PathVariable Long id) {
+        List<RmsResourceDto> members = projectService.getProjectMembersFromRms(id);
         return ResponseEntity.ok(members);
     }
 

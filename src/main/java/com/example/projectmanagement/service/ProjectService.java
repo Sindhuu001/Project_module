@@ -2,8 +2,12 @@ package com.example.projectmanagement.service;
 
 import com.example.projectmanagement.ExternalDTO.ProjectIdName;
 import com.example.projectmanagement.ExternalDTO.ProjectTasksDto;
+import com.example.projectmanagement.ExternalDTO.RmsResourceDto;
+import com.example.projectmanagement.ExternalDTO.RmsResourceResponse;
+import com.example.projectmanagement.client.RmsClient;
 import com.example.projectmanagement.client.UserClient;
 import com.example.projectmanagement.config.ProjectStatusProperties;
+import com.example.projectmanagement.config.RmsCacheStore;
 import com.example.projectmanagement.dto.*;
 import com.example.projectmanagement.entity.*;
 import com.example.projectmanagement.exception.ResourceNotFoundException;
@@ -31,6 +35,8 @@ public class ProjectService {
     private final ProjectRepository projectRepository;
     private final ModelMapper modelMapper;
     private final UserClient userClient;
+    private final RmsClient rmsClient;
+    private final RmsCacheStore rmsCacheStore;
     private final UserService userService;
     private final ProjectStatusProperties projectStatusProperties;
     private final StatusService statusService;
@@ -802,6 +808,20 @@ public class ProjectService {
         Project project = projectRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Project not found with id: " + id));
         return userService.getUsersByIds(new ArrayList<>(project.getMemberIds()));
+    }
+
+    @Transactional(readOnly = true)
+    public List<RmsResourceDto> getProjectMembersFromRms(Long projectId) {
+        if (rmsCacheStore.contains(projectId)) {
+            return rmsCacheStore.get(projectId);
+        }
+        // Cache miss — fetch live from RMS and warm the cache
+        RmsResourceResponse response = rmsClient.getProjectResources(projectId);
+        List<RmsResourceDto> resources = (response != null && response.getData() != null)
+                ? response.getData()
+                : new ArrayList<>();
+        rmsCacheStore.put(projectId, resources);
+        return resources;
     }
 
     public List<UserDto> getProjectMembersOwner(Long id) {

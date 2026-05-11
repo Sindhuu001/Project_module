@@ -13,31 +13,33 @@ import java.util.List;
 
 @Repository
 public interface StoryRepository extends JpaRepository<Story, Long> {
-    
+
     List<Story> findByEpicId(Long epicId);
+
     List<Story> findByProjectId(Long projectId);
+
     List<Story> findByStatusId(Long statusId); // Replaced findByStatus
-    
+
     List<Story> findByAssigneeId(Long assigneeId);
 
     @Query("SELECT s from Story s WHERE s.id = :storyId")
-    Story findStorybyStoryId(@Param("storyId")Long storyId);
+    Story findStorybyStoryId(@Param("storyId") Long storyId);
 
-    
     List<Story> findByReporterId(Long reporterId);
+
     List<Story> findBySprintId(Long sprintId);
 
     List<Story> findByEpicIsNullAndProjectIdAndSprintIdIsNull(Long projectId);
 
     @Query("SELECT s FROM Story s WHERE s.epic.id = :epicId")
     Page<Story> findByEpicId(@Param("epicId") Long epicId, Pageable pageable);
-    
+
     @Query("SELECT s FROM Story s WHERE s.title LIKE %:title%")
     Page<Story> findByTitleContaining(@Param("title") String title, Pageable pageable);
-    
+
     @Query("SELECT s FROM Story s WHERE s.priority = :priority")
     Page<Story> findByPriority(@Param("priority") Story.Priority priority, Pageable pageable);
-    
+
     long countByStatusId(Long statusId); // Replaced countByStatus
 
     @Query("SELECT s FROM Story s " +
@@ -47,33 +49,34 @@ public interface StoryRepository extends JpaRepository<Story, Long> {
             "AND (:sprintId IS NULL OR s.sprint.id = :sprintId) " +
             "AND (:projectId IS NULL OR s.project.id = :projectId)")
     Page<Story> searchByFilters(
-        @Param("title") String title,
-        @Param("priority") Story.Priority priority,
-        @Param("epicId") Long epicId,
-        @Param("sprintId") Long sprintId,
-        @Param("projectId") Long projectId,
-        Pageable pageable
-    );
+            @Param("title") String title,
+            @Param("priority") Story.Priority priority,
+            @Param("epicId") Long epicId,
+            @Param("sprintId") Long sprintId,
+            @Param("projectId") Long projectId,
+            Pageable pageable);
+
     boolean existsByTitleAndProjectIdAndEpicId(String title, Long projectId, Long epicId);
+
     Long countByAssigneeIdAndStatusId(Long userId, Long statusId); // Replaced countByAssigneeIdAndStatus
 
     @Query("""
-        SELECT s FROM Story s
-        WHERE s.sprint.id = :sprintId
-          AND s.status.sortOrder <> :finalSortOrder
-    """)
+                SELECT s FROM Story s
+                WHERE s.sprint.id = :sprintId
+                  AND s.status.sortOrder <> :finalSortOrder
+            """)
     List<Story> findIncompleteStoriesBySprintId(
             @Param("sprintId") Long sprintId,
             @Param("finalSortOrder") Integer finalSortOrder);
 
     @Query("""
-        SELECT CASE WHEN COUNT(s) > 0 THEN true ELSE false END
-        FROM Story s
-        WHERE s.sprint.id = :sprintId
-          AND s.status.sortOrder <> :finalSortOrder
-       """)
+             SELECT CASE WHEN COUNT(s) > 0 THEN true ELSE false END
+             FROM Story s
+             WHERE s.sprint.id = :sprintId
+               AND s.status.sortOrder <> :finalSortOrder
+            """)
     boolean existsBySprintIdAndStatus_SortOrderNot(@Param("sprintId") Long sprintId,
-                                                   @Param("finalSortOrder") Integer finalSortOrder);
+            @Param("finalSortOrder") Integer finalSortOrder);
 
     @Query("SELECT CASE WHEN COUNT(s) > 0 THEN true ELSE false END " +
             "FROM Story s " +
@@ -83,14 +86,17 @@ public interface StoryRepository extends JpaRepository<Story, Long> {
     long countBySprintId(Long id);
 
     @Query("""
-    SELECT s.status
-    FROM Story s
-    WHERE s.epic.id = :epicId
-    AND s.status.sortOrder = (
-        SELECT MIN(s2.status.sortOrder)
-        FROM Story s2
-        WHERE s2.epic.id = :epicId
-    )
-    """)
+            SELECT s.status
+            FROM Story s
+            WHERE s.epic.id = :epicId
+            AND s.status.sortOrder = (
+                SELECT MIN(s2.status.sortOrder)
+                FROM Story s2
+                WHERE s2.epic.id = :epicId
+            )
+            """)
     Status findMinStatusByEpicId(@Param("epicId") Long epicId);
+
+    @Query("SELECT COUNT(s) FROM Story s WHERE s.epic.id = :epicId AND s.status.sortOrder < :sortOrder")
+    long countByEpicIdAndStatusSortOrderLessThan(@Param("epicId") Long epicId, @Param("sortOrder") Integer sortOrder);
 }

@@ -14,9 +14,9 @@ import java.util.List;
 @Repository
 public interface TaskRepository extends JpaRepository<Task, Long> {
     @Query("""
-    SELECT new com.example.projectmanagement.dto.TaskDto$Summary(t.id,t.title,t.status,t.story.id,t.story.sprint.id,t.priority,t.reporterId,t.assigneeId,t.createdAt,t.billable,t.dueDate)
-    FROM Task t
-    WHERE t.project.id = :projectId""")
+            SELECT new com.example.projectmanagement.dto.TaskDto$Summary(t.id,t.title,t.status,t.story.id,t.story.sprint.id,t.priority,t.reporterId,t.assigneeId,t.createdAt,t.billable,t.dueDate)
+            FROM Task t
+            WHERE t.project.id = :projectId""")
     List<TaskDto.Summary> findTaskSummariesByProjectId(@Param("projectId") Long projectId);
 
     List<Task> findByStoryId(Long storyId);
@@ -45,23 +45,27 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
     @Query("SELECT COUNT(t) FROM Task t WHERE t.story.id = :storyId")
     long countByStoryId(@Param("storyId") Long storyId);
 
-
     @Query("SELECT t FROM Task t WHERE t.sprint IS NULL")
     List<Task> findBacklogTasks();
 
     @Query("""
-        SELECT COUNT(t) 
-        FROM Task t 
-        WHERE t.story.id = :storyId 
-        AND t.status.id <> :statusId
-        """)
+            SELECT COUNT(t)
+            FROM Task t
+            WHERE t.story.id = :storyId
+            AND t.status.id <> :statusId
+            """)
     long countTasksWithDifferentStatus(Long storyId, Long statusId);
+
+    @Query("SELECT COUNT(t) FROM Task t WHERE t.story.id = :storyId AND t.status.sortOrder < :sortOrder")
+    long countByStoryIdAndStatusSortOrderLessThan(@Param("storyId") Long storyId,
+            @Param("sortOrder") Integer sortOrder);
 
     @Query("SELECT COUNT(t) FROM Task t WHERE t.dueDate BETWEEN CURRENT_TIMESTAMP AND :futureDate")
     long countTasksDueSoon(@Param("futureDate") LocalDateTime futureDate);
 
-    @Query("SELECT new com.example.projectmanagement.dto.TaskDto$Summary(t.id, t.title, t.status, t.story.id, t.story.sprint.id) " +
-       "FROM Task t WHERE t.story.sprint.id = :sprintId")
+    @Query("SELECT new com.example.projectmanagement.dto.TaskDto$Summary(t.id, t.title, t.status, t.story.id, t.story.sprint.id) "
+            +
+            "FROM Task t WHERE t.story.sprint.id = :sprintId")
     List<TaskDto.Summary> findTaskSummariesBySprintId(@Param("sprintId") Long sprintId);
 
     long countByStatusId(Long statusId);
@@ -73,21 +77,23 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
     Long countByAssigneeIdAndStatusId(Long userId, Long statusId);
 
     @Query("""
-        SELECT t FROM Task t
-        WHERE (:title IS NULL OR LOWER(t.title) LIKE LOWER(CONCAT('%', :title, '%')))
-          AND (:priority IS NULL OR t.priority = :priority)
-          AND (:assigneeId IS NULL OR t.assigneeId = :assigneeId)
-    """)
+                SELECT t FROM Task t
+                WHERE (:title IS NULL OR LOWER(t.title) LIKE LOWER(CONCAT('%', :title, '%')))
+                  AND (:priority IS NULL OR t.priority = :priority)
+                  AND (:assigneeId IS NULL OR t.assigneeId = :assigneeId)
+            """)
     Page<Task> searchTasks(
             @Param("title") String title,
             @Param("priority") Task.Priority priority,
             @Param("assigneeId") Long assigneeId,
             Pageable pageable);
 
-    // Checks whether there exists at least one task in sprint where task.status.sortOrder != maxSortOrder
+    // Checks whether there exists at least one task in sprint where
+    // task.status.sortOrder != maxSortOrder
     boolean existsBySprintIdAndStatus_SortOrderNot(Long sprintId, Integer sortOrder);
 
-    // Get list of tasks in sprint which are NOT in final status (i.e., need transfer)
+    // Get list of tasks in sprint which are NOT in final status (i.e., need
+    // transfer)
     @Query("SELECT t FROM Task t WHERE t.sprint.id = :sprintId AND t.status.sortOrder <> :finalSortOrder")
     List<Task> findIncompleteTasksBySprintId(Long sprintId, Integer finalSortOrder);
 
@@ -101,30 +107,27 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
             "WHERE t.sprint.id = :sprintId " +
             "AND s.sortOrder <> :sortOrder")
     boolean existsTaskWithSprintIdAndStatusSortOrderNot(@Param("sprintId") Long sprintId,
-                                                        @Param("sortOrder") Integer sortOrder);
+            @Param("sortOrder") Integer sortOrder);
 
     long countBySprintId(Long id);
 
     @Query("""
-    SELECT t.status
-    FROM Task t
-    WHERE t.story.id = :storyId
-    AND t.status.sortOrder = (
-        SELECT MIN(t2.status.sortOrder)
-        FROM Task t2
-        WHERE t2.story.id = :storyId
-    )
-    """)
+            SELECT t.status
+            FROM Task t
+            WHERE t.story.id = :storyId
+            AND t.status.sortOrder = (
+                SELECT MIN(t2.status.sortOrder)
+                FROM Task t2
+                WHERE t2.story.id = :storyId
+            )
+            """)
     Status findMinStatusByStoryId(@Param("storyId") Long storyId);
 
     @Query("""
-    SELECT t.status
-    FROM Task t
-    WHERE t.story.id = :storyId
-    ORDER BY t.status.sortOrder ASC
-    """)
+            SELECT t.status
+            FROM Task t
+            WHERE t.story.id = :storyId
+            ORDER BY t.status.sortOrder ASC
+            """)
     List<Status> findMinStatusByStoryId(@Param("storyId") Long storyId, Pageable pageable);
 }
-
-
-

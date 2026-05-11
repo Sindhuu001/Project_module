@@ -66,8 +66,6 @@ public class StoryService {
     @Autowired
     private RiskAttachmentRepository riskAttachmentRepository;
 
-
-
     @Transactional
     public StoryCreateDto createStory(StoryCreateDto dto, Long userId) {
 
@@ -283,6 +281,7 @@ public class StoryService {
         // -----------------------------------------
         Status status = statusRepository.findById(dto.getStatusId())
                 .orElseThrow(() -> new ResourceNotFoundException("Status not found"));
+        validateStoryStatusPromotion(story, status);
         story.setStatus(status);
         Integer doneSortOrder = statusRepository.findMaxSortOrderByProject(projectId);
 
@@ -363,6 +362,7 @@ public class StoryService {
         Status status = statusRepository.findById(statusId)
                 .orElseThrow(() -> new RuntimeException("Status not found with id: " + statusId));
 
+        validateStoryStatusPromotion(story, status);
         story.setStatus(status);
 
         // ✅ Safely fetch the DONE status (first done by sort order)
@@ -385,6 +385,21 @@ public class StoryService {
         return convertToDto(updatedStory);
     }
 
+    private void validateStoryStatusPromotion(Story story, Status newStatus) {
+        if (story == null || newStatus == null || story.getStatus() == null) {
+            return;
+        }
+
+        if (newStatus.getSortOrder() > story.getStatus().getSortOrder()) {
+            long lowerTaskCount = taskRepository.countByStoryIdAndStatusSortOrderLessThan(story.getId(),
+                    newStatus.getSortOrder());
+            if (lowerTaskCount > 0) {
+                throw new IllegalArgumentException("Cannot advance story to status '" + newStatus.getName()
+                        + "' while some related tasks remain in a lower status.");
+            }
+        }
+    }
+
     @Transactional
     public void deleteStory(Long id) {
 
@@ -405,13 +420,12 @@ public class StoryService {
          * 1. Ask user whether to delete risks or only unlink them
          * 2. Prefer soft delete for Risk records
          * 3. If the Risk is linked to other Task/Epic/Sprint items,
-         *    only delete this RiskLink and keep the Risk
+         * only delete this RiskLink and keep the Risk
          * 4. Preserve mitigation plans and attachments for audit/history if needed
          */
         List<RiskLink> riskLinks = riskLinkRepository.findByLinkedTypeAndLinkedId(
                 RiskLink.LinkedType.Story,
-                id
-        );
+                id);
 
         if (!riskLinks.isEmpty()) {
 

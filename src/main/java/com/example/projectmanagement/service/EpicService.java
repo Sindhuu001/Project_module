@@ -6,7 +6,7 @@ import com.example.projectmanagement.dto.*;
 //import com.example.projectmanagement.entity.Epic.EpicStatus;
 import com.example.projectmanagement.entity.Epic.Priority;
 import com.example.projectmanagement.repository.*;
-
+import com.example.projectmanagement.repository.StoryRepository;
 
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,6 +32,8 @@ public class EpicService {
     private StatusRepository statusRepository;
 
     @Autowired
+    private StoryRepository storyRepository;
+
     private RiskLinkRepository riskLinkRepository;
 
     @Autowired
@@ -42,12 +44,6 @@ public class EpicService {
 
     @Autowired
     private RiskAttachmentRepository riskAttachmentRepository;
-
-
-
-
-
-
 
     // ✅ Create Epic
     public EpicDto createEpic(EpicDto epicDto, Long userId) {
@@ -97,6 +93,7 @@ public class EpicService {
             if (epicDto.getStatusId() != null) {
                 Status status = statusRepository.findById(epicDto.getStatusId())
                         .orElseThrow(() -> new IllegalArgumentException("Invalid status"));
+                validateEpicStatusPromotion(existingEpic, status);
                 existingEpic.setStatus(status);
             }
 
@@ -116,14 +113,11 @@ public class EpicService {
                 existingEpic.setProject(project);
             }
 
-            
-
             Epic updatedEpic = epicRepository.save(existingEpic);
             return convertToDto(updatedEpic);
         }
         return null;
     }
-
 
     // ✅ Delete Epic
     @Transactional
@@ -148,13 +142,12 @@ public class EpicService {
          * 1. Ask user whether to delete risks or only unlink them
          * 2. Prefer soft delete for Risk records
          * 3. If the Risk is linked to other Story/Task/Sprint items,
-         *    only delete this RiskLink and keep the Risk
+         * only delete this RiskLink and keep the Risk
          * 4. Preserve mitigation plans and attachments for audit/history if needed
          */
         List<RiskLink> riskLinks = riskLinkRepository.findByLinkedTypeAndLinkedId(
                 RiskLink.LinkedType.Epic,
-                id
-        );
+                id);
 
         if (!riskLinks.isEmpty()) {
 
@@ -194,7 +187,6 @@ public class EpicService {
             dto.setStatusName(epic.getStatus().getName());
         }
 
-
         if (epic.getPriority() != null) {
             dto.setPriority(epic.getPriority().name()); // Priority to String
         }
@@ -210,8 +202,6 @@ public class EpicService {
             dto.setProjectId(epic.getProject().getId());
         }
 
-        
-
         return dto;
     }
 
@@ -226,7 +216,6 @@ public class EpicService {
             dto.setStatusId(epic.getStatus().getId());
             dto.setStatusName(epic.getStatus().getName());
         }
-
 
         if (dto.getPriority() != null) {
             epic.setPriority(Epic.Priority.valueOf(dto.getPriority().toUpperCase()));
@@ -244,11 +233,24 @@ public class EpicService {
             epic.setProject(project);
         }
 
-        
-
         return epic;
     }
 
+    private void validateEpicStatusPromotion(Epic epic, Status newStatus) {
+        if (epic == null || newStatus == null) {
+            return;
+        }
+
+        Status currentStatus = epic.getStatus();
+        if (currentStatus == null || newStatus.getSortOrder() > currentStatus.getSortOrder()) {
+            long lowerStoryCount = epic.getId() == null ? 0L
+                    : storyRepository.countByEpicIdAndStatusSortOrderLessThan(epic.getId(), newStatus.getSortOrder());
+            if (lowerStoryCount > 0) {
+                throw new IllegalArgumentException("Cannot advance epic to status '" + newStatus.getName()
+                        + "' while some related stories remain in a lower status.");
+            }
+        }
+    }
 
     // ✅ Optional methods to implement
     public List<EpicDto> getEpicsByProjectId(Long projectId) {
@@ -270,7 +272,6 @@ public class EpicService {
                 .map(this::convertToDto)
                 .collect(Collectors.toList());
     }
-
 
     public Page<EpicDto> searchEpics(String name, Priority priority, Long projectId, Pageable pageable) {
         throw new UnsupportedOperationException("Unimplemented method 'searchEpics'");

@@ -44,7 +44,7 @@ public class SprintController {
     // Create Sprint with User context
     @PostMapping
     // @PreAuthorize("hasRole('PROJECT_MANAGER')")
-    @PreAuthorize("hasAnyRole('PROJECT_MANAGER')")
+    @PreAuthorize("hasRole('PROJECT_MANAGER')")
     public ResponseEntity<SprintDto> createSprint(@Valid @RequestBody SprintDto sprintDto,
             @CurrentUser UserDto currentUser) {
 

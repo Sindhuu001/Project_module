@@ -12,6 +12,7 @@ public interface RiskIssueQueryService {
             LinkedType issueType,
             String issueStatus,
             Long sprintId,
+            String search,
             Pageable pageable
     );
 }

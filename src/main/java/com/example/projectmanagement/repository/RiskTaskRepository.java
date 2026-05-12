@@ -14,7 +14,7 @@ public interface RiskTaskRepository extends JpaRepository<Task, Long> {
         SELECT new com.example.projectmanagement.dto.RiskIssueSummaryDTO(
             'Task',
             t.id,
-            CONCAT('Task-', t.id, ' ', t.title),
+            CONCAT(t.title),
             s.name,
             sp.id,
             COUNT(rl.id)
@@ -28,6 +28,11 @@ public interface RiskTaskRepository extends JpaRepository<Task, Long> {
           AND rl.linkedType = :linkedType
           AND (:status IS NULL OR s.name = :status)
           AND (:sprintId IS NULL OR sp.id = :sprintId)
+          AND (
+              :search IS NULL
+              OR LOWER(t.title) LIKE CONCAT('%', :search, '%')
+              OR LOWER(CONCAT('Task-', t.id, ' ', t.title)) LIKE CONCAT('%', :search, '%')
+          )
         GROUP BY t.id, t.title, s.name, sp.id
         """,
             countQuery = """
@@ -41,6 +46,11 @@ public interface RiskTaskRepository extends JpaRepository<Task, Long> {
           AND rl.linkedType = :linkedType
           AND (:status IS NULL OR s.name = :status)
           AND (:sprintId IS NULL OR sp.id = :sprintId)
+          AND (
+              :search IS NULL
+              OR LOWER(t.title) LIKE CONCAT('%', :search, '%')
+              OR LOWER(CONCAT('Task-', t.id, ' ', t.title)) LIKE CONCAT('%', :search, '%')
+          )
         """
     )
     Page<RiskIssueSummaryDTO> findTasksWithRiskSummary(
@@ -48,6 +58,7 @@ public interface RiskTaskRepository extends JpaRepository<Task, Long> {
             @Param("linkedType") LinkedType linkedType,
             @Param("status") String status,
             @Param("sprintId") Long sprintId,
+            @Param("search") String search,
             Pageable pageable
     );
 }

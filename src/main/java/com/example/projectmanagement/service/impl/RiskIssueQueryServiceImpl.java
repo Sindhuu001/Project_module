@@ -25,32 +25,31 @@ public class RiskIssueQueryServiceImpl implements RiskIssueQueryService {
             LinkedType issueType,
             String issueStatus,
             Long sprintId,
+            String search,
             Pageable pageable
     ) {
+        String searchTerm = normalizeSearch(search);
 
-        // ✅ handle ALL first
         if (issueType == null) {
-            return fetchAllIssues(projectId, issueStatus, sprintId, pageable);
+            return fetchAllIssues(projectId, issueStatus, sprintId, searchTerm, pageable);
         }
 
-        // ✅ switch now SAFE (non-null)
         return switch (issueType) {
             case Epic ->
                     epicRepository.findEpicsWithRiskSummary(
-                            projectId, LinkedType.Epic, issueStatus, pageable
+                            projectId, LinkedType.Epic, issueStatus, searchTerm, pageable
                     );
 
             case Story ->
                     storyRepository.findStoriesWithRiskSummary(
-                            projectId, LinkedType.Story, issueStatus, sprintId, pageable
+                            projectId, LinkedType.Story, issueStatus, sprintId, searchTerm, pageable
                     );
 
             case Task ->
                     taskRepository.findTasksWithRiskSummary(
-                            projectId, LinkedType.Task, issueStatus, sprintId, pageable
+                            projectId, LinkedType.Task, issueStatus, sprintId, searchTerm, pageable
                     );
 
-            // ✅ Explicitly reject unsupported types
             case Sprint, Bug, Release ->
                     throw new IllegalArgumentException(
                             "Issue type not supported for risk panel: " + issueType
@@ -62,22 +61,22 @@ public class RiskIssueQueryServiceImpl implements RiskIssueQueryService {
             Long projectId,
             String issueStatus,
             Long sprintId,
+            String search,
             Pageable pageable
     ) {
-
         Page<RiskIssueSummaryDTO> epics =
                 epicRepository.findEpicsWithRiskSummary(
-                        projectId, LinkedType.Epic, issueStatus, pageable
+                        projectId, LinkedType.Epic, issueStatus, search, pageable
                 );
 
         Page<RiskIssueSummaryDTO> stories =
                 storyRepository.findStoriesWithRiskSummary(
-                        projectId, LinkedType.Story, issueStatus, sprintId, pageable
+                        projectId, LinkedType.Story, issueStatus, sprintId, search, pageable
                 );
 
         Page<RiskIssueSummaryDTO> tasks =
                 taskRepository.findTasksWithRiskSummary(
-                        projectId, LinkedType.Task, issueStatus, sprintId, pageable
+                        projectId, LinkedType.Task, issueStatus, sprintId, search, pageable
                 );
 
         List<RiskIssueSummaryDTO> combined =
@@ -86,5 +85,12 @@ public class RiskIssueQueryServiceImpl implements RiskIssueQueryService {
                         .toList();
 
         return new PageImpl<>(combined, pageable, combined.size());
+    }
+
+    private String normalizeSearch(String search) {
+        if (search == null || search.trim().isEmpty()) {
+            return null;
+        }
+        return search.trim().toLowerCase();
     }
 }

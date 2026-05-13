@@ -12,6 +12,7 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 // Your custom security project package (for the User DTO and Custom Annotation)
 import com.example.projectmanagement.security.CurrentUser;
 import com.example.projectmanagement.dto.UserDto;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/my-work")
@@ -40,5 +41,15 @@ public class MyWorkController {
     @PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')")
     public ResponseEntity<MyWorkResponseDto> getMyWorkCompleted(@RequestParam Long userId) {
         return ResponseEntity.ok(myWorkService.getMyWorkCompleted(userId));
+    }
+
+    @GetMapping("/dashboard-summary")
+    @PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')")
+    public ResponseEntity<Map<String, Long>> getDashboardSummary(@RequestParam Long userId) {
+        MyWorkResponseDto data = myWorkService.getMyWork(userId);
+        return ResponseEntity.ok(Map.of(
+            "activeProjectCount", data.getActiveProjectCount(),
+            "totalTasksCount",    data.getTotalTasksCount()
+        ));
     }
 }

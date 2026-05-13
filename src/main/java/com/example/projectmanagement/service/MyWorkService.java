@@ -6,7 +6,8 @@ import com.example.projectmanagement.entity.testing.*;
 import com.example.projectmanagement.enums.BugStatus;
 import com.example.projectmanagement.enums.TestRunCaseStatus;
 import com.example.projectmanagement.repository.*;
-//import com.example.projectmanagement.repository.testing.*;
+import com.example.projectmanagement.entity.Project;
+import com.example.projectmanagement.repository.ProjectRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -28,6 +29,7 @@ public class MyWorkService {
         private final TestRunCaseRepository testRunCaseRepository;
         private final TestCycleRepository testCycleRepository;
         private final StoryService storyService;
+        private final ProjectRepository projectRepository;  // ← ADDED
 
         // ─────────────────────────────────────────────────────────────────────────
         // Main entry point
@@ -35,8 +37,7 @@ public class MyWorkService {
 
         public MyWorkResponseDto getMyWork(Long userId) {
 
-                // 1. Fetch all active assigned items in parallel (Java streams, single DB
-                // round-trips each)
+                // 1. Fetch all active assigned items
                 List<Task> tasks = taskRepository.findByAssigneeId(userId);
                 List<Story> stories = storyRepository.findByAssigneeId(userId);
                 List<Bug> bugs = bugRepository.findByAssignedTo(userId);
@@ -63,15 +64,24 @@ public class MyWorkService {
                 activeStories.forEach(s -> allItems.add(toWorkItem(s)));
                 activeBugs.forEach(b -> allItems.add(toWorkItem(b)));
 
-                // 3. Group by project
+                // 3. Fetch ALL active projects this user owns or is a member of
+                List<Project> allUserProjects = projectRepository.findByOwnerIdOrMemberId(userId)
+                                .stream()
+                                .filter(p -> p.getStatus() == Project.ProjectStatus.ACTIVE
+                                                || p.getStatus() == Project.ProjectStatus.PLANNING)
+                                .collect(Collectors.toList());
+
+                // Index work items by projectId for fast lookup
                 Map<Long, List<WorkItemDto>> byProject = allItems.stream()
+                                .filter(i -> i.getProjectId() != null)
                                 .collect(Collectors.groupingBy(WorkItemDto::getProjectId));
 
-                List<MyWorkResponseDto.ProjectWorkGroup> groups = byProject.entrySet().stream()
-                                .map(entry -> buildProjectGroup(entry.getKey(),
-                                                // get name from first item
-                                                entry.getValue().get(0).getProjectName(),
-                                                entry.getValue()))
+                // Build a group for every active project — empty items list if no work assigned
+                List<MyWorkResponseDto.ProjectWorkGroup> groups = allUserProjects.stream()
+                                .map(p -> buildProjectGroup(
+                                                p.getId(),
+                                                p.getName(),
+                                                byProject.getOrDefault(p.getId(), Collections.emptyList())))
                                 .sorted(Comparator.comparingInt(g -> urgencyRank(g.getUrgencyFlag())))
                                 .collect(Collectors.toList());
 
@@ -82,9 +92,6 @@ public class MyWorkService {
                 List<WorkItemDto> PROJECT_MANAGERItems = buildPROJECT_MANAGERItems(userId);
 
                 // 6. Snapshot counts
-                LocalDate today = LocalDate.now();
-                LocalDate weekEnd = today.plusDays(7);
-
                 long overdueCount = allItems.stream().filter(i -> "OVERDUE".equals(i.getUrgency())).count();
                 long dueTodayCount = allItems.stream().filter(i -> "DUE_TODAY".equals(i.getUrgency())).count();
                 long dueThisWeekCount = allItems.stream().filter(i -> "DUE_THIS_WEEK".equals(i.getUrgency())).count();
@@ -92,6 +99,8 @@ public class MyWorkService {
                                 .filter(i -> i.getStatusName() != null &&
                                                 i.getStatusName().toLowerCase().contains("block"))
                                 .count();
+                long activeProjectCount = allUserProjects.size();
+                long totalTasksCount = activeTasks.size();
 
                 return MyWorkResponseDto.builder()
                                 .overdueCount(overdueCount)
@@ -99,6 +108,8 @@ public class MyWorkService {
                                 .dueThisWeekCount(dueThisWeekCount)
                                 .allActiveCount(allItems.size())
                                 .blockedCount(blockedCount)
+                                .activeProjectCount(activeProjectCount)
+                                .totalTasksCount(totalTasksCount)
                                 .projects(groups)
                                 .testWork(testWork)
                                 .PROJECT_MANAGERItems(PROJECT_MANAGERItems)
@@ -132,11 +143,14 @@ public class MyWorkService {
                 doneStories.forEach(s -> completed.add(toWorkItem(s)));
                 doneBugs.forEach(b -> completed.add(toWorkItem(b)));
 
+                // Group completed items by project (only projects that have completed work)
                 Map<Long, List<WorkItemDto>> byProject = completed.stream()
+                                .filter(i -> i.getProjectId() != null)
                                 .collect(Collectors.groupingBy(WorkItemDto::getProjectId));
 
                 List<MyWorkResponseDto.ProjectWorkGroup> groups = byProject.entrySet().stream()
-                                .map(entry -> buildProjectGroup(entry.getKey(),
+                                .map(entry -> buildProjectGroup(
+                                                entry.getKey(),
                                                 entry.getValue().get(0).getProjectName(),
                                                 entry.getValue()))
                                 .collect(Collectors.toList());
@@ -221,7 +235,7 @@ public class MyWorkService {
         }
 
         // ─────────────────────────────────────────────────────────────────────────
-        // Urgency computation (pure client-side logic, no DB)
+        // Urgency computation
         // ─────────────────────────────────────────────────────────────────────────
 
         private String computeUrgency(LocalDateTime dueDate, String statusName) {
@@ -268,8 +282,6 @@ public class MyWorkService {
         private MyWorkResponseDto.ProjectWorkGroup buildProjectGroup(
                         Long projectId, String projectName, List<WorkItemDto> items) {
 
-                // Sort within group: OVERDUE → BLOCKED → DUE_TODAY → DUE_THIS_WEEK → IN_SPRINT
-                // → FUTURE
                 items.sort(Comparator.comparingInt(i -> urgencyItemRank(i.getUrgency())));
 
                 long overdue = items.stream().filter(i -> "OVERDUE".equals(i.getUrgency())).count();
@@ -313,7 +325,6 @@ public class MyWorkService {
         private List<TestWorkItemDto> buildTestWork(Long userId) {
                 List<TestWorkItemDto> result = new ArrayList<>();
 
-                // Test runs created by user that are not completed
                 List<TestRun> runs = testRunRepository.findByCreatedByAndStatusNot(
                                 userId, com.example.projectmanagement.enums.TestRunStatus.COMPLETED);
 
@@ -345,7 +356,6 @@ public class MyWorkService {
                                         .build());
                 }
 
-                // Test run cases assigned to user that are not done
                 List<TestRunCase> assignedCases = testRunCaseRepository.findByAssigneeIdAndStatusNot(
                                 userId, TestRunCaseStatus.PASSED);
 
@@ -388,13 +398,11 @@ public class MyWorkService {
         private List<WorkItemDto> buildPROJECT_MANAGERItems(Long userId) {
                 List<WorkItemDto> result = new ArrayList<>();
 
-                // Stories created by this user assigned to someone else
                 storyRepository.findByReporterId(userId).stream()
                                 .filter(s -> s.getAssigneeId() != null && !s.getAssigneeId().equals(userId))
                                 .filter(s -> s.getStatus() != null && !isClosedStatus(s.getStatus().getName()))
                                 .forEach(s -> result.add(toWorkItem(s)));
 
-                // Tasks created by this user assigned to someone else
                 taskRepository.findByReporterId(userId).stream()
                                 .filter(t -> t.getAssigneeId() != null && !t.getAssigneeId().equals(userId))
                                 .filter(t -> t.getStatus() != null && !isClosedStatus(t.getStatus().getName()))

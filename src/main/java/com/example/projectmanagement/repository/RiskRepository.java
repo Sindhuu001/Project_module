@@ -45,5 +45,27 @@ public interface RiskRepository extends JpaRepository<Risk, Long> {
             Pageable pageable
     );
 
+    @Query("""
+        SELECT DISTINCT r
+        FROM Risk r
+        JOIN r.riskLinks rl
+        WHERE r.projectId = :projectId
+          AND rl.linkedType = :linkedType
+          AND rl.linkedId = :linkedId
+          AND (
+                :search IS NULL
+                OR LOWER(r.title) LIKE LOWER(CONCAT('%', :search, '%'))
+                OR LOWER(r.description) LIKE LOWER(CONCAT('%', :search, '%'))
+              )
+        ORDER BY r.createdAt DESC
+    """)
+    Page<Risk> findLinkedRisksWithSearch(
+            @Param("projectId") Long projectId,
+            @Param("linkedType") LinkedType linkedType,
+            @Param("linkedId") Long linkedId,
+            @Param("search") String search,
+            Pageable pageable
+    );
+
 
 }

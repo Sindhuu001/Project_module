@@ -15,7 +15,7 @@ public interface RiskEpicRepository extends JpaRepository<Epic, Long> {
         SELECT new com.example.projectmanagement.dto.RiskIssueSummaryDTO(
             'Epic',
             e.id,
-            CONCAT('Epic-', e.id, ' ', e.name),
+            CONCAT(e.name),
             s.name,
             NULL,
             COUNT(rl.id)
@@ -27,6 +27,11 @@ public interface RiskEpicRepository extends JpaRepository<Epic, Long> {
         WHERE r.project.id = :projectId
           AND rl.linkedType = :linkedType
           AND (:status IS NULL OR s.name = :status)
+          AND (
+              :search IS NULL
+              OR LOWER(e.name) LIKE CONCAT('%', :search, '%')
+              OR LOWER(CONCAT('Epic-', e.id, ' ', e.name)) LIKE CONCAT('%', :search, '%')
+          )
         GROUP BY e.id, e.name, s.name
         """,
             countQuery = """
@@ -38,13 +43,18 @@ public interface RiskEpicRepository extends JpaRepository<Epic, Long> {
         WHERE r.project.id = :projectId
           AND rl.linkedType = :linkedType
           AND (:status IS NULL OR s.name = :status)
+          AND (
+              :search IS NULL
+              OR LOWER(e.name) LIKE CONCAT('%', :search, '%')
+              OR LOWER(CONCAT('Epic-', e.id, ' ', e.name)) LIKE CONCAT('%', :search, '%')
+          )
         """
     )
     Page<RiskIssueSummaryDTO> findEpicsWithRiskSummary(
             @Param("projectId") Long projectId,
             @Param("linkedType") LinkedType linkedType,
             @Param("status") String status,
+            @Param("search") String search,
             Pageable pageable
     );
-
 }

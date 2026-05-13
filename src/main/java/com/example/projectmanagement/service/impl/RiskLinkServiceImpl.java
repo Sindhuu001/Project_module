@@ -60,10 +60,31 @@ public class RiskLinkServiceImpl implements RiskLinkService {
 
     @Override
     public RiskLinkResponse updateLink(Long id, RiskLinkRequest request) {
+
         RiskLink link = linkRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Risk link not found"));
 
         validateLinkedId(request.getLinkedType(), request.getLinkedId());
+
+        boolean sameLink =
+                link.getLinkedType().equals(request.getLinkedType()) &&
+                        link.getLinkedId().equals(request.getLinkedId());
+
+        // Same value selected again: no DB update, just continue
+        if (sameLink) {
+            return toResponse(link);
+        }
+
+        boolean exists = linkRepository.existsByRiskAndLinkedTypeAndLinkedId(
+                link.getRisk(),
+                request.getLinkedType(),
+                request.getLinkedId()
+        );
+
+        // Another existing duplicate: don't update DB, just return current link
+        if (exists) {
+            return toResponse(link);
+        }
 
         link.setLinkedType(request.getLinkedType());
         link.setLinkedId(request.getLinkedId());

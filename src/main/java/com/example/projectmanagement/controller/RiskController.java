@@ -2,19 +2,14 @@ package com.example.projectmanagement.controller;
 
 import com.example.projectmanagement.dto.*;
 import com.example.projectmanagement.entity.RiskLink;
-import com.example.projectmanagement.entity.RiskLink.LinkedType;
 import com.example.projectmanagement.service.RiskService;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.*;
 import com.example.projectmanagement.security.CurrentUser;
 
 import java.util.List;
-import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 
-// Your custom security project package (for the User DTO and Custom Annotation)
-import com.example.projectmanagement.security.CurrentUser;
-import com.example.projectmanagement.dto.UserDto;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/risks")
@@ -27,7 +22,10 @@ public class RiskController {
 
     @PostMapping
     @PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')")
-    public RiskResponse createRisk(@RequestBody RiskRequest request, @CurrentUser UserDto currentUser) {
+    public RiskResponse createRisk(
+            @RequestBody RiskRequest request,
+            @CurrentUser UserDto currentUser
+    ) {
         return riskService.createRisk(request, currentUser.getId());
     }
 
@@ -45,7 +43,7 @@ public class RiskController {
         return riskService.getRiskById(id);
     }
 
-    /* ---------- ✅ NEW PAGINATED + LINKED API ---------- */
+    /* ---------- EXISTING PAGINATED + LINKED API ---------- */
 
     @GetMapping("/linked")
     @PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')")
@@ -55,9 +53,38 @@ public class RiskController {
             @RequestParam(required = false) Long linkedId,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size,
-            @RequestParam(required = false) String severity) {
+            @RequestParam(required = false) String severity
+    ) {
         return riskService.getRisksWithPagination(
-                projectId, linkedType, linkedId, page, size, severity);
+                projectId,
+                linkedType,
+                linkedId,
+                page,
+                size,
+                severity
+        );
+    }
+
+    /* ---------- NEW LINKED RISK SEARCH API ---------- */
+
+    @GetMapping("/linked/search")
+    @PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')")
+    public RiskResponseDTO searchLinkedRisks(
+            @RequestParam Long projectId,
+            @RequestParam RiskLink.LinkedType linkedType,
+            @RequestParam Long linkedId,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) String search
+    ) {
+        return riskService.getLinkedRisks(
+                projectId,
+                linkedType,
+                linkedId,
+                page,
+                size,
+                search
+        );
     }
 
     /* ---------- UPDATE ---------- */
@@ -66,7 +93,8 @@ public class RiskController {
     @PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')")
     public RiskResponse updateRisk(
             @PathVariable Long id,
-            @RequestBody RiskRequest request) {
+            @RequestBody RiskRequest request
+    ) {
         return riskService.updateRisk(id, request);
     }
 
@@ -74,7 +102,8 @@ public class RiskController {
     @PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')")
     public RiskResponse updateRiskStatus(
             @PathVariable Long id,
-            @RequestBody RiskStatusUpdateRequest request) {
+            @RequestBody RiskStatusUpdateRequest request
+    ) {
         return riskService.updateStatus(id, request);
     }
 
@@ -85,5 +114,4 @@ public class RiskController {
     public void deleteRisk(@PathVariable Long id) {
         riskService.deleteRisk(id);
     }
-
 }

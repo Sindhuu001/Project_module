@@ -25,22 +25,23 @@ public class RiskLeftPanelController {
         @GetMapping("/issues")
         @PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')")
         public Page<RiskIssueSummaryDTO> getIssuesWithRisks(
-                        @PathVariable Long projectId,
-                        @RequestParam(required = false) LinkedType issueType, // ✅ OPTIONAL
-                        @RequestParam(required = false) String issueStatus,
-                        @RequestParam(required = false) Long sprintId,
-                        Pageable pageable) {
+                @PathVariable Long projectId,
+                @RequestParam(required = false) LinkedType issueType,
+                @RequestParam(required = false) String issueStatus,
+                @RequestParam(required = false) Long sprintId,
+                @RequestParam(required = false) String search,
+                Pageable pageable) {
 
-                // ✅ enforce safe pageable (avoid invalid sort)
                 Pageable safePageable = PageRequest.of(
-                                pageable.getPageNumber(),
-                                pageable.getPageSize());
+                        pageable.getPageNumber(),
+                        pageable.getPageSize());
 
                 return service.getIssuesWithRisks(
-                                projectId,
-                                issueType, // ✅ can be null → ALL
-                                issueStatus,
-                                sprintId,
-                                safePageable);
+                        projectId,
+                        issueType,
+                        issueStatus,
+                        sprintId,
+                        search,
+                        safePageable);
         }
 }

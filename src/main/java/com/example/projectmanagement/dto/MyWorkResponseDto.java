@@ -24,6 +24,10 @@ public class MyWorkResponseDto {
     private long allActiveCount;
     private long blockedCount;
 
+    // Dashboard summary counts
+    private long activeProjectCount;
+    private long totalTasksCount;
+
     // ── Items grouped by project ──────────────────────────────────────────────
     // Key = projectId, Value = ordered list of work items
     private List<ProjectWorkGroup> projects;

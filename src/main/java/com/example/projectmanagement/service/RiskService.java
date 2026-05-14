@@ -27,4 +27,13 @@ public interface RiskService {
             int size,
             String severityFilter
     );
+
+    RiskResponseDTO getLinkedRisks(
+            Long projectId,
+            RiskLink.LinkedType linkedType,
+            Long linkedId,
+            int page,
+            int size,
+            String search
+    );
 }

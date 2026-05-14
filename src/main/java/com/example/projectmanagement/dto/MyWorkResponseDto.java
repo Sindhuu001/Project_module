@@ -26,17 +26,22 @@ public class MyWorkResponseDto {
 
     // Dashboard summary counts
     private long activeProjectCount;
-    private long totalTasksCount;
+
+    /**
+     * Tasks assigned to the user whose status.sortOrder < MAX(sortOrder)
+     * for their project. The highest-order column is always treated as terminal
+     * (done), regardless of its name. Fully dynamic — unaffected by renames
+     * or reordering of columns.
+     */
+    private long pendingTasksCount;
 
     // ── Items grouped by project ──────────────────────────────────────────────
-    // Key = projectId, Value = ordered list of work items
     private List<ProjectWorkGroup> projects;
 
     // ── Test work (separate section for QA users) ─────────────────────────────
     private List<TestWorkItemDto> testWork;
 
-    // ── PROJECT_MANAGER accountability items (items created by user, assigned to
-    // others)
+    // ── PROJECT_MANAGER accountability items (items created by user, assigned to others)
     private List<WorkItemDto> PROJECT_MANAGERItems;
 
     // ─────────────────────────────────────────────────────────────────────────

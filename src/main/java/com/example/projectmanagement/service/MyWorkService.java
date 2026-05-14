@@ -1,13 +1,24 @@
 package com.example.projectmanagement.service;
 
-import com.example.projectmanagement.dto.*;
-import com.example.projectmanagement.entity.*;
-import com.example.projectmanagement.entity.testing.*;
+import com.example.projectmanagement.dto.MyWorkResponseDto;
+import com.example.projectmanagement.dto.WorkItemDto;
+import com.example.projectmanagement.dto.TestWorkItemDto;
+import com.example.projectmanagement.entity.Bug;
+import com.example.projectmanagement.entity.Project;
+import com.example.projectmanagement.entity.Story;
+import com.example.projectmanagement.entity.Task;
+import com.example.projectmanagement.entity.testing.TestRun;
+import com.example.projectmanagement.entity.testing.TestRunCase;
 import com.example.projectmanagement.enums.BugStatus;
 import com.example.projectmanagement.enums.TestRunCaseStatus;
-import com.example.projectmanagement.repository.*;
-import com.example.projectmanagement.entity.Project;
+import com.example.projectmanagement.enums.TestRunStatus;
+import com.example.projectmanagement.repository.BugRepository;
 import com.example.projectmanagement.repository.ProjectRepository;
+import com.example.projectmanagement.repository.StoryRepository;
+import com.example.projectmanagement.repository.TaskRepository;
+import com.example.projectmanagement.repository.TestCycleRepository;
+import com.example.projectmanagement.repository.TestRunCaseRepository;
+import com.example.projectmanagement.repository.TestRunRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -16,7 +27,6 @@ import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 @Service
 @RequiredArgsConstructor
@@ -29,7 +39,7 @@ public class MyWorkService {
         private final TestRunCaseRepository testRunCaseRepository;
         private final TestCycleRepository testCycleRepository;
         private final StoryService storyService;
-        private final ProjectRepository projectRepository;  // ← ADDED
+        private final ProjectRepository projectRepository;
 
         // ─────────────────────────────────────────────────────────────────────────
         // Main entry point
@@ -38,14 +48,17 @@ public class MyWorkService {
         public MyWorkResponseDto getMyWork(Long userId) {
 
                 // 1. Fetch all active assigned items
-                List<Task> tasks = taskRepository.findByAssigneeId(userId);
                 List<Story> stories = storyRepository.findByAssigneeId(userId);
                 List<Bug> bugs = bugRepository.findByAssignedTo(userId);
 
-                // Filter out completed/closed items for the main view
-                List<Task> activeTasks = tasks.stream()
-                                .filter(t -> t.getStatus() != null && !isClosedStatus(t.getStatus().getName()))
-                                .collect(Collectors.toList());
+                /*
+                 * PENDING TASKS — sortOrder-based (replaces old keyword-filtering)
+                 * ──────────────────────────────────────────────────────────────────
+                 * A task is pending when status.sortOrder < MAX(sortOrder) for its project.
+                 * The highest-order column is always terminal, regardless of its name.
+                 * Single DB query — no in-memory keyword matching needed.
+                 */
+                List<Task> activeTasks = taskRepository.findPendingTasksByAssigneeId(userId);
 
                 List<Story> activeStories = stories.stream()
                                 .filter(s -> s.getStatus() != null && !isClosedStatus(s.getStatus().getName()))
@@ -92,15 +105,18 @@ public class MyWorkService {
                 List<WorkItemDto> PROJECT_MANAGERItems = buildPROJECT_MANAGERItems(userId);
 
                 // 6. Snapshot counts
-                long overdueCount = allItems.stream().filter(i -> "OVERDUE".equals(i.getUrgency())).count();
-                long dueTodayCount = allItems.stream().filter(i -> "DUE_TODAY".equals(i.getUrgency())).count();
+                long overdueCount     = allItems.stream().filter(i -> "OVERDUE".equals(i.getUrgency())).count();
+                long dueTodayCount    = allItems.stream().filter(i -> "DUE_TODAY".equals(i.getUrgency())).count();
                 long dueThisWeekCount = allItems.stream().filter(i -> "DUE_THIS_WEEK".equals(i.getUrgency())).count();
-                long blockedCount = allItems.stream()
-                                .filter(i -> i.getStatusName() != null &&
-                                                i.getStatusName().toLowerCase().contains("block"))
+                long blockedCount     = allItems.stream()
+                                .filter(i -> i.getStatusName() != null
+                                                && i.getStatusName().toLowerCase().contains("block"))
                                 .count();
                 long activeProjectCount = allUserProjects.size();
-                long totalTasksCount = activeTasks.size();
+
+                // pendingTasksCount = tasks whose status.sortOrder < max for their project
+                // activeTasks already came from that exact DB query, so just use its size
+                long pendingTasksCount = activeTasks.size();
 
                 return MyWorkResponseDto.builder()
                                 .overdueCount(overdueCount)
@@ -109,7 +125,7 @@ public class MyWorkService {
                                 .allActiveCount(allItems.size())
                                 .blockedCount(blockedCount)
                                 .activeProjectCount(activeProjectCount)
-                                .totalTasksCount(totalTasksCount)
+                                .pendingTasksCount(pendingTasksCount)
                                 .projects(groups)
                                 .testWork(testWork)
                                 .PROJECT_MANAGERItems(PROJECT_MANAGERItems)
@@ -284,7 +300,7 @@ public class MyWorkService {
 
                 items.sort(Comparator.comparingInt(i -> urgencyItemRank(i.getUrgency())));
 
-                long overdue = items.stream().filter(i -> "OVERDUE".equals(i.getUrgency())).count();
+                long overdue  = items.stream().filter(i -> "OVERDUE".equals(i.getUrgency())).count();
                 long dueToday = items.stream().filter(i -> "DUE_TODAY".equals(i.getUrgency())).count();
 
                 String flag = overdue > 0 ? "OVERDUE" : dueToday > 0 ? "DUE_TODAY" : "NONE";
@@ -326,12 +342,12 @@ public class MyWorkService {
                 List<TestWorkItemDto> result = new ArrayList<>();
 
                 List<TestRun> runs = testRunRepository.findByCreatedByAndStatusNot(
-                                userId, com.example.projectmanagement.enums.TestRunStatus.COMPLETED);
+                                userId, TestRunStatus.COMPLETED);
 
                 for (TestRun run : runs) {
                         List<TestRunCase> cases = testRunCaseRepository.findByRunId(run.getId());
                         long remaining = cases.stream()
-                                        .filter(c -> c.getStatus() == com.example.projectmanagement.enums.TestRunCaseStatus.NOT_STARTED)
+                                        .filter(c -> c.getStatus() == TestRunCaseStatus.NOT_STARTED)
                                         .count();
 
                         String cycleName = run.getCycle() != null ? run.getCycle().getName() : null;

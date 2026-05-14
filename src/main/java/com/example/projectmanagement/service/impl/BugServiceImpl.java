@@ -205,6 +205,14 @@ public class BugServiceImpl implements BugService {
     }
 
     @Override
+    public List<BugResponse> findBugsByAssigneeId(Long assigneeId) {
+        return bugRepository.findByAssignedTo(assigneeId)
+                .stream()
+                .map(this::toResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Override
     public List<BugSummaryResponse> findBugSummariesByProjectId(Long projectId) {
         List<Bug> bugs = bugRepository.findByProjectId(projectId);
         return bugs.stream()

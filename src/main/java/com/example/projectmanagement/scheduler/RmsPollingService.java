@@ -2,7 +2,10 @@ package com.example.projectmanagement.scheduler;
 
 import com.example.projectmanagement.ExternalDTO.RmsResourceDto;
 import com.example.projectmanagement.ExternalDTO.RmsResourceResponse;
+import com.example.projectmanagement.ExternalDTO.UmsEmployeeInfo;
+import com.example.projectmanagement.ExternalDTO.UmsEmployeeLookupRequest;
 import com.example.projectmanagement.client.RmsClient;
+import com.example.projectmanagement.client.UserClient;
 import com.example.projectmanagement.config.RmsCacheStore;
 import com.example.projectmanagement.config.TokenStore;
 import com.example.projectmanagement.entity.Project;
@@ -16,21 +19,28 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class RmsPollingService {
 
+    private static final Set<String> ALLOWED_ROLES = Set.of(
+            "project_manager", "resource_manager", "hr_manager");
+
     private final RmsClient rmsClient;
+    private final UserClient userClient;
     private final ProjectRepository projectRepository;
     private final RmsCacheStore rmsCacheStore;
     private final TokenStore tokenStore;
 
     @Scheduled(fixedRateString = "${rms.polling.interval-ms:10000}")
-    @Transactional
+    @org.springframework.transaction.annotation.Transactional
     public void pollRmsResources() {
         String token = tokenStore.get();
         if (token == null) {
@@ -38,34 +48,66 @@ public class RmsPollingService {
             return;
         }
 
+        List<String> roles = tokenStore.getRoles();
+        boolean hasAllowedRole = roles.stream()
+                .anyMatch(r -> ALLOWED_ROLES.contains(r.toLowerCase().replace(" ", "_")));
+        if (!hasAllowedRole) {
+            log.info("RMS polling skipped - token roles {} do not include project_manager / resource_manager / hr_manager", roles);
+            return;
+        }
+
         List<Project> activeProjects = projectRepository.findByStatus(Project.ProjectStatus.ACTIVE);
         log.info("RMS polling started for {} active projects", activeProjects.size());
 
         for (Project proj : activeProjects) {
+
+            // Step 1: fetch employee IDs from RMS
+            List<Long> employeeIds;
             try {
                 RmsResourceResponse response = rmsClient.getProjectResources(proj.getId());
-
                 List<RmsResourceDto> resources = (response != null && response.getData() != null)
                         ? response.getData()
                         : Collections.emptyList();
-
-                // Update in-memory cache
                 rmsCacheStore.put(proj.getId(), resources);
-
-                // Extract resource IDs and persist into project.memberIds in DB
-                Set<Long> memberIds = resources.stream()
+                employeeIds = resources.stream()
                         .map(RmsResourceDto::getResourceId)
+                        .collect(Collectors.toList());
+                log.info("Project {} → RMS returned {} employee IDs: {}", proj.getId(), employeeIds.size(), employeeIds);
+            } catch (Exception e) {
+                log.warn("Project {} → RMS call failed: {}", proj.getId(), e.getMessage());
+                continue;
+            }
+
+            if (employeeIds.isEmpty()) {
+                projectRepository.deleteAllMembers(proj.getId());
+                log.info("Project {} → no RMS members, cleared project_members", proj.getId());
+                continue;
+            }
+
+            // Step 2: resolve employee IDs → UMS user IDs
+            try {
+                log.info("Project {} → calling UMS with employee IDs: {}", proj.getId(), employeeIds);
+                Map<String, UmsEmployeeInfo> umsLookup = userClient.resolveEmployeeIds(
+                        new UmsEmployeeLookupRequest(employeeIds));
+                log.info("Project {} → UMS raw response: {}", proj.getId(), umsLookup);
+
+                Set<Long> umsUserIds = umsLookup.values().stream()
+                        .filter(info -> info != null && info.getUserId() != null)
+                        .map(UmsEmployeeInfo::getUserId)
                         .collect(Collectors.toCollection(HashSet::new));
 
-                proj.setMemberIds(memberIds);
-                projectRepository.save(proj);
-
-                log.info("Project {} memberIds synced with {} members from RMS", proj.getId(), memberIds.size());
+                // DELETE all existing rows then INSERT resolved UMS IDs — avoids any
+                // Hibernate lazy-load of stale employee IDs contaminating the write.
+                projectRepository.deleteAllMembers(proj.getId());
+                for (Long umsId : umsUserIds) {
+                    projectRepository.insertMember(proj.getId(), umsId);
+                }
+                log.info("Project {} → saved UMS user IDs: {}", proj.getId(), umsUserIds);
 
             } catch (Exception e) {
-                log.warn("RMS polling failed for project {}: {}", proj.getId(), e.getMessage());
-            
-
+                log.error("Project {} → UMS resolution failed for employee IDs {}: {}",
+                        proj.getId(), employeeIds, e.getMessage(), e);
+                projectRepository.deleteAllMembers(proj.getId());
             }
         }
 

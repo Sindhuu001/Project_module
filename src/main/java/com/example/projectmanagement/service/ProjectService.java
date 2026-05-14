@@ -4,6 +4,8 @@ import com.example.projectmanagement.ExternalDTO.ProjectIdName;
 import com.example.projectmanagement.ExternalDTO.ProjectTasksDto;
 import com.example.projectmanagement.ExternalDTO.RmsResourceDto;
 import com.example.projectmanagement.ExternalDTO.RmsResourceResponse;
+import com.example.projectmanagement.ExternalDTO.UmsEmployeeInfo;
+import com.example.projectmanagement.ExternalDTO.UmsEmployeeLookupRequest;
 import com.example.projectmanagement.client.RmsClient;
 import com.example.projectmanagement.client.UserClient;
 import com.example.projectmanagement.config.ProjectStatusProperties;
@@ -14,6 +16,7 @@ import com.example.projectmanagement.exception.ResourceNotFoundException;
 import com.example.projectmanagement.exception.ValidationException;
 import com.example.projectmanagement.repository.*;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -27,6 +30,7 @@ import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @Transactional
 @AllArgsConstructor
@@ -157,12 +161,9 @@ public class ProjectService {
                     : Project.ProjectStage.INITIATION
     );
 
-    // Members
-    project.setMemberIds(
-            projectDto.getMemberIds() != null
-                    ? new HashSet<>(projectDto.getMemberIds())
-                    : new HashSet<>()
-    );
+    // Members are managed exclusively by RmsPollingService (employee ID → UMS user ID resolution).
+    // Never accept memberIds from the frontend to avoid storing raw employee IDs.
+    project.setMemberIds(new HashSet<>());
 
     // Optional ownership fields
     project.setRmId(projectDto.getRmId());
@@ -616,9 +617,7 @@ public class ProjectService {
         if (updatedDto.getDeliveryOwnerId() != null) existing.setDeliveryOwnerId(updatedDto.getDeliveryOwnerId());   
         
 
-        if (updatedDto.getMemberIds() != null) {
-            existing.setMemberIds(new HashSet<>(updatedDto.getMemberIds()));
-        }
+        // Members are managed exclusively by RmsPollingService — ignore any memberIds from the frontend.
 
         Project saved = projectRepository.save(existing);
         return convertToDto(saved);
@@ -632,24 +631,43 @@ public class ProjectService {
         projectRepository.deleteById(id);
     }
 
-    public ProjectDto addMemberToProject(Long projectId, Long userId) {
+    @org.springframework.transaction.annotation.Transactional
+    public ProjectDto addMemberToProject(Long projectId, Long employeeId) {
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new RuntimeException("Project not found with id: " + projectId));
 
-        if (!project.getMemberIds().contains(userId)) {
-            project.getMemberIds().add(userId);
-            projectRepository.save(project);
+        try {
+            Map<String, UmsEmployeeInfo> lookup = userClient.resolveEmployeeIds(
+                    new UmsEmployeeLookupRequest(List.of(employeeId)));
+            Long umsUserId = lookup.values().stream()
+                    .filter(info -> info != null && info.getUserId() != null)
+                    .map(UmsEmployeeInfo::getUserId)
+                    .findFirst()
+                    .orElse(null);
+
+            if (umsUserId != null) {
+                // Direct SQL INSERT — never touches the lazy-loaded Hibernate collection,
+                // so stale employee IDs already in project_members are not re-saved.
+                projectRepository.insertMember(projectId, umsUserId);
+                log.info("addMember: project {} → employee {} → UMS user {}", projectId, employeeId, umsUserId);
+            } else {
+                log.warn("addMember: project {} → employee {} not found in UMS", projectId, employeeId);
+            }
+        } catch (Exception e) {
+            log.error("addMember: UMS resolution failed for employee {}: {}", employeeId, e.getMessage());
         }
 
         return convertToDto(project);
     }
 
+    @org.springframework.transaction.annotation.Transactional
     public ProjectDto removeMemberFromProject(Long projectId, Long userId) {
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new RuntimeException("Project not found with id: " + projectId));
 
-        project.getMemberIds().remove(userId);
-        projectRepository.save(project);
+        // Direct SQL DELETE — never loads the lazy collection, so stale employee IDs
+        // already in project_members cannot be accidentally re-saved.
+        projectRepository.deleteMember(projectId, userId);
 
         return convertToDto(project);
     }

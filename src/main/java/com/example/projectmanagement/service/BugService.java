@@ -24,6 +24,8 @@ public interface BugService {
 
     List<BugSummaryResponse> findBugSummariesByProjectId(Long projectId);
 
+    List<BugResponse> findBugsByAssigneeId(Long assigneeId);
+
     /**
      * Called when a TestRunCase is passed successfully (retest passed).
      * Will auto-close bugs that are READY_FOR_RETEST (or FIXED if your flow sets FIXED directly)

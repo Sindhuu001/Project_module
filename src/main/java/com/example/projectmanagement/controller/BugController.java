@@ -80,6 +80,13 @@ public class BugController {
         return ResponseEntity.ok(bugs);
     }
 
+    @GetMapping("/assignee/{assigneeId}")
+    @PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')")
+    public ResponseEntity<List<BugResponse>> getBugsByAssignee1(@PathVariable Long assigneeId) {
+        List<BugResponse> bugs = bugService.findBugsByAssigneeId(assigneeId);
+        return ResponseEntity.ok(bugs);
+    }
+
     @GetMapping("/projects/{projectId}/summaries")
     @PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')") // Only allow PROJECT_MANAGER and GENERAL roles to access
                                                              // this endpoint

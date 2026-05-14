@@ -7,6 +7,7 @@ import com.example.projectmanagement.entity.Project.ProjectStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -88,7 +89,15 @@ public interface ProjectRepository extends JpaRepository<Project, Long> {
 """)
     List<Project> findByOwnerIdOrMemberId(@Param("userId") Long userId);
 
+    @Modifying
+    @Query(value = "INSERT IGNORE INTO project_members (project_id, user_id) VALUES (:projectId, :userId)", nativeQuery = true)
+    void insertMember(@Param("projectId") Long projectId, @Param("userId") Long userId);
 
+    @Modifying
+    @Query(value = "DELETE FROM project_members WHERE project_id = :projectId AND user_id = :userId", nativeQuery = true)
+    void deleteMember(@Param("projectId") Long projectId, @Param("userId") Long userId);
 
-
+    @Modifying
+    @Query(value = "DELETE FROM project_members WHERE project_id = :projectId", nativeQuery = true)
+    void deleteAllMembers(@Param("projectId") Long projectId);
 }

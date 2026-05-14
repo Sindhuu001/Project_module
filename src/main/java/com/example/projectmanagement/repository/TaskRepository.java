@@ -13,6 +13,7 @@ import java.util.List;
 
 @Repository
 public interface TaskRepository extends JpaRepository<Task, Long> {
+
     @Query("""
             SELECT new com.example.projectmanagement.dto.TaskDto$Summary(t.id,t.title,t.status,t.story.id,t.story.sprint.id,t.priority,t.reporterId,t.assigneeId,t.createdAt,t.billable,t.dueDate)
             FROM Task t
@@ -27,9 +28,9 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
 
     List<Task> findByStatusId(Long statusId);
 
-    List<Task> findByProjectId(Long projectId); // Added method
+    List<Task> findByProjectId(Long projectId);
 
-    // ✅ fetch tasks indirectly linked to a sprint via their story
+    // fetch tasks indirectly linked to a sprint via their story
     @Query("SELECT t FROM Task t WHERE t.story.sprint.id = :sprintId")
     List<Task> findBySprintId(@Param("sprintId") Long sprintId);
 
@@ -64,8 +65,7 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
     long countTasksDueSoon(@Param("futureDate") LocalDateTime futureDate);
 
     @Query("SELECT new com.example.projectmanagement.dto.TaskDto$Summary(t.id, t.title, t.status, t.story.id, t.story.sprint.id) "
-            +
-            "FROM Task t WHERE t.story.sprint.id = :sprintId")
+            + "FROM Task t WHERE t.story.sprint.id = :sprintId")
     List<TaskDto.Summary> findTaskSummariesBySprintId(@Param("sprintId") Long sprintId);
 
     long countByStatusId(Long statusId);
@@ -88,12 +88,8 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
             @Param("assigneeId") Long assigneeId,
             Pageable pageable);
 
-    // Checks whether there exists at least one task in sprint where
-    // task.status.sortOrder != maxSortOrder
     boolean existsBySprintIdAndStatus_SortOrderNot(Long sprintId, Integer sortOrder);
 
-    // Get list of tasks in sprint which are NOT in final status (i.e., need
-    // transfer)
     @Query("SELECT t FROM Task t WHERE t.sprint.id = :sprintId AND t.status.sortOrder <> :finalSortOrder")
     List<Task> findIncompleteTasksBySprintId(Long sprintId, Integer finalSortOrder);
 
@@ -130,4 +126,42 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
             ORDER BY t.status.sortOrder ASC
             """)
     List<Status> findMinStatusByStoryId(@Param("storyId") Long storyId, Pageable pageable);
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // PENDING TASKS — sortOrder-based
+    // A task is PENDING when status.sortOrder < MAX(sortOrder) in the project.
+    // The highest-order column is always the terminal/done column.
+    // Fully dynamic: renames, reorders, additions all update automatically.
+    // ─────────────────────────────────────────────────────────────────────────
+
+    /**
+     * Returns full Task entities — used by getMyWork() to build WorkItemDtos.
+     */
+    @Query("""
+            SELECT t FROM Task t
+            WHERE t.assigneeId = :assigneeId
+            AND t.status IS NOT NULL
+            AND t.status.sortOrder < (
+                SELECT MAX(s.sortOrder)
+                FROM Status s
+                WHERE s.project.id = t.project.id
+            )
+            """)
+    List<Task> findPendingTasksByAssigneeId(@Param("assigneeId") Long assigneeId);
+
+    /**
+     * Direct COUNT — used by the /pending-count and /dashboard-summary endpoints.
+     * No entity loading; suitable for lightweight polling.
+     */
+    @Query("""
+            SELECT COUNT(t) FROM Task t
+            WHERE t.assigneeId = :assigneeId
+            AND t.status IS NOT NULL
+            AND t.status.sortOrder < (
+                SELECT MAX(s.sortOrder)
+                FROM Status s
+                WHERE s.project.id = t.project.id
+            )
+            """)
+    long countPendingTasksByAssigneeId(@Param("assigneeId") Long assigneeId);
 }

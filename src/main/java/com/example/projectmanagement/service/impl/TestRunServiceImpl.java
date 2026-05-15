@@ -60,6 +60,10 @@ public class TestRunServiceImpl implements TestRunService {
                 .name(finalName)
                 .description(request.description())
                 .status(TestRunStatus.CREATED)
+                .executedBy(
+            request.executedBy() 
+                
+        )
                 .executedAt(LocalDateTime.now())
                 .createdBy(currentUserId)
                 .build();
@@ -79,6 +83,7 @@ public class TestRunServiceImpl implements TestRunService {
                         .run(savedRun)
                         .testCase(tc)
                         .status(TestRunCaseStatus.NOT_STARTED)
+                        
                         .createdAt(LocalDateTime.now())
                         .lastExecutedAt(LocalDateTime.now())
                         .build();

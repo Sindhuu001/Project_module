@@ -10,5 +10,8 @@ public record TestRunCreateRequest(
         String name,        // optional custom name
         String description, // optional
         TestRunStatus status,
+        Long executedBy,
         List<Long> testCaseIds // List of test case IDs to include in the run
-) {}
+) {
+
+    }

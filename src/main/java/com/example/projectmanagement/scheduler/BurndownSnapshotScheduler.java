@@ -5,8 +5,11 @@ import com.example.projectmanagement.entity.graphs.SprintBurndownSnapshot;
 import com.example.projectmanagement.repository.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.DayOfWeek;
@@ -14,6 +17,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Objects;
 
 @Slf4j
 @Component
@@ -27,9 +31,13 @@ public class BurndownSnapshotScheduler {
     private final SprintBurndownSnapshotRepository snapshotRepository;
     private final SprintScopeChangeRepository scopeChangeRepository;
 
+    // Self-injection via proxy so that takeSnapshotForSprint runs in its own transaction
+    @Autowired
+    @Lazy
+    private BurndownSnapshotScheduler self;
+
     // Runs every day at midnight
-    @Scheduled(cron = "0 */3 * * * *")
-    @Transactional
+    @Scheduled(cron = "0 */1 * * * *")
     public void takeSnapshots() {
         LocalDate today = LocalDate.now();
         log.info("Taking burndown snapshots for date: {}", today);
@@ -38,7 +46,7 @@ public class BurndownSnapshotScheduler {
 
         for (Sprint sprint : activeSprints) {
             try {
-                takeSnapshotForSprint(sprint, today);
+                self.takeSnapshotForSprint(sprint, today);
             } catch (Exception e) {
                 // Don't let one sprint failure break all others
                 log.error("Failed to take snapshot for sprint {}: {}", sprint.getId(), e.getMessage());
@@ -49,14 +57,8 @@ public class BurndownSnapshotScheduler {
     }
 
     // Also callable manually from service (e.g. when sprint is started)
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void takeSnapshotForSprint(Sprint sprint, LocalDate date) {
-
-        // Idempotent — skip if already exists
-        if (snapshotRepository.existsBySprintIdAndSnapshotDate(sprint.getId(), date)) {
-            log.debug("Snapshot already exists for sprint {} on {}", sprint.getId(), date);
-            return;
-        }
 
         Long projectId = sprint.getProject().getId();
         Integer doneSortOrder = statusRepository.findMaxSortOrderByProject(projectId);
@@ -71,7 +73,7 @@ public class BurndownSnapshotScheduler {
 
         int completedPoints = stories.stream()
                 .filter(s -> s.getStatus() != null
-                        && s.getStatus().getSortOrder() == doneSortOrder)
+                        && Objects.equals(s.getStatus().getSortOrder(), doneSortOrder))
                 .mapToInt(s -> s.getStoryPoints() != null ? s.getStoryPoints() : 0)
                 .sum();
 
@@ -85,11 +87,11 @@ public class BurndownSnapshotScheduler {
 
         int completedIssues = (int) stories.stream()
                 .filter(s -> s.getStatus() != null
-                        && s.getStatus().getSortOrder() == doneSortOrder)
+                        && Objects.equals(s.getStatus().getSortOrder(), doneSortOrder))
                 .count()
                 + (int) tasks.stream()
                 .filter(t -> t.getStatus() != null
-                        && t.getStatus().getSortOrder() == doneSortOrder)
+                        && Objects.equals(t.getStatus().getSortOrder(), doneSortOrder))
                 .count();
 
         int remainingIssues = totalIssues - completedIssues;
@@ -138,11 +140,16 @@ public class BurndownSnapshotScheduler {
         DayOfWeek dow = date.getDayOfWeek();
         boolean isWeekend = dow == DayOfWeek.SATURDAY || dow == DayOfWeek.SUNDAY;
 
-        // ── Build and save ────────────────────────────────────────────────
+        // ── Upsert: update today's snapshot if it exists, otherwise create ──
 
-        SprintBurndownSnapshot snapshot = new SprintBurndownSnapshot();
-        snapshot.setSprint(sprint);
-        snapshot.setSnapshotDate(date);
+        SprintBurndownSnapshot snapshot = snapshotRepository
+                .findBySprintIdAndSnapshotDate(sprint.getId(), date)
+                .orElseGet(() -> {
+                    SprintBurndownSnapshot s = new SprintBurndownSnapshot();
+                    s.setSprint(sprint);
+                    s.setSnapshotDate(date);
+                    return s;
+                });
         snapshot.setSprintDayNumber(sprintDayNumber);
         snapshot.setIsWeekend(isWeekend);
         snapshot.setInitialStoryPoints(initialPoints);

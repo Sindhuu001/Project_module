@@ -71,8 +71,8 @@ public class Task {
     @Column(nullable = false)
     private Priority priority = Priority.MEDIUM;
 
-    @Column(name = "story_points")
-    private Integer storyPoints;
+   //  @Column(name = "story_points")
+   //  private Integer storyPoints;
 
     @Column(name = "start_date")
     private LocalDateTime startDate;

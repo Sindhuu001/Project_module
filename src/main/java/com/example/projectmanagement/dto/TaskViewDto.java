@@ -36,7 +36,7 @@ public class TaskViewDto {
     // Task fields
     private String title;
     private String description;
-    private Integer storyPoints;
+    // private Integer storyPoints;
     private LocalDateTime dueDate;
     private boolean billable;
     private Task.Priority priority;

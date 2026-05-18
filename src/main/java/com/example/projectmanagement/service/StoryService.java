@@ -10,6 +10,7 @@ import com.example.projectmanagement.dto.StoryCreateDto;
 import com.example.projectmanagement.dto.StoryViewDto;
 import com.example.projectmanagement.dto.UserDto;
 import com.example.projectmanagement.entity.*;
+import com.example.projectmanagement.entity.graphs.SprintScopeChange;
 import com.example.projectmanagement.repository.*;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -65,6 +66,9 @@ public class StoryService {
     private MitigationPlanRepository mitigationPlanRepository;
     @Autowired
     private RiskAttachmentRepository riskAttachmentRepository;
+
+    @Autowired
+    private BurndownService burndownService;
 
     @Transactional
     public StoryCreateDto createStory(StoryCreateDto dto, Long userId) {
@@ -127,6 +131,13 @@ public class StoryService {
                         .orElseThrow(() -> new RuntimeException("Status not found")));
 
         Story saved = storyRepository.save(story);
+
+        if (saved.getSprint() != null) {
+            burndownService.recordScopeChange(saved.getSprint(), saved.getId(), saved.getTitle(),
+                    SprintScopeChange.IssueType.STORY,
+                    SprintScopeChange.ChangeType.ADDED_TO_SPRINT,
+                    null, saved.getStoryPoints(), userId);
+        }
 
         if (saved.getEpic() != null) {
             updateEpicStatus(saved.getEpic().getId());
@@ -241,6 +252,8 @@ public class StoryService {
                 .orElseThrow(() -> new ResourceNotFoundException("Story not found with id: " + id));
 
         Long projectId = story.getProject().getId();
+        Sprint oldSprint = story.getSprint();
+        Integer oldPoints = story.getStoryPoints();
 
         // -----------------------------------------
         // CHECK: Reporter must be member/owner
@@ -330,6 +343,33 @@ public class StoryService {
         }
 
         Story saved = storyRepository.save(story);
+
+        if (oldSprint == null && saved.getSprint() != null) {
+            burndownService.recordScopeChange(saved.getSprint(), saved.getId(), saved.getTitle(),
+                    SprintScopeChange.IssueType.STORY,
+                    SprintScopeChange.ChangeType.ADDED_TO_SPRINT,
+                    null, saved.getStoryPoints(), null);
+        } else if (oldSprint != null && saved.getSprint() == null) {
+            burndownService.recordScopeChange(oldSprint, saved.getId(), saved.getTitle(),
+                    SprintScopeChange.IssueType.STORY,
+                    SprintScopeChange.ChangeType.REMOVED_FROM_SPRINT,
+                    oldPoints, null, null);
+        }
+
+        if (!Objects.equals(oldPoints, saved.getStoryPoints()) && saved.getSprint() != null) {
+            burndownService.recordScopeChange(saved.getSprint(), saved.getId(), saved.getTitle(),
+                    SprintScopeChange.IssueType.STORY,
+                    SprintScopeChange.ChangeType.STORY_POINTS_CHANGED,
+                    oldPoints, saved.getStoryPoints(), null);
+        }
+
+        if (Objects.equals(status.getSortOrder(), doneSortOrder) && saved.getSprint() != null) {
+            burndownService.recordScopeChange(saved.getSprint(), saved.getId(), saved.getTitle(),
+                    SprintScopeChange.IssueType.STORY,
+                    SprintScopeChange.ChangeType.STATUS_CHANGED_TO_DONE,
+                    saved.getStoryPoints(), saved.getStoryPoints(), null);
+        }
+
         if (saved.getEpic() != null) {
             updateEpicStatus(saved.getEpic().getId());
         }
@@ -379,6 +419,14 @@ public class StoryService {
         }
 
         Story updatedStory = storyRepository.save(story);
+
+        if (doneSortOrder != null && status.getSortOrder().equals(doneSortOrder) && updatedStory.getSprint() != null) {
+            burndownService.recordScopeChange(updatedStory.getSprint(), updatedStory.getId(), updatedStory.getTitle(),
+                    SprintScopeChange.IssueType.STORY,
+                    SprintScopeChange.ChangeType.STATUS_CHANGED_TO_DONE,
+                    updatedStory.getStoryPoints(), updatedStory.getStoryPoints(), null);
+        }
+
         if (story.getEpic() != null) {
             updateEpicStatus(story.getEpic().getId());
         }
@@ -496,6 +544,8 @@ public class StoryService {
             project = sprint.getProject();
         }
 
+        Sprint oldSprint = story.getSprint();
+
         // 1. Update Story
         story.setSprint(sprint);
         story.setProject(project);
@@ -512,6 +562,18 @@ public class StoryService {
         // 4. Save everything
         taskRepository.saveAll(tasks);
         storyRepository.save(story);
+
+        if (oldSprint == null && sprint != null) {
+            burndownService.recordScopeChange(sprint, story.getId(), story.getTitle(),
+                    SprintScopeChange.IssueType.STORY,
+                    SprintScopeChange.ChangeType.ADDED_TO_SPRINT,
+                    null, story.getStoryPoints(), null);
+        } else if (oldSprint != null && sprint == null) {
+            burndownService.recordScopeChange(oldSprint, story.getId(), story.getTitle(),
+                    SprintScopeChange.IssueType.STORY,
+                    SprintScopeChange.ChangeType.REMOVED_FROM_SPRINT,
+                    story.getStoryPoints(), null, null);
+        }
     }
 
     public StoryViewDto convertToDto1(Story story, Map<Long, UserDto> userMap) {

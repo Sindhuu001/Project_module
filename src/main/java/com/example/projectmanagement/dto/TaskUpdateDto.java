@@ -15,7 +15,7 @@ public class TaskUpdateDto {
     private String title;
     private String description;
     private Task.Priority priority;
-    private Integer storyPoints;
+    // private Integer storyPoints;
     private LocalDateTime dueDate;
     private Boolean billable;
     private Long assigneeId;

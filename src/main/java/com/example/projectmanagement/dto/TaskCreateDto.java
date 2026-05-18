@@ -25,7 +25,7 @@ public class TaskCreateDto {
     private Long statusId;   // <-- USE THIS
 
     private Task.Priority priority;
-    private Integer storyPoints;
+    // private Integer storyPoints;
     private LocalDateTime dueDate;
 
     @NotNull private Long projectId;

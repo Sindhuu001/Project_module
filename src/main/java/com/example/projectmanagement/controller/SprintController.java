@@ -7,7 +7,10 @@ import com.example.projectmanagement.dto.SprintPopupResponse;
 import com.example.projectmanagement.dto.TaskDto;
 import com.example.projectmanagement.dto.UserDto;
 import com.example.projectmanagement.entity.Sprint;
+import com.example.projectmanagement.entity.graphs.SprintScopeChange;
+import com.example.projectmanagement.repository.SprintScopeChangeRepository;
 import com.example.projectmanagement.security.CurrentUser;
+import com.example.projectmanagement.service.BurndownService;
 import com.example.projectmanagement.service.SprintService;
 import com.example.projectmanagement.service.TaskService;
 import com.example.projectmanagement.service.UserService;
@@ -40,6 +43,11 @@ public class SprintController {
 
     @Autowired
     private UserService userService;
+    @Autowired
+private BurndownService burndownService;
+
+@Autowired
+private SprintScopeChangeRepository scopeChangeRepository;
 
     // Create Sprint with User context
     @PostMapping
@@ -182,10 +190,15 @@ public class SprintController {
         return ResponseEntity.ok("Sprint finished with option: " + option);
     }
 
-    @GetMapping("/{sprintId}/burndown")
-    @PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')")
-    public SprintBurndownResponse getBurndownChart(@PathVariable Long sprintId) {
-        return sprintService.getSprintBurndown(sprintId);
-    }
+    // @GetMapping("/{sprintId}/burndown")
+    // @PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')")
+    // public SprintBurndownResponse getBurndownChart(@PathVariable Long sprintId) {
+    //     return sprintService.getSprintBurndown(sprintId);
+    // }
+    @GetMapping("/{sprintId}/scope-changes")
+@PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')")
+public ResponseEntity<List<SprintScopeChange>> getScopeChanges(@PathVariable Long sprintId) {
+    return ResponseEntity.ok(scopeChangeRepository.findBySprintIdOrderByChangedAtAsc(sprintId));
+}
 
 }

@@ -92,7 +92,7 @@ public class TaskServiceImpl implements TaskService {
         task.setTitle(taskCreateDto.getTitle());
         task.setDescription(taskCreateDto.getDescription());
         task.setPriority(taskCreateDto.getPriority());
-        task.setStoryPoints(taskCreateDto.getStoryPoints());
+        // task.setStoryPoints(taskCreateDto.getStoryPoints());
         task.setDueDate(taskCreateDto.getDueDate());
         task.setStartDate(taskCreateDto.getStartDate());
         task.setBillable(taskCreateDto.isBillable());
@@ -242,8 +242,8 @@ public class TaskServiceImpl implements TaskService {
             existingTask.setDescription(dto.getDescription());
         if (dto.getPriority() != null)
             existingTask.setPriority(dto.getPriority());
-        if (dto.getStoryPoints() != null)
-            existingTask.setStoryPoints(dto.getStoryPoints());
+        // if (dto.getStoryPoints() != null)
+        //     existingTask.setStoryPoints(dto.getStoryPoints());
         if (dto.getDueDate() != null)
             existingTask.setDueDate(dto.getDueDate());
         if (dto.getStartDate() != null)
@@ -541,7 +541,7 @@ public class TaskServiceImpl implements TaskService {
         dto.setTitle(task.getTitle());
         dto.setDescription(task.getDescription());
         dto.setPriority(task.getPriority());
-        dto.setStoryPoints(task.getStoryPoints());
+        // dto.setStoryPoints(task.getStoryPoints());
         dto.setDueDate(task.getDueDate());
         dto.setBillable(task.isBillable());
         dto.setCreatedAt(task.getCreatedAt());
@@ -575,7 +575,7 @@ public class TaskServiceImpl implements TaskService {
         dto.setTitle(task.getTitle());
         dto.setDescription(task.getDescription());
         dto.setPriority(task.getPriority());
-        dto.setStoryPoints(task.getStoryPoints());
+        // dto.setStoryPoints(task.getStoryPoints());
         dto.setDueDate(task.getDueDate());
         dto.setBillable(task.isBillable());
         dto.setCreatedAt(task.getCreatedAt());

@@ -2,6 +2,7 @@ package com.example.projectmanagement.controller;
 
 import com.example.projectmanagement.audit.annotation.AuditLog;
 import com.example.projectmanagement.dto.SprintBurndownResponse;
+import com.example.projectmanagement.dto.SprintBurnupResponse;
 import com.example.projectmanagement.dto.SprintDto;
 import com.example.projectmanagement.dto.SprintPopupResponse;
 import com.example.projectmanagement.dto.TaskDto;
@@ -11,6 +12,7 @@ import com.example.projectmanagement.entity.graphs.SprintScopeChange;
 import com.example.projectmanagement.repository.SprintScopeChangeRepository;
 import com.example.projectmanagement.security.CurrentUser;
 import com.example.projectmanagement.service.BurndownService;
+import com.example.projectmanagement.service.BurnupService;
 import com.example.projectmanagement.service.SprintService;
 import com.example.projectmanagement.service.TaskService;
 import com.example.projectmanagement.service.UserService;
@@ -43,11 +45,16 @@ public class SprintController {
 
     @Autowired
     private UserService userService;
+    
     @Autowired
-private BurndownService burndownService;
+    private BurndownService burndownService;
 
-@Autowired
-private SprintScopeChangeRepository scopeChangeRepository;
+    @Autowired
+    private BurnupService burnupService;
+
+    @Autowired
+    private SprintScopeChangeRepository scopeChangeRepository;
+
 
     // Create Sprint with User context
     @PostMapping
@@ -196,9 +203,15 @@ private SprintScopeChangeRepository scopeChangeRepository;
     //     return sprintService.getSprintBurndown(sprintId);
     // }
     @GetMapping("/{sprintId}/scope-changes")
-@PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')")
-public ResponseEntity<List<SprintScopeChange>> getScopeChanges(@PathVariable Long sprintId) {
-    return ResponseEntity.ok(scopeChangeRepository.findBySprintIdOrderByChangedAtAsc(sprintId));
-}
+    @PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')")
+    public ResponseEntity<List<SprintScopeChange>> getScopeChanges(@PathVariable Long sprintId) {
+        return ResponseEntity.ok(scopeChangeRepository.findBySprintIdOrderByChangedAtAsc(sprintId));
+    }
+
+    @GetMapping("/{sprintId}/burnup")
+    @PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')")
+    public ResponseEntity<SprintBurnupResponse> getBurnupChart(@PathVariable Long sprintId) {
+        return ResponseEntity.ok(burnupService.getBurnup(sprintId));
+    }
 
 }

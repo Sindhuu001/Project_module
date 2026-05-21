@@ -34,16 +34,31 @@ public class SprintDto {
     private String projectName;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private LocalDateTime startedAt;
     
     // Constructors
     public SprintDto() {}
     
-    public SprintDto(String name, String goal, LocalDateTime startDate, LocalDateTime endDate, Long projectId) {
+    public SprintDto(String name, String goal, LocalDateTime startDate, LocalDateTime endDate, LocalDateTime startedAt, Long projectId) {
         this.name = name;
         this.goal = goal;
         this.startDate = startDate;
         this.endDate = endDate;
         this.projectId = projectId;
+        this.startedAt=startedAt;
+    }
+    public SprintDto(Long id, String name, String goal, LocalDateTime startDate, LocalDateTime endDate, Sprint.SprintStatus status, Long projectId, String projectName, LocalDateTime createdAt, LocalDateTime updatedAt, LocalDateTime startedAt) {
+        this.id = id;
+        this.name = name;
+        this.goal = goal;
+        this.startDate = startDate;
+        this.endDate = endDate;
+        this.status = status;
+        this.projectId = projectId;
+        this.projectName = projectName;
+        this.createdAt = createdAt;
+        this.updatedAt = updatedAt;
+        this.startedAt=startedAt;
     }
     
     // Getters and Setters
@@ -76,4 +91,6 @@ public class SprintDto {
     
     public LocalDateTime getUpdatedAt() { return updatedAt; }
     public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
+    public LocalDateTime getStartedAt() { return startedAt; }
+    public void setStartedAt(LocalDateTime startedAt) { this.startedAt = startedAt; }
 }

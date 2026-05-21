@@ -18,6 +18,8 @@ import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Component
@@ -31,13 +33,11 @@ public class BurndownSnapshotScheduler {
     private final SprintBurndownSnapshotRepository snapshotRepository;
     private final SprintScopeChangeRepository scopeChangeRepository;
 
-    // Self-injection via proxy so that takeSnapshotForSprint runs in its own transaction
     @Autowired
     @Lazy
     private BurndownSnapshotScheduler self;
 
-    // Runs every day at midnight
-    @Scheduled(cron = "0 */1 * * * *")
+    @Scheduled(cron = "0 0 0 * * *")
     public void takeSnapshots() {
         LocalDate today = LocalDate.now();
         log.info("Taking burndown snapshots for date: {}", today);
@@ -48,7 +48,6 @@ public class BurndownSnapshotScheduler {
             try {
                 self.takeSnapshotForSprint(sprint, today);
             } catch (Exception e) {
-                // Don't let one sprint failure break all others
                 log.error("Failed to take snapshot for sprint {}: {}", sprint.getId(), e.getMessage());
             }
         }
@@ -56,16 +55,18 @@ public class BurndownSnapshotScheduler {
         log.info("Burndown snapshots completed. Processed {} active sprints.", activeSprints.size());
     }
 
-    // Also callable manually from service (e.g. when sprint is started)
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void takeSnapshotForSprint(Sprint sprint, LocalDate date) {
+        // Reload within this transaction so lazy associations (project, holidays, workingWeekends) resolve correctly
+        final Sprint loaded = sprintRepository.findById(sprint.getId())
+                .orElseThrow(() -> new RuntimeException("Sprint not found: " + sprint.getId()));
 
-        Long projectId = sprint.getProject().getId();
+        Long projectId = loaded.getProject().getId();
         Integer doneSortOrder = statusRepository.findMaxSortOrderByProject(projectId);
 
         // ── Story point calculations ──────────────────────────────────────
 
-        List<Story> stories = storyRepository.findBySprintId(sprint.getId());
+        List<Story> stories = storyRepository.findBySprintId(loaded.getId());
 
         int currentTotal = stories.stream()
                 .mapToInt(s -> s.getStoryPoints() != null ? s.getStoryPoints() : 0)
@@ -81,7 +82,7 @@ public class BurndownSnapshotScheduler {
 
         // ── Issue count calculations ──────────────────────────────────────
 
-        List<Task> tasks = taskRepository.findBySprintId(sprint.getId());
+        List<Task> tasks = taskRepository.findBySprintId(loaded.getId());
 
         int totalIssues = stories.size() + tasks.size();
 
@@ -98,28 +99,55 @@ public class BurndownSnapshotScheduler {
 
         // ── Sprint day number ─────────────────────────────────────────────
 
-        LocalDate sprintStart = sprint.getStartDate().toLocalDate();
-        LocalDate sprintEnd   = sprint.getEndDate().toLocalDate();
-        int sprintDayNumber   = (int) ChronoUnit.DAYS.between(sprintStart, date) + 1;
-        int totalSprintDays   = (int) ChronoUnit.DAYS.between(sprintStart, sprintEnd) + 1;
+        LocalDateTime actualStart = loaded.getStartedAt() != null ? loaded.getStartedAt() : loaded.getStartDate();
+        LocalDate sprintStart = actualStart.toLocalDate();
+        LocalDate sprintEnd   = loaded.getEndDate().toLocalDate();
+
+        int totalSprintDays = (int) ChronoUnit.DAYS.between(sprintStart, sprintEnd) + 1;
+        int sprintDayNumber = Math.max(1, Math.min(
+                (int) ChronoUnit.DAYS.between(sprintStart, date) + 1,
+                totalSprintDays
+        ));
 
         // ── Initial points — locked from day 1 snapshot ──────────────────
 
         int initialPoints = snapshotRepository
-                .findFirstBySprintIdOrderBySnapshotDateAsc(sprint.getId())
-                .map(SprintBurndownSnapshot::getCurrentStoryPoints)
-                .orElse(currentTotal);   // today IS day 1
+                .findFirstBySprintIdOrderBySnapshotDateAsc(loaded.getId())
+                .map(SprintBurndownSnapshot::getInitialStoryPoints)
+                .orElse(currentTotal);
 
-        // ── Ideal remaining (linear from initialPoints → 0) ──────────────
+        // ── Holiday / working-weekend flags ───────────────────────────────
 
-        int idealRemaining = Math.round(
-                initialPoints * (1f - ((float)(sprintDayNumber - 1) / (totalSprintDays - 1)))
-        );
+        Set<LocalDate> holidays        = loaded.getHolidays();
+        Set<LocalDate> workingWeekends = loaded.getWorkingWeekends();
+
+        DayOfWeek dow        = date.getDayOfWeek();
+        boolean isWeekend        = dow == DayOfWeek.SATURDAY || dow == DayOfWeek.SUNDAY;
+        boolean isHoliday        = holidays.contains(date);
+        boolean isWorkingWeekend = workingWeekends.contains(date);
+
+        // ── Ideal remaining (respects holidays and working weekends) ──────
+
+        List<LocalDate> allSprintDates = sprintStart.datesUntil(sprintEnd.plusDays(1))
+                .collect(Collectors.toList());
+
+        long totalWorkingDays = allSprintDates.stream()
+                .filter(d -> isWorkingDay(d, holidays, workingWeekends))
+                .count();
+
+        long workingDaysElapsed = allSprintDates.stream()
+                .filter(d -> !d.isAfter(date))
+                .filter(d -> isWorkingDay(d, holidays, workingWeekends))
+                .count();
+
+        int idealRemaining = (totalWorkingDays == 0) ? 0 : Math.max(0, Math.round(
+                initialPoints * (1f - ((float) workingDaysElapsed / totalWorkingDays))
+        ));
 
         // ── Yesterday's snapshot for delta calculations ───────────────────
 
         SprintBurndownSnapshot yesterday = snapshotRepository
-                .findBySprintIdAndSnapshotDate(sprint.getId(), date.minusDays(1))
+                .findBySprintIdAndSnapshotDate(loaded.getId(), date.minusDays(1))
                 .orElse(null);
 
         int prevRemaining       = yesterday != null ? yesterday.getRemainingStoryPoints() : initialPoints;
@@ -127,31 +155,32 @@ public class BurndownSnapshotScheduler {
 
         // ── Scope changes (from audit log) ────────────────────────────────
 
-        int addedScope   = scopeChangeRepository.sumAddedPointsOnDate(sprint.getId(), date);
-        int removedScope = Math.abs(scopeChangeRepository.sumRemovedPointsOnDate(sprint.getId(), date));
+        int addedScope   = scopeChangeRepository.sumAddedPointsOnDate(loaded.getId(), date);
+        int removedScope = Math.abs(scopeChangeRepository.sumRemovedPointsOnDate(loaded.getId(), date));
 
         // ── Velocity (burned today only) ──────────────────────────────────
 
-        int velocityPoints = Math.max(0, prevRemaining - remainingPoints);
-        int velocityIssues = Math.max(0, completedIssues - prevCompletedIssues);
+        boolean isFirstDay     = yesterday == null;
+        int velocityPoints = isFirstDay ? 0 : Math.max(0,
+                prevRemaining - remainingPoints + addedScope - removedScope
+        );
+        int velocityIssues = isFirstDay ? 0 : Math.max(0, completedIssues - prevCompletedIssues);
 
-        // ── Weekend flag ──────────────────────────────────────────────────
-
-        DayOfWeek dow = date.getDayOfWeek();
-        boolean isWeekend = dow == DayOfWeek.SATURDAY || dow == DayOfWeek.SUNDAY;
-
-        // ── Upsert: update today's snapshot if it exists, otherwise create ──
+        // ── Upsert ────────────────────────────────────────────────────────
 
         SprintBurndownSnapshot snapshot = snapshotRepository
-                .findBySprintIdAndSnapshotDate(sprint.getId(), date)
+                .findBySprintIdAndSnapshotDate(loaded.getId(), date)
                 .orElseGet(() -> {
                     SprintBurndownSnapshot s = new SprintBurndownSnapshot();
-                    s.setSprint(sprint);
+                    s.setSprint(loaded);
                     s.setSnapshotDate(date);
                     return s;
                 });
+
         snapshot.setSprintDayNumber(sprintDayNumber);
         snapshot.setIsWeekend(isWeekend);
+        snapshot.setIsHoliday(isHoliday);
+        snapshot.setIsWorkingWeekend(isWorkingWeekend);
         snapshot.setInitialStoryPoints(initialPoints);
         snapshot.setIdealRemainingPoints(idealRemaining);
         snapshot.setCurrentStoryPoints(currentTotal);
@@ -166,6 +195,14 @@ public class BurndownSnapshotScheduler {
         snapshot.setVelocityIssues(velocityIssues);
 
         snapshotRepository.save(snapshot);
-        log.debug("Snapshot saved for sprint {} on day {}", sprint.getId(), sprintDayNumber);
+        log.debug("Snapshot saved for sprint {} on day {}", loaded.getId(), sprintDayNumber);
+    }
+
+    private boolean isWorkingDay(LocalDate d, Set<LocalDate> holidays, Set<LocalDate> workingWeekends) {
+        if (workingWeekends.contains(d)) return true;
+        DayOfWeek dw = d.getDayOfWeek();
+        if (dw == DayOfWeek.SATURDAY || dw == DayOfWeek.SUNDAY) return false;
+        if (holidays.contains(d)) return false;
+        return true;
     }
 }

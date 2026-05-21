@@ -7,7 +7,12 @@ import jakarta.validation.constraints.Size;
 import lombok.Data;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
+
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.HashSet;
+import java.util.Set;
+
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties; 
 
 @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
@@ -54,6 +59,17 @@ public class Sprint {
 
     private Long startedBy;
     private LocalDateTime startedAt;
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    @ElementCollection
+    @CollectionTable(name = "sprint_holidays", joinColumns = @JoinColumn(name = "sprint_id"))
+    @Column(name = "date")
+    private Set<LocalDate> holidays = new HashSet<>();
+
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    @ElementCollection
+    @CollectionTable(name = "sprint_working_weekends", joinColumns = @JoinColumn(name = "sprint_id"))
+    @Column(name = "date")
+    private Set<LocalDate> workingWeekends = new HashSet<>();
 
     public enum SprintStatus {
         PLANNING, ACTIVE, COMPLETED

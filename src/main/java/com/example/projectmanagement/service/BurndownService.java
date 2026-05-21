@@ -36,7 +36,7 @@ public class BurndownService {
         Sprint sprint = sprintRepository.findById(sprintId)
                 .orElseThrow(() -> new RuntimeException("Sprint not found: " + sprintId));
 
-        LocalDate sprintStart = sprint.getStartDate().toLocalDate();
+        LocalDate sprintStart = sprint.getStartedAt().toLocalDate();
         LocalDate sprintEnd   = sprint.getEndDate().toLocalDate();
         LocalDate today       = LocalDate.now();
         int totalSprintDays   = (int) ChronoUnit.DAYS.between(sprintStart, sprintEnd) + 1;
@@ -58,15 +58,15 @@ public class BurndownService {
         int liveCurrentTotal = stories.stream()
                 .mapToInt(s -> s.getStoryPoints() != null ? s.getStoryPoints() : 0).sum();
         int liveCompleted = stories.stream()
-                .filter(s -> s.getStatus() != null && s.getStatus().getSortOrder() == doneSortOrder)
+                .filter(s -> s.getStatus() != null && Objects.equals(s.getStatus().getSortOrder(), doneSortOrder))
                 .mapToInt(s -> s.getStoryPoints() != null ? s.getStoryPoints() : 0).sum();
         int liveRemaining    = liveCurrentTotal - liveCompleted;
         int liveTotalIssues  = stories.size() + tasks.size();
         int liveCompletedIssues = (int) stories.stream()
-                .filter(s -> s.getStatus() != null && s.getStatus().getSortOrder() == doneSortOrder)
+                .filter(s -> s.getStatus() != null && Objects.equals(s.getStatus().getSortOrder(), doneSortOrder))
                 .count()
                 + (int) tasks.stream()
-                .filter(t -> t.getStatus() != null && t.getStatus().getSortOrder() == doneSortOrder)
+                .filter(t -> t.getStatus() != null && Objects.equals(t.getStatus().getSortOrder(), doneSortOrder))
                 .count();
 
         // Initial points from first snapshot (or live if sprint just started)
@@ -190,8 +190,8 @@ public class BurndownService {
                                    Integer oldPoints, Integer newPoints, Long changedBy) {
 
         LocalDate today = LocalDate.now();
-        LocalDate sprintStart = sprint.getStartDate().toLocalDate();
-        int sprintDayNumber = (int) ChronoUnit.DAYS.between(sprintStart, today) + 1;
+        LocalDate sprintStart = (sprint.getStartedAt() != null ? sprint.getStartedAt() : sprint.getStartDate()).toLocalDate();
+        int sprintDayNumber = Math.max(1, (int) ChronoUnit.DAYS.between(sprintStart, today) + 1);
 
         int delta = 0;
         if (changeType == SprintScopeChange.ChangeType.ADDED_TO_SPRINT) {

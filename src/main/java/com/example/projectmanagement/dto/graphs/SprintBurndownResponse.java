@@ -53,6 +53,10 @@ public class SprintBurndownResponse {
         // Scope
         private Integer addedScopePoints;
         private Integer removedScopePoints;
+         private Boolean isHoliday;           // ← add
+    private Boolean isWorkingWeekend;    // ← add
+
+        
 
         // null = future date (not yet snapshotted)
         // populated = past/today

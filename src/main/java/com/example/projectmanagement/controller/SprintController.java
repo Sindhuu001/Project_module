@@ -9,7 +9,9 @@ import com.example.projectmanagement.dto.TaskDto;
 import com.example.projectmanagement.dto.UserDto;
 import com.example.projectmanagement.entity.Sprint;
 import com.example.projectmanagement.entity.graphs.SprintScopeChange;
+import com.example.projectmanagement.repository.SprintRepository;
 import com.example.projectmanagement.repository.SprintScopeChangeRepository;
+import com.example.projectmanagement.scheduler.BurndownSnapshotScheduler;
 import com.example.projectmanagement.security.CurrentUser;
 import com.example.projectmanagement.service.BurndownService;
 import com.example.projectmanagement.service.BurnupService;
@@ -54,6 +56,12 @@ public class SprintController {
 
     @Autowired
     private SprintScopeChangeRepository scopeChangeRepository;
+
+    @Autowired
+    private BurndownSnapshotScheduler burndownSnapshotScheduler;
+
+    @Autowired
+    private SprintRepository sprintRepository;
 
 
     // Create Sprint with User context

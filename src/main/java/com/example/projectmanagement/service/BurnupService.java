@@ -198,6 +198,8 @@ public class BurnupService {
                     e.setChangeType(sc.getChangeType().name());
                     e.setPointsDelta(sc.getPointsDelta());
                     e.setChangedBy(sc.getChangedBy());
+                    e.setEpicId(sc.getEpicId());
+                    e.setEpicName(sc.getEpicName());
                     return e;
                 })
                 .collect(Collectors.toList());

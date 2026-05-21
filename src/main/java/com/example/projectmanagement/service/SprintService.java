@@ -133,12 +133,13 @@ private BurndownSnapshotScheduler burndownSnapshotScheduler;
 
         // 6. Save and return
         Sprint updatedSprint = sprintRepository.save(sprint);
-         try {
-        burndownSnapshotScheduler.takeSnapshotForSprint(updatedSprint, LocalDate.now());
-    } catch (Exception e) {
-        // Don't fail the sprint start if snapshot fails
-        // log.warn("Failed to take initial snapshot for sprint {}: {}", id, e.getMessage());
-    }
+        try {
+            burndownSnapshotScheduler.takeSnapshotForSprint(updatedSprint, LocalDate.now());
+        } catch (Exception e) {
+            // Don't fail the sprint start if snapshot fails
+            System.err.println("Failed to take initial snapshot for sprint " + id + ": " + e.getMessage());
+            e.printStackTrace();
+        }
         return convertToDto(updatedSprint);
     }
 

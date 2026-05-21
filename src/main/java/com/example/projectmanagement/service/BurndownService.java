@@ -158,6 +158,8 @@ public class BurndownService {
                     e.setChangeType(sc.getChangeType().name());
                     e.setPointsDelta(sc.getPointsDelta());
                     e.setChangedBy(sc.getChangedBy());
+                    e.setEpicId(sc.getEpicId());
+                    e.setEpicName(sc.getEpicName());
                     return e;
                 })
                 .collect(Collectors.toList());
@@ -187,7 +189,7 @@ public class BurndownService {
     public void recordScopeChange(Sprint sprint, Long issueId, String issueTitle,
                                    SprintScopeChange.IssueType issueType,
                                    SprintScopeChange.ChangeType changeType,
-                                   Integer oldPoints, Integer newPoints, Long changedBy) {
+                                   Integer oldPoints, Integer newPoints, Long changedBy, Long epicId, String epicName) {
 
         LocalDate today = LocalDate.now();
         LocalDate sprintStart = (sprint.getStartedAt() != null ? sprint.getStartedAt() : sprint.getStartDate()).toLocalDate();
@@ -214,6 +216,8 @@ public class BurndownService {
         change.setNewStoryPoints(newPoints);
         change.setPointsDelta(delta);
         change.setChangedBy(changedBy);
+        change.setEpicId(epicId);
+        change.setEpicName(epicName);
 
         scopeChangeRepository.save(change);
     }

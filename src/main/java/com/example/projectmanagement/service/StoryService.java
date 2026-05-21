@@ -136,7 +136,9 @@ public class StoryService {
             burndownService.recordScopeChange(saved.getSprint(), saved.getId(), saved.getTitle(),
                     SprintScopeChange.IssueType.STORY,
                     SprintScopeChange.ChangeType.ADDED_TO_SPRINT,
-                    null, saved.getStoryPoints(), userId);
+                    null, saved.getStoryPoints(), userId,
+                    saved.getEpic() != null ? saved.getEpic().getId() : null,
+                    saved.getEpic() != null ? saved.getEpic().getName() : null);
         }
 
         if (saved.getEpic() != null) {
@@ -344,30 +346,33 @@ public class StoryService {
 
         Story saved = storyRepository.save(story);
 
+        Long savedEpicId   = saved.getEpic() != null ? saved.getEpic().getId()   : null;
+        String savedEpicName = saved.getEpic() != null ? saved.getEpic().getName() : null;
+
         if (oldSprint == null && saved.getSprint() != null) {
             burndownService.recordScopeChange(saved.getSprint(), saved.getId(), saved.getTitle(),
                     SprintScopeChange.IssueType.STORY,
                     SprintScopeChange.ChangeType.ADDED_TO_SPRINT,
-                    null, saved.getStoryPoints(), null);
+                    null, saved.getStoryPoints(), null, savedEpicId, savedEpicName);
         } else if (oldSprint != null && saved.getSprint() == null) {
             burndownService.recordScopeChange(oldSprint, saved.getId(), saved.getTitle(),
                     SprintScopeChange.IssueType.STORY,
                     SprintScopeChange.ChangeType.REMOVED_FROM_SPRINT,
-                    oldPoints, null, null);
+                    oldPoints, null, null, savedEpicId, savedEpicName);
         }
 
         if (!Objects.equals(oldPoints, saved.getStoryPoints()) && saved.getSprint() != null) {
             burndownService.recordScopeChange(saved.getSprint(), saved.getId(), saved.getTitle(),
                     SprintScopeChange.IssueType.STORY,
                     SprintScopeChange.ChangeType.STORY_POINTS_CHANGED,
-                    oldPoints, saved.getStoryPoints(), null);
+                    oldPoints, saved.getStoryPoints(), null, savedEpicId, savedEpicName);
         }
 
         if (Objects.equals(status.getSortOrder(), doneSortOrder) && saved.getSprint() != null) {
             burndownService.recordScopeChange(saved.getSprint(), saved.getId(), saved.getTitle(),
                     SprintScopeChange.IssueType.STORY,
                     SprintScopeChange.ChangeType.STATUS_CHANGED_TO_DONE,
-                    saved.getStoryPoints(), saved.getStoryPoints(), null);
+                    saved.getStoryPoints(), saved.getStoryPoints(), null, savedEpicId, savedEpicName);
         }
 
         if (saved.getEpic() != null) {
@@ -424,7 +429,9 @@ public class StoryService {
             burndownService.recordScopeChange(updatedStory.getSprint(), updatedStory.getId(), updatedStory.getTitle(),
                     SprintScopeChange.IssueType.STORY,
                     SprintScopeChange.ChangeType.STATUS_CHANGED_TO_DONE,
-                    updatedStory.getStoryPoints(), updatedStory.getStoryPoints(), null);
+                    updatedStory.getStoryPoints(), updatedStory.getStoryPoints(), null,
+                    updatedStory.getEpic() != null ? updatedStory.getEpic().getId() : null,
+                    updatedStory.getEpic() != null ? updatedStory.getEpic().getName() : null);
         }
 
         if (story.getEpic() != null) {
@@ -563,16 +570,19 @@ public class StoryService {
         taskRepository.saveAll(tasks);
         storyRepository.save(story);
 
+        Long storyEpicId     = story.getEpic() != null ? story.getEpic().getId()   : null;
+        String storyEpicName = story.getEpic() != null ? story.getEpic().getName() : null;
+
         if (oldSprint == null && sprint != null) {
             burndownService.recordScopeChange(sprint, story.getId(), story.getTitle(),
                     SprintScopeChange.IssueType.STORY,
                     SprintScopeChange.ChangeType.ADDED_TO_SPRINT,
-                    null, story.getStoryPoints(), null);
+                    null, story.getStoryPoints(), null, storyEpicId, storyEpicName);
         } else if (oldSprint != null && sprint == null) {
             burndownService.recordScopeChange(oldSprint, story.getId(), story.getTitle(),
                     SprintScopeChange.IssueType.STORY,
                     SprintScopeChange.ChangeType.REMOVED_FROM_SPRINT,
-                    story.getStoryPoints(), null, null);
+                    story.getStoryPoints(), null, null, storyEpicId, storyEpicName);
         }
     }
 

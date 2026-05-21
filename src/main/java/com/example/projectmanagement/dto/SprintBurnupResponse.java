@@ -84,5 +84,7 @@ public class SprintBurnupResponse {
         private String changeType;
         private Integer pointsDelta;
         private Long changedBy;
+        private Long epicId;
+        private String epicName;
     }
 }

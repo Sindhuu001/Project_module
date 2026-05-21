@@ -17,6 +17,7 @@ import com.example.projectmanagement.repository.ProjectRepository;
 import com.example.projectmanagement.repository.SprintRepository;
 import com.example.projectmanagement.repository.StoryRepository;
 import com.example.projectmanagement.repository.TaskRepository;
+import com.example.projectmanagement.scheduler.BurndownSnapshotScheduler;
 import com.example.projectmanagement.repository.StatusRepository;
 import com.example.projectmanagement.entity.RolePermissionChecker;
 import com.example.projectmanagement.entity.Status;
@@ -40,6 +41,8 @@ import java.util.stream.Collectors;
 @Service
 @Transactional
 public class SprintService {
+    @Autowired
+private BurndownSnapshotScheduler burndownSnapshotScheduler;
 
     @Autowired
     private SprintRepository sprintRepository;
@@ -130,6 +133,12 @@ public class SprintService {
 
         // 6. Save and return
         Sprint updatedSprint = sprintRepository.save(sprint);
+         try {
+        burndownSnapshotScheduler.takeSnapshotForSprint(updatedSprint, LocalDate.now());
+    } catch (Exception e) {
+        // Don't fail the sprint start if snapshot fails
+        // log.warn("Failed to take initial snapshot for sprint {}: {}", id, e.getMessage());
+    }
         return convertToDto(updatedSprint);
     }
 
@@ -593,4 +602,7 @@ public SprintBurndownResponse getSprintBurndown(Long sprintId) {
             System.out.println("Expired sprint processed: " + sprint.getName());
         }
     }
+
+
+    
 }

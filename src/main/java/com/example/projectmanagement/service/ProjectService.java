@@ -631,34 +631,45 @@ public class ProjectService {
         projectRepository.deleteById(id);
     }
 
-    @org.springframework.transaction.annotation.Transactional
-    public ProjectDto addMemberToProject(Long projectId, Long employeeId) {
-        Project project = projectRepository.findById(projectId)
-                .orElseThrow(() -> new RuntimeException("Project not found with id: " + projectId));
+    // @org.springframework.transaction.annotation.Transactional
+    // public ProjectDto addMemberToProject(Long projectId, Long employeeId) {
+    //     Project project = projectRepository.findById(projectId)
+    //             .orElseThrow(() -> new RuntimeException("Project not found with id: " + projectId));
 
-        try {
-            Map<String, UmsEmployeeInfo> lookup = userClient.resolveEmployeeIds(
-                    new UmsEmployeeLookupRequest(List.of(employeeId)));
-            Long umsUserId = lookup.values().stream()
-                    .filter(info -> info != null && info.getUserId() != null)
-                    .map(UmsEmployeeInfo::getUserId)
-                    .findFirst()
-                    .orElse(null);
+    //     try {
+    //         Map<String, UmsEmployeeInfo> lookup = userClient.resolveEmployeeIds(
+    //                 new UmsEmployeeLookupRequest(List.of(employeeId)));
+    //         Long umsUserId = lookup.values().stream()
+    //                 .filter(info -> info != null && info.getUserId() != null)
+    //                 .map(UmsEmployeeInfo::getUserId)
+    //                 .findFirst()
+    //                 .orElse(null);
 
-            if (umsUserId != null) {
-                // Direct SQL INSERT — never touches the lazy-loaded Hibernate collection,
-                // so stale employee IDs already in project_members are not re-saved.
-                projectRepository.insertMember(projectId, umsUserId);
-                log.info("addMember: project {} → employee {} → UMS user {}", projectId, employeeId, umsUserId);
-            } else {
-                log.warn("addMember: project {} → employee {} not found in UMS", projectId, employeeId);
-            }
-        } catch (Exception e) {
-            log.error("addMember: UMS resolution failed for employee {}: {}", employeeId, e.getMessage());
-        }
+    //         if (umsUserId != null) {
+    //             // Direct SQL INSERT — never touches the lazy-loaded Hibernate collection,
+    //             // so stale employee IDs already in project_members are not re-saved.
+    //             projectRepository.insertMember(projectId, umsUserId);
+    //             log.info("addMember: project {} → employee {} → UMS user {}", projectId, employeeId, umsUserId);
+    //         } else {
+    //             log.warn("addMember: project {} → employee {} not found in UMS", projectId, employeeId);
+    //         }
+    //     } catch (Exception e) {
+    //         log.error("addMember: UMS resolution failed for employee {}: {}", employeeId, e.getMessage());
+    //     }
 
-        return convertToDto(project);
-    }
+    //     return convertToDto(project);
+    // }
+
+    @Transactional
+public ProjectDto addMemberToProject(Long projectId, Long employeeId) {
+    Project project = projectRepository.findById(projectId)
+            .orElseThrow(() -> new RuntimeException("Project not found with id: " + projectId));
+
+    projectRepository.insertMember(projectId, employeeId);
+    log.info("addMember: project {} → employee {}", projectId, employeeId);
+
+    return convertToDto(project);
+}
 
     @org.springframework.transaction.annotation.Transactional
     public ProjectDto removeMemberFromProject(Long projectId, Long userId) {

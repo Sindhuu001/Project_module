@@ -40,10 +40,20 @@ public class BurnupService {
         Sprint sprint = sprintRepository.findById(sprintId)
                 .orElseThrow(() -> new RuntimeException("Sprint not found: " + sprintId));
 
-        LocalDate sprintStart = sprint.getStartDate().toLocalDate();
+        LocalDate sprintStart = (sprint.getStartedAt() != null ? sprint.getStartedAt() : sprint.getStartDate()).toLocalDate();
         LocalDate sprintEnd   = sprint.getEndDate().toLocalDate();
         LocalDate today       = LocalDate.now();
         int totalSprintDays   = (int) ChronoUnit.DAYS.between(sprintStart, sprintEnd) + 1;
+
+        Set<LocalDate> holidays        = sprint.getHolidays();
+        Set<LocalDate> workingWeekends = sprint.getWorkingWeekends();
+
+        List<LocalDate> allSprintDates = sprintStart.datesUntil(sprintEnd.plusDays(1))
+                .collect(Collectors.toList());
+
+        long totalWorkingDays = allSprintDates.stream()
+                .filter(wd -> isWorkingDay(wd, holidays, workingWeekends))
+                .count();
 
         // ── Load all snapshots keyed by date ──────────────────────────────
 
@@ -103,11 +113,13 @@ public class BurnupService {
                     DayOfWeek dow = date.getDayOfWeek();
                     d.setIsWeekend(dow == DayOfWeek.SATURDAY || dow == DayOfWeek.SUNDAY);
 
-                    // Ideal completed line: linear from 0 on day 1 → initialPoints on last day
-                    // Guard against division by zero for 1-day sprints
-                    int idealCompleted = (totalSprintDays <= 1) ? initialPoints :
-                            Math.round(initialPoints *
-                                    ((float)(d.getSprintDayNumber() - 1) / (totalSprintDays - 1)));
+                    // Ideal completed line: increases only on working days
+                    long workingDaysElapsed = allSprintDates.stream()
+                            .filter(wd -> !wd.isAfter(date))
+                            .filter(wd -> isWorkingDay(wd, holidays, workingWeekends))
+                            .count();
+                    int idealCompleted = totalWorkingDays == 0 ? 0 : Math.min(initialPoints,
+                            Math.round(initialPoints * ((float) workingDaysElapsed / totalWorkingDays)));
 
                     d.setIdealCompletedPoints(idealCompleted);
                     d.setInitialScopePoints(initialPoints);
@@ -204,12 +216,13 @@ public class BurnupService {
             isOnTrack = true;
             overallDeviation = 0;
         } else {
-            int todayDayNumber = (int) ChronoUnit.DAYS.between(sprintStart, today) + 1;
-            todayDayNumber = Math.min(todayDayNumber, totalSprintDays); // clamp for completed sprints
-
-            int todayIdeal = (totalSprintDays <= 1) ? initialPoints :
-                    Math.round(initialPoints *
-                            ((float)(todayDayNumber - 1) / (totalSprintDays - 1)));
+            LocalDate clampedToday = today.isAfter(sprintEnd) ? sprintEnd : today;
+            long todayWorkingElapsed = allSprintDates.stream()
+                    .filter(wd -> !wd.isAfter(clampedToday))
+                    .filter(wd -> isWorkingDay(wd, holidays, workingWeekends))
+                    .count();
+            int todayIdeal = totalWorkingDays == 0 ? 0 : Math.min(initialPoints,
+                    Math.round(initialPoints * ((float) todayWorkingElapsed / totalWorkingDays)));
 
             isOnTrack = liveCompleted >= todayIdeal;
             overallDeviation = liveCompleted - todayIdeal;
@@ -237,5 +250,13 @@ public class BurnupService {
         response.setScopeChanges(scopeChanges);
 
         return response;
+    }
+
+    private boolean isWorkingDay(LocalDate d, Set<LocalDate> holidays, Set<LocalDate> workingWeekends) {
+        if (workingWeekends.contains(d)) return true;
+        DayOfWeek dw = d.getDayOfWeek();
+        if (dw == DayOfWeek.SATURDAY || dw == DayOfWeek.SUNDAY) return false;
+        if (holidays.contains(d)) return false;
+        return true;
     }
 }

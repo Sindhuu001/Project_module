@@ -93,4 +93,9 @@ public class SprintBurndownSnapshot {
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
+    @Column(name = "is_holiday", nullable = false)
+private Boolean isHoliday = false;
+
+@Column(name = "is_working_weekend", nullable = false)
+private Boolean isWorkingWeekend = false;
 } 

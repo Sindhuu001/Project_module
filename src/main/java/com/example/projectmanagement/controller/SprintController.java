@@ -207,11 +207,19 @@ public class SprintController {
     public ResponseEntity<List<SprintScopeChange>> getScopeChanges(@PathVariable Long sprintId) {
         return ResponseEntity.ok(scopeChangeRepository.findBySprintIdOrderByChangedAtAsc(sprintId));
     }
-
+   @GetMapping("/{sprintId}/burndown")
+@PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')")
+public ResponseEntity<SprintBurndownResponse> getBurndownChart(@PathVariable Long sprintId) {
+    return ResponseEntity.ok(burndownService.getBurndown(sprintId));
+}
     @GetMapping("/{sprintId}/burnup")
     @PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')")
     public ResponseEntity<SprintBurnupResponse> getBurnupChart(@PathVariable Long sprintId) {
         return ResponseEntity.ok(burnupService.getBurnup(sprintId));
     }
+
+
+
+    
 
 }

@@ -109,6 +109,8 @@ public class BurndownService {
                         SprintBurndownSnapshot snap = snapshotMap.get(date);
                         d.setRemainingStoryPoints(snap.getRemainingStoryPoints());
                         d.setCompletedStoryPoints(snap.getCompletedStoryPoints());
+                        
+                        d.setTotalScopePoints(snap.getCurrentStoryPoints());
                         d.setVelocityPoints(snap.getVelocityPoints());
                         d.setAddedScopePoints(snap.getAddedScopePoints());
                         d.setRemovedScopePoints(snap.getRemovedScopePoints());
@@ -125,6 +127,7 @@ public class BurndownService {
                             SprintBurndownSnapshot snap = snapshotMap.get(today);
                             d.setRemainingStoryPoints(snap.getRemainingStoryPoints());
                             d.setCompletedStoryPoints(snap.getCompletedStoryPoints());
+                            d.setTotalScopePoints(snap.getCurrentStoryPoints());
                             d.setVelocityPoints(snap.getVelocityPoints());
                             d.setAddedScopePoints(snap.getAddedScopePoints());
                             d.setRemovedScopePoints(snap.getRemovedScopePoints());
@@ -137,6 +140,7 @@ public class BurndownService {
                             // Live fallback
                             d.setRemainingStoryPoints(liveRemaining);
                             d.setCompletedStoryPoints(liveCompleted);
+                            d.setTotalScopePoints(liveCurrentTotal);
                             d.setVelocityPoints(0);
                             d.setAddedScopePoints(0);
                             d.setRemovedScopePoints(0);
@@ -152,6 +156,7 @@ public class BurndownService {
                         // Future — nulls so frontend knows not to plot
                         d.setRemainingStoryPoints(null);
                         d.setCompletedStoryPoints(null);
+                        d.setTotalScopePoints(null);
                         d.setVelocityPoints(null);
                         d.setAddedScopePoints(null);
                         d.setRemovedScopePoints(null);

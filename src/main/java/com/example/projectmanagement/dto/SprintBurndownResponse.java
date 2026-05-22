@@ -49,6 +49,7 @@ public class SprintBurndownResponse {
         private Integer velocityIssues;
         private Integer addedScopeIssues;
         private Integer removedScopeIssues;
+        private Integer totalScopePoints;
         private Boolean isHoliday;
         private Boolean isWorkingWeekend;
     }

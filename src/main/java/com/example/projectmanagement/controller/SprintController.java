@@ -4,7 +4,9 @@ import com.example.projectmanagement.audit.annotation.AuditLog;
 import com.example.projectmanagement.dto.SprintBurndownResponse;
 import com.example.projectmanagement.dto.SprintBurnupResponse;
 import com.example.projectmanagement.dto.SprintDto;
+import com.example.projectmanagement.dto.SprintHolidayRequest;
 import com.example.projectmanagement.dto.SprintPopupResponse;
+import com.example.projectmanagement.dto.SprintScheduleResponse;
 import com.example.projectmanagement.dto.TaskDto;
 import com.example.projectmanagement.dto.UserDto;
 import com.example.projectmanagement.entity.Sprint;
@@ -24,6 +26,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.data.domain.*;
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -226,8 +229,55 @@ public ResponseEntity<SprintBurndownResponse> getBurndownChart(@PathVariable Lon
         return ResponseEntity.ok(burnupService.getBurnup(sprintId));
     }
 
+    // ── Sprint Schedule: holidays & working weekends ─────────────────────
 
+    @GetMapping("/{id}/schedule")
+    @PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')")
+    public ResponseEntity<SprintScheduleResponse> getSchedule(@PathVariable Long id) {
+        return ResponseEntity.ok(sprintService.getSchedule(id));
+    }
 
-    
+    @GetMapping("/{id}/holidays")
+    @PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')")
+    public ResponseEntity<List<LocalDate>> getHolidays(@PathVariable Long id) {
+        return ResponseEntity.ok(sprintService.getHolidays(id));
+    }
 
+    @GetMapping("/{id}/working-weekends")
+    @PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')")
+    public ResponseEntity<List<LocalDate>> getWorkingWeekends(@PathVariable Long id) {
+        return ResponseEntity.ok(sprintService.getWorkingWeekends(id));
+    }
+
+    @PostMapping("/{id}/holidays")
+    @PreAuthorize("hasRole('PROJECT_MANAGER')")
+    public ResponseEntity<SprintScheduleResponse> addHolidays(
+            @PathVariable Long id,
+            @RequestBody SprintHolidayRequest request) {
+        return ResponseEntity.ok(sprintService.addHolidays(id, request.getDates()));
+    }
+
+    @DeleteMapping("/{id}/holidays")
+    @PreAuthorize("hasRole('PROJECT_MANAGER')")
+    public ResponseEntity<SprintScheduleResponse> removeHolidays(
+            @PathVariable Long id,
+            @RequestBody SprintHolidayRequest request) {
+        return ResponseEntity.ok(sprintService.removeHolidays(id, request.getDates()));
+    }
+
+    @PostMapping("/{id}/working-weekends")
+    @PreAuthorize("hasRole('PROJECT_MANAGER')")
+    public ResponseEntity<SprintScheduleResponse> addWorkingWeekends(
+            @PathVariable Long id,
+            @RequestBody SprintHolidayRequest request) {
+        return ResponseEntity.ok(sprintService.addWorkingWeekends(id, request.getDates()));
+    }
+
+    @DeleteMapping("/{id}/working-weekends")
+    @PreAuthorize("hasRole('PROJECT_MANAGER')")
+    public ResponseEntity<SprintScheduleResponse> removeWorkingWeekends(
+            @PathVariable Long id,
+            @RequestBody SprintHolidayRequest request) {
+        return ResponseEntity.ok(sprintService.removeWorkingWeekends(id, request.getDates()));
+    }
 }

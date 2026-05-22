@@ -49,14 +49,7 @@ public class SprintBurndownResponse {
         private Integer velocityIssues;
         private Integer addedScopeIssues;
         private Integer removedScopeIssues;
-        public void setIsHoliday(boolean contains) {
-            // TODO Auto-generated method stub
-            throw new UnsupportedOperationException("Unimplemented method 'setIsHoliday'");
-        }
-        public void setIsWorkingWeekend(boolean contains) {
-            // TODO Auto-generated method stub
-            throw new UnsupportedOperationException("Unimplemented method 'setIsWorkingWeekend'");
-        }
-        
+        private Boolean isHoliday;
+        private Boolean isWorkingWeekend;
     }
 }

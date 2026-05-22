@@ -3,6 +3,7 @@ package com.example.projectmanagement.repository;
 import com.example.projectmanagement.entity.Sprint;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -61,6 +62,11 @@ public interface SprintRepository extends JpaRepository<Sprint, Long> {
     long countByEndDateBetween(LocalDateTime start, LocalDateTime end);
 
     boolean existsByNameAndProjectId(String name, Long projectId);
+
+    // Eagerly loads holidays + workingWeekends to avoid lazy-load failures in scheduler / burnup
+    @EntityGraph(attributePaths = {"holidays", "workingWeekends"})
+    @Query("SELECT s FROM Sprint s WHERE s.id = :id")
+    Optional<Sprint> findByIdWithSchedule(@Param("id") Long id);
 
     // Find expired active sprints
     List<Sprint> findByStatusAndEndDateBefore(Sprint.SprintStatus status,

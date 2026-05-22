@@ -37,7 +37,7 @@ public class BurndownSnapshotScheduler {
     @Lazy
     private BurndownSnapshotScheduler self;
 
-    @Scheduled(cron = "0 0 0 * * *")
+    @Scheduled(cron = "${sprint.scheduler.cron:0 0 0 * * *}")
     public void takeSnapshots() {
         LocalDate today = LocalDate.now();
         log.info("Taking burndown snapshots for date: {}", today);
@@ -57,12 +57,17 @@ public class BurndownSnapshotScheduler {
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void takeSnapshotForSprint(Sprint sprint, LocalDate date) {
-        // Reload within this transaction so lazy associations (project, holidays, workingWeekends) resolve correctly
-        final Sprint loaded = sprintRepository.findById(sprint.getId())
+        // Use eager-load query so holidays + workingWeekends are fetched in the same query,
+        // avoiding lazy-load failures if sprint_holidays / sprint_working_weekends tables
+        // haven't been initialised in this session yet.
+        final Sprint loaded = sprintRepository.findByIdWithSchedule(sprint.getId())
                 .orElseThrow(() -> new RuntimeException("Sprint not found: " + sprint.getId()));
 
         Long projectId = loaded.getProject().getId();
         Integer doneSortOrder = statusRepository.findMaxSortOrderByProject(projectId);
+        if (doneSortOrder == null) {
+            log.warn("No statuses found for project {} — sprint {} snapshot will show 0 completed", projectId, loaded.getId());
+        }
 
         // ── Story point calculations ──────────────────────────────────────
 
@@ -160,11 +165,8 @@ public class BurndownSnapshotScheduler {
 
         // ── Velocity (burned today only) ──────────────────────────────────
 
-        boolean isFirstDay     = yesterday == null;
-        int velocityPoints = isFirstDay ? 0 : Math.max(0,
-                prevRemaining - remainingPoints + addedScope - removedScope
-        );
-        int velocityIssues = isFirstDay ? 0 : Math.max(0, completedIssues - prevCompletedIssues);
+        int velocityPoints = Math.max(0, prevRemaining - remainingPoints + addedScope - removedScope);
+        int velocityIssues = Math.max(0, completedIssues - prevCompletedIssues);
 
         // ── Upsert ────────────────────────────────────────────────────────
 

@@ -33,10 +33,10 @@ public class BurndownService {
     @Transactional(readOnly = true)
     public SprintBurndownResponse getBurndown(Long sprintId) {
 
-        Sprint sprint = sprintRepository.findById(sprintId)
+        Sprint sprint = sprintRepository.findByIdWithSchedule(sprintId)
                 .orElseThrow(() -> new RuntimeException("Sprint not found: " + sprintId));
 
-        LocalDate sprintStart = sprint.getStartedAt().toLocalDate();
+        LocalDate sprintStart = (sprint.getStartedAt() != null ? sprint.getStartedAt() : sprint.getStartDate()).toLocalDate();
         LocalDate sprintEnd   = sprint.getEndDate().toLocalDate();
         LocalDate today       = LocalDate.now();
         int totalSprintDays   = (int) ChronoUnit.DAYS.between(sprintStart, sprintEnd) + 1;
@@ -75,6 +75,15 @@ public class BurndownService {
                 .map(SprintBurndownSnapshot::getInitialStoryPoints)
                 .orElse(liveCurrentTotal);
 
+        java.util.Set<LocalDate> holidays        = sprint.getHolidays();
+        java.util.Set<LocalDate> workingWeekends = sprint.getWorkingWeekends();
+
+        List<LocalDate> allSprintDates = sprintStart.datesUntil(sprintEnd.plusDays(1))
+                .collect(Collectors.toList());
+        long totalWorkingDays = allSprintDates.stream()
+                .filter(d -> isWorkingDay(d, holidays, workingWeekends))
+                .count();
+
         // Build daily burn list
         List<DailyBurn> dailyBurnList = sprintStart.datesUntil(sprintEnd.plusDays(1))
                 .map(date -> {
@@ -85,10 +94,14 @@ public class BurndownService {
                     DayOfWeek dow = date.getDayOfWeek();
                     d.setIsWeekend(dow == DayOfWeek.SATURDAY || dow == DayOfWeek.SUNDAY);
 
-                    // Ideal line — always calculable
-                    int idealRemaining = Math.round(
-                            initialPoints * (1f - ((float)(d.getSprintDayNumber() - 1) / (totalSprintDays - 1)))
-                    );
+                    // Ideal line — holds steady on weekends/holidays, decreases only on working days
+                    long workingDaysElapsed = allSprintDates.stream()
+                            .filter(wd -> !wd.isAfter(date))
+                            .filter(wd -> isWorkingDay(wd, holidays, workingWeekends))
+                            .count();
+                    int idealRemaining = totalWorkingDays == 0 ? 0 : Math.max(0, Math.round(
+                            initialPoints * (1f - ((float) workingDaysElapsed / totalWorkingDays))
+                    ));
                     d.setIdealRemainingPoints(idealRemaining);
 
                     if (date.isBefore(today) && snapshotMap.containsKey(date)) {
@@ -103,6 +116,8 @@ public class BurndownService {
                         d.setCompletedIssues(snap.getCompletedIssues());
                         d.setVelocityIssues(snap.getVelocityIssues());
                         d.setDeviationPoints(snap.getRemainingStoryPoints() - idealRemaining);
+                        d.setIsHoliday(snap.getIsHoliday());
+                        d.setIsWorkingWeekend(snap.getIsWorkingWeekend());
 
                     } else if (date.isEqual(today)) {
                         // Today — use snapshot if exists, else live
@@ -116,6 +131,8 @@ public class BurndownService {
                             d.setRemainingIssues(snap.getRemainingIssues());
                             d.setCompletedIssues(snap.getCompletedIssues());
                             d.setVelocityIssues(snap.getVelocityIssues());
+                            d.setIsHoliday(snap.getIsHoliday());
+                            d.setIsWorkingWeekend(snap.getIsWorkingWeekend());
                         } else {
                             // Live fallback
                             d.setRemainingStoryPoints(liveRemaining);
@@ -126,6 +143,8 @@ public class BurndownService {
                             d.setRemainingIssues(liveTotalIssues - liveCompletedIssues);
                             d.setCompletedIssues(liveCompletedIssues);
                             d.setVelocityIssues(0);
+                            d.setIsHoliday(holidays.contains(date));
+                            d.setIsWorkingWeekend(workingWeekends.contains(date));
                         }
                         d.setDeviationPoints(d.getRemainingStoryPoints() - idealRemaining);
 
@@ -140,6 +159,8 @@ public class BurndownService {
                         d.setCompletedIssues(null);
                         d.setVelocityIssues(null);
                         d.setDeviationPoints(null);
+                        d.setIsHoliday(null);
+                        d.setIsWorkingWeekend(null);
                     }
 
                     return d;
@@ -182,6 +203,14 @@ public class BurndownService {
         response.setScopeChanges(scopeChanges);
 
         return response;
+    }
+
+    private boolean isWorkingDay(LocalDate d, Set<LocalDate> holidays, Set<LocalDate> workingWeekends) {
+        if (workingWeekends.contains(d)) return true;
+        DayOfWeek dw = d.getDayOfWeek();
+        if (dw == DayOfWeek.SATURDAY || dw == DayOfWeek.SUNDAY) return false;
+        if (holidays.contains(d)) return false;
+        return true;
     }
 
     // Called from StoryService/TaskService when scope changes happen

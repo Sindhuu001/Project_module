@@ -37,7 +37,7 @@ public class BurnupService {
 
         // ── Load sprint ───────────────────────────────────────────────────
 
-        Sprint sprint = sprintRepository.findById(sprintId)
+        Sprint sprint = sprintRepository.findByIdWithSchedule(sprintId)
                 .orElseThrow(() -> new RuntimeException("Sprint not found: " + sprintId));
 
         LocalDate sprintStart = (sprint.getStartedAt() != null ? sprint.getStartedAt() : sprint.getStartDate()).toLocalDate();
@@ -138,6 +138,8 @@ public class BurnupService {
                         d.setTotalIssues(snap.getTotalIssues());
                         d.setRemainingIssues(snap.getRemainingIssues());
                         d.setDeviationPoints(snap.getCompletedStoryPoints() - idealCompleted);
+                        d.setIsHoliday(snap.getIsHoliday());
+                        d.setIsWorkingWeekend(snap.getIsWorkingWeekend());
 
                     } else if (date.isEqual(today)) {
                         // ── Today: snapshot if available, else live ───────
@@ -153,6 +155,8 @@ public class BurnupService {
                             d.setCompletedIssues(snap.getCompletedIssues());
                             d.setTotalIssues(snap.getTotalIssues());
                             d.setRemainingIssues(snap.getRemainingIssues());
+                            d.setIsHoliday(snap.getIsHoliday());
+                            d.setIsWorkingWeekend(snap.getIsWorkingWeekend());
                         } else {
                             // Live fallback — no snapshot yet for today
                             d.setCompletedPoints(liveCompleted);
@@ -164,6 +168,8 @@ public class BurnupService {
                             d.setCompletedIssues(liveCompletedIssues);
                             d.setTotalIssues(liveTotalIssues);
                             d.setRemainingIssues(liveTotalIssues - liveCompletedIssues);
+                            d.setIsHoliday(holidays.contains(date));
+                            d.setIsWorkingWeekend(workingWeekends.contains(date));
                         }
                         d.setDeviationPoints(d.getCompletedPoints() - idealCompleted);
 
@@ -179,6 +185,8 @@ public class BurnupService {
                         d.setTotalIssues(null);
                         d.setRemainingIssues(null);
                         d.setDeviationPoints(null);
+                        d.setIsHoliday(null);
+                        d.setIsWorkingWeekend(null);
                     }
 
                     return d;
@@ -198,6 +206,8 @@ public class BurnupService {
                     e.setChangeType(sc.getChangeType().name());
                     e.setPointsDelta(sc.getPointsDelta());
                     e.setChangedBy(sc.getChangedBy());
+                    e.setEpicId(sc.getEpicId());
+                    e.setEpicName(sc.getEpicName());
                     return e;
                 })
                 .collect(Collectors.toList());

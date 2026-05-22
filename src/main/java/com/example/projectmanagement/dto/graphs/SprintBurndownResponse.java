@@ -53,8 +53,8 @@ public class SprintBurndownResponse {
         // Scope
         private Integer addedScopePoints;
         private Integer removedScopePoints;
-         private Boolean isHoliday;           // ← add
-    private Boolean isWorkingWeekend;    // ← add
+        private Boolean isHoliday;           // ← add
+        private Boolean isWorkingWeekend;    // ← add
 
         
 
@@ -70,5 +70,7 @@ public class SprintBurndownResponse {
         private String changeType;
         private Integer pointsDelta;
         private Long changedBy;
+        private Long epicId;
+        private String epicName;
     }
 }

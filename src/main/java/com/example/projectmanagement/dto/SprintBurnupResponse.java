@@ -73,6 +73,9 @@ public class SprintBurnupResponse {
         private Integer totalIssues;
         private Integer remainingIssues;
 
+        private Boolean isHoliday;
+        private Boolean isWorkingWeekend;
+
         // null values = future date (frontend should not plot these)
     }
 
@@ -84,5 +87,7 @@ public class SprintBurnupResponse {
         private String changeType;
         private Integer pointsDelta;
         private Long changedBy;
+        private Long epicId;
+        private String epicName;
     }
 }

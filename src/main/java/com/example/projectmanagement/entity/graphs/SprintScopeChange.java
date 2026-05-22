@@ -62,6 +62,12 @@ public class SprintScopeChange {
     @Column(name = "points_delta")
     private Integer pointsDelta;
 
+    @Column(name = "epic_id")
+    private Long epicId;
+
+    @Column(name = "epic_name")
+    private String epicName;
+
     @Column(name = "changed_by")
     private Long changedBy;
 

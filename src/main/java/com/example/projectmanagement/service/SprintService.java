@@ -4,7 +4,9 @@ import com.example.projectmanagement.ExternalDTO.ProjectTasksDto.TaskDto;
 import com.example.projectmanagement.client.UserClient;
 import com.example.projectmanagement.dto.SprintBurndownResponse;
 import com.example.projectmanagement.dto.SprintDto;
+import com.example.projectmanagement.dto.SprintHolidayRequest;
 import com.example.projectmanagement.dto.SprintPopupResponse;
+import com.example.projectmanagement.dto.SprintScheduleResponse;
 import com.example.projectmanagement.dto.UserDto;
 import com.example.projectmanagement.entity.Project;
 import com.example.projectmanagement.entity.Sprint;
@@ -14,6 +16,7 @@ import com.example.projectmanagement.entity.Task;
 //import com.example.projectmanagement.entity.Task.TaskStatus;
 import com.example.projectmanagement.exception.SprintCompletionException;
 import com.example.projectmanagement.repository.ProjectRepository;
+import com.example.projectmanagement.repository.SprintBurndownSnapshotRepository;
 import com.example.projectmanagement.repository.SprintRepository;
 import com.example.projectmanagement.repository.StoryRepository;
 import com.example.projectmanagement.repository.TaskRepository;
@@ -28,6 +31,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.time.Duration;
 import java.time.LocalDate;
@@ -68,6 +73,9 @@ private BurndownSnapshotScheduler burndownSnapshotScheduler;
 
     @Autowired
     private StatusRepository statusRepository;
+
+    @Autowired
+    private SprintBurndownSnapshotRepository snapshotRepository;
 
     @Value("${sprint.prompt.window.hours:24}")
     private int promptWindowHours;
@@ -131,14 +139,23 @@ private BurndownSnapshotScheduler burndownSnapshotScheduler;
         // print sprint start date and time
         System.out.println("Sprint started at: " + sprint.getStartedAt());
 
-        // 6. Save and return
+        // 6. Save — snapshot must run AFTER this transaction commits so that
+        //    REQUIRES_NEW sees startedAt in the DB (READ COMMITTED isolation).
         Sprint updatedSprint = sprintRepository.save(sprint);
-         try {
-        burndownSnapshotScheduler.takeSnapshotForSprint(updatedSprint, LocalDate.now());
-    } catch (Exception e) {
-        // Don't fail the sprint start if snapshot fails
-        // log.warn("Failed to take initial snapshot for sprint {}: {}", id, e.getMessage());
-    }
+        final Long capturedId = updatedSprint.getId();
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                try {
+                    Sprint stub = new Sprint();
+                    stub.setId(capturedId);
+                    burndownSnapshotScheduler.takeSnapshotForSprint(stub, LocalDate.now());
+                } catch (Exception e) {
+                    System.err.println("Failed to take Day-1 snapshot for sprint " + capturedId + ": " + e.getMessage());
+                    e.printStackTrace();
+                }
+            }
+        });
         return convertToDto(updatedSprint);
     }
 
@@ -348,6 +365,90 @@ public SprintDto completeSprint(Long id) {
         }
     }
 
+    // ── Holiday & Working Weekend Management ─────────────────────────────
+
+    public SprintScheduleResponse getSchedule(Long sprintId) {
+        Sprint sprint = sprintRepository.findByIdWithSchedule(sprintId)
+                .orElseThrow(() -> new RuntimeException("Sprint not found: " + sprintId));
+        return buildScheduleResponse(sprint);
+    }
+
+    public List<LocalDate> getHolidays(Long sprintId) {
+        Sprint sprint = sprintRepository.findByIdWithSchedule(sprintId)
+                .orElseThrow(() -> new RuntimeException("Sprint not found: " + sprintId));
+        return sprint.getHolidays().stream().sorted().collect(Collectors.toList());
+    }
+
+    public List<LocalDate> getWorkingWeekends(Long sprintId) {
+        Sprint sprint = sprintRepository.findByIdWithSchedule(sprintId)
+                .orElseThrow(() -> new RuntimeException("Sprint not found: " + sprintId));
+        return sprint.getWorkingWeekends().stream().sorted().collect(Collectors.toList());
+    }
+
+    public SprintScheduleResponse addHolidays(Long sprintId, List<LocalDate> dates) {
+        Sprint sprint = sprintRepository.findById(sprintId)
+                .orElseThrow(() -> new RuntimeException("Sprint not found: " + sprintId));
+        sprint.getHolidays().addAll(dates);
+        sprintRepository.save(sprint);
+        updateSnapshotHolidayFlags(sprintId, dates, true, false);
+        return buildScheduleResponse(sprint);
+    }
+
+    public SprintScheduleResponse removeHolidays(Long sprintId, List<LocalDate> dates) {
+        Sprint sprint = sprintRepository.findById(sprintId)
+                .orElseThrow(() -> new RuntimeException("Sprint not found: " + sprintId));
+        sprint.getHolidays().removeAll(dates);
+        sprintRepository.save(sprint);
+        updateSnapshotHolidayFlags(sprintId, dates, false, false);
+        return buildScheduleResponse(sprint);
+    }
+
+    public SprintScheduleResponse addWorkingWeekends(Long sprintId, List<LocalDate> dates) {
+        Sprint sprint = sprintRepository.findById(sprintId)
+                .orElseThrow(() -> new RuntimeException("Sprint not found: " + sprintId));
+        sprint.getWorkingWeekends().addAll(dates);
+        sprintRepository.save(sprint);
+        updateSnapshotWorkingWeekendFlags(sprintId, dates, true);
+        return buildScheduleResponse(sprint);
+    }
+
+    public SprintScheduleResponse removeWorkingWeekends(Long sprintId, List<LocalDate> dates) {
+        Sprint sprint = sprintRepository.findById(sprintId)
+                .orElseThrow(() -> new RuntimeException("Sprint not found: " + sprintId));
+        sprint.getWorkingWeekends().removeAll(dates);
+        sprintRepository.save(sprint);
+        updateSnapshotWorkingWeekendFlags(sprintId, dates, false);
+        return buildScheduleResponse(sprint);
+    }
+
+    private void updateSnapshotHolidayFlags(Long sprintId, List<LocalDate> dates, boolean isHoliday, boolean isWorkingWeekend) {
+        for (LocalDate date : dates) {
+            snapshotRepository.findBySprintIdAndSnapshotDate(sprintId, date).ifPresent(snap -> {
+                snap.setIsHoliday(isHoliday);
+                if (isHoliday) snap.setIsWorkingWeekend(false);
+                snapshotRepository.save(snap);
+            });
+        }
+    }
+
+    private void updateSnapshotWorkingWeekendFlags(Long sprintId, List<LocalDate> dates, boolean isWorkingWeekend) {
+        for (LocalDate date : dates) {
+            snapshotRepository.findBySprintIdAndSnapshotDate(sprintId, date).ifPresent(snap -> {
+                snap.setIsWorkingWeekend(isWorkingWeekend);
+                snapshotRepository.save(snap);
+            });
+        }
+    }
+
+    private SprintScheduleResponse buildScheduleResponse(Sprint sprint) {
+        SprintScheduleResponse r = new SprintScheduleResponse();
+        r.setSprintId(sprint.getId());
+        r.setSprintName(sprint.getName());
+        r.setHolidays(sprint.getHolidays().stream().sorted().collect(Collectors.toList()));
+        r.setWorkingWeekends(sprint.getWorkingWeekends().stream().sorted().collect(Collectors.toList()));
+        return r;
+    }
+
     public SprintDto convertToDto(Sprint sprint) {
         SprintDto dto = modelMapper.map(sprint, SprintDto.class);
         dto.setProjectId(sprint.getProject().getId());
@@ -530,7 +631,7 @@ public SprintBurndownResponse getSprintBurndown(Long sprintId) {
 
         // Complete sprint
         sprint.setStatus(Sprint.SprintStatus.COMPLETED);
-        sprint.setUpdatedAt(LocalDateTime.now());
+        sprint.setEndDate(LocalDateTime.now());
         sprintRepository.save(sprint);
     }
 

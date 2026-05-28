@@ -38,13 +38,13 @@ public class StoryCreateDto {
     private Long epicId;
 
     private Long sprintId;
-   
-   private LocalDateTime startDate;
+
+    private LocalDateTime startDate;
 
     @NotNull(message = "Status ID is required")
     private Long statusId;
     private Long createdBy;
     @NotNull(message = "Priority is required")
-    private Story.Priority priority;  // LOW / MEDIUM / HIGH / CRITICAL
+    private Story.Priority priority; // LOW / MEDIUM / HIGH / CRITICAL
     private LocalDateTime dueDate;
 }

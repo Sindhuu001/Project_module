@@ -34,6 +34,7 @@ public class EpicService {
     @Autowired
     private StoryRepository storyRepository;
 
+    @Autowired
     private RiskLinkRepository riskLinkRepository;
 
     @Autowired

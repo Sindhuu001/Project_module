@@ -1,0 +1,2 @@
+@Library('paves-shared-lib') _ 
+deployToDev(serviceName: 'pms', serviceType: 'java', ecrRepo: 'paves/pms-dev')

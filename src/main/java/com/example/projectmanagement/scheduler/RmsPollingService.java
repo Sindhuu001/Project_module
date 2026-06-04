@@ -30,9 +30,6 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class RmsPollingService {
 
-    private static final Set<String> ALLOWED_ROLES = Set.of(
-            "project_manager", "resource_manager", "hr_manager");
-
     private final RmsClient rmsClient;
     private final UserClient userClient;
     private final ProjectRepository projectRepository;
@@ -45,14 +42,6 @@ public class RmsPollingService {
         String token = tokenStore.get();
         if (token == null) {
             log.info("RMS polling skipped - no user token available yet");
-            return;
-        }
-
-        List<String> roles = tokenStore.getRoles();
-        boolean hasAllowedRole = roles.stream()
-                .anyMatch(r -> ALLOWED_ROLES.contains(r.toLowerCase().replace(" ", "_")));
-        if (!hasAllowedRole) {
-            log.info("RMS polling skipped - token roles {} do not include project_manager / resource_manager / hr_manager", roles);
             return;
         }
 
@@ -105,9 +94,8 @@ public class RmsPollingService {
                 log.info("Project {} → saved UMS user IDs: {}", proj.getId(), umsUserIds);
 
             } catch (Exception e) {
-                log.error("Project {} → UMS resolution failed for employee IDs {}: {}",
+                log.error("Project {} → UMS resolution failed for employee IDs {}: {} — retaining existing members",
                         proj.getId(), employeeIds, e.getMessage(), e);
-                projectRepository.deleteAllMembers(proj.getId());
             }
         }
 

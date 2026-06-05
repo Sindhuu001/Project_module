@@ -37,22 +37,28 @@ public class BurndownSnapshotScheduler {
     @Lazy
     private BurndownSnapshotScheduler self;
 
+    // Runs at midnight daily. Override via sprint.scheduler.cron property.
     @Scheduled(cron = "${sprint.scheduler.cron:0 0 0 * * *}")
     public void takeSnapshots() {
         LocalDate today = LocalDate.now();
-        log.info("Taking burndown snapshots for date: {}", today);
+        log.info("=== BurndownSnapshotScheduler FIRED for date: {} ===", today);
 
         List<Sprint> activeSprints = sprintRepository.findByStatus(Sprint.SprintStatus.ACTIVE);
+        log.info("[BurndownScheduler] Found {} active sprint(s) to snapshot.", activeSprints.size());
 
+        int success = 0, failed = 0;
         for (Sprint sprint : activeSprints) {
             try {
                 self.takeSnapshotForSprint(sprint, today);
+                log.info("[BurndownScheduler] Snapshot saved for sprint '{}' (id={})", sprint.getName(), sprint.getId());
+                success++;
             } catch (Exception e) {
-                log.error("Failed to take snapshot for sprint {}: {}", sprint.getId(), e.getMessage());
+                log.error("[BurndownScheduler] Failed to snapshot sprint '{}' (id={}): {}", sprint.getName(), sprint.getId(), e.getMessage(), e);
+                failed++;
             }
         }
 
-        log.info("Burndown snapshots completed. Processed {} active sprints.", activeSprints.size());
+        log.info("=== BurndownSnapshotScheduler DONE — success={}, failed={} ===", success, failed);
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
@@ -197,7 +203,10 @@ public class BurndownSnapshotScheduler {
         snapshot.setVelocityIssues(velocityIssues);
 
         snapshotRepository.save(snapshot);
-        log.debug("Snapshot saved for sprint {} on day {}", loaded.getId(), sprintDayNumber);
+        log.info("[BurndownScheduler] Sprint '{}' day={} | total={} remaining={} ideal={} velocity={} issues(rem={}/tot={})",
+                loaded.getName(), sprintDayNumber,
+                currentTotal, remainingPoints, idealRemaining, velocityPoints,
+                remainingIssues, totalIssues);
     }
 
     private boolean isWorkingDay(LocalDate d, Set<LocalDate> holidays, Set<LocalDate> workingWeekends) {

@@ -14,11 +14,15 @@ public class SprintScheduler {
     private final SprintService sprintService;
 
 
-    // configured in properties by default "0 0 * * * *" (= every hour at minute 0)
-    @Scheduled(cron = "${sprint.scheduler.cron:0 0 * * * *}")
+    // Runs every hour (cron: "0 0 * * * *"). Override via sprint.expiry.scheduler.cron property.
+    @Scheduled(cron = "${sprint.expiry.scheduler.cron:0 0 * * * *}")
     public void runHourlyChecks() {
-        log.info("SprintScheduler running: processing expired sprints if any.");
-        sprintService.processExpiredSprints();
-        log.info("completed executing...");
+        log.info("=== SprintScheduler FIRED — checking for expired active sprints ===");
+        try {
+            sprintService.processExpiredSprints();
+            log.info("=== SprintScheduler DONE ===");
+        } catch (Exception e) {
+            log.error("=== SprintScheduler ERROR: {} ===", e.getMessage(), e);
+        }
     }
 }

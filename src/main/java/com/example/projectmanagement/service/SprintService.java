@@ -24,6 +24,7 @@ import com.example.projectmanagement.scheduler.BurndownSnapshotScheduler;
 import com.example.projectmanagement.repository.StatusRepository;
 import com.example.projectmanagement.entity.RolePermissionChecker;
 import com.example.projectmanagement.entity.Status;
+import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -43,6 +44,7 @@ import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @Transactional
 public class SprintService {
@@ -136,8 +138,7 @@ private BurndownSnapshotScheduler burndownSnapshotScheduler;
         // 5. Update sprint status and time
         sprint.setStatus(Sprint.SprintStatus.ACTIVE);
         sprint.setStartedAt(LocalDateTime.now());
-        // print sprint start date and time
-        System.out.println("Sprint started at: " + sprint.getStartedAt());
+        log.info("Sprint '{}' (id={}) started at {}", sprint.getName(), sprint.getId(), sprint.getStartedAt());
 
         // 6. Save — snapshot must run AFTER this transaction commits so that
         //    REQUIRES_NEW sees startedAt in the DB (READ COMMITTED isolation).
@@ -151,8 +152,7 @@ private BurndownSnapshotScheduler burndownSnapshotScheduler;
                     stub.setId(capturedId);
                     burndownSnapshotScheduler.takeSnapshotForSprint(stub, LocalDate.now());
                 } catch (Exception e) {
-                    System.err.println("Failed to take Day-1 snapshot for sprint " + capturedId + ": " + e.getMessage());
-                    e.printStackTrace();
+                    log.error("Failed to take Day-1 snapshot for sprint {}: {}", capturedId, e.getMessage(), e);
                 }
             }
         });
@@ -270,7 +270,7 @@ public SprintDto completeSprint(Long id) {
         Project project = projectRepository.findById(sprintDto.getProjectId())
                 .orElseThrow(() -> new RuntimeException("Project not found with id: " + sprintDto.getProjectId()));
 
-        if (sprintDto.getStartDate().isAfter(sprintDto.getEndDate())) {
+        if (sprintDto.getStartedAt().isAfter(sprintDto.getEndDate())) {
             throw new RuntimeException("Start date cannot be after end date");
         }
 
@@ -647,21 +647,32 @@ public SprintBurndownResponse getSprintBurndown(Long sprintId) {
     @Transactional
     public void processExpiredSprints() {
         LocalDateTime now = LocalDateTime.now();
+        log.info("[SprintScheduler] Running expiry check at {}", now);
 
         // 1️⃣ Fetch all ACTIVE expired sprints
         List<Sprint> expiredSprints =
                 sprintRepository.findByStatusAndEndDateBefore(Sprint.SprintStatus.ACTIVE, now);
 
+        if (expiredSprints.isEmpty()) {
+            log.info("[SprintScheduler] No expired active sprints found — nothing to process.");
+            return;
+        }
+
+        log.info("[SprintScheduler] Found {} expired sprint(s) to process.", expiredSprints.size());
+
         for (Sprint sprint : expiredSprints) {
+            log.info("[SprintScheduler] Processing sprint '{}' (id={}, projectId={}, endDate={})",
+                    sprint.getName(), sprint.getId(), sprint.getProject().getId(), sprint.getEndDate());
 
             Long projectId = sprint.getProject().getId();
 
             // 2️⃣ Find final (Done) status order for this project
             Integer finalSortOrder = statusRepository.findMaxSortOrderByProject(projectId);
+            log.debug("[SprintScheduler] Done status sortOrder for project {} = {}", projectId, finalSortOrder);
 
-            // 3️⃣ Move STORIES first (because they are higher hierarchy)
-            List<Story> storiesInSprint =
-                    storyRepository.findBySprintId(sprint.getId());
+            // 3️⃣ Move INCOMPLETE STORIES first (because they are higher hierarchy)
+            List<Story> incompleteStoriesInSprint =
+                    storyRepository.findIncompleteStoriesBySprintId(sprint.getId(), finalSortOrder);
 
             // Find next sprint
             Optional<Sprint> nextSprintOpt =
@@ -669,15 +680,21 @@ public SprintBurndownResponse getSprintBurndown(Long sprintId) {
                             projectId, sprint.getEndDate());
 
             Sprint nextSprint = nextSprintOpt.orElse(null);
+            String destination = nextSprint != null
+                    ? "next sprint '" + nextSprint.getName() + "' (id=" + nextSprint.getId() + ")"
+                    : "backlog";
 
-            if (!storiesInSprint.isEmpty()) {
+            if (!incompleteStoriesInSprint.isEmpty()) {
+                log.info("[SprintScheduler] Moving {} incomplete story(ies) to {} for sprint '{}'",
+                        incompleteStoriesInSprint.size(), destination, sprint.getName());
                 if (nextSprint != null) {
-                    storiesInSprint.forEach(story -> story.setSprint(nextSprint));
+                    incompleteStoriesInSprint.forEach(story -> story.setSprint(nextSprint));
                 } else {
-                    // backlog → set story sprint = null
-                    storiesInSprint.forEach(story -> story.setSprint(null));
+                    incompleteStoriesInSprint.forEach(story -> story.setSprint(null));
                 }
-                storyRepository.saveAll(storiesInSprint);
+                storyRepository.saveAll(incompleteStoriesInSprint);
+            } else {
+                log.info("[SprintScheduler] No incomplete stories to move for sprint '{}'", sprint.getName());
             }
 
             // 4️⃣ Move TASKS that belong directly to this sprint (and not Done)
@@ -685,14 +702,16 @@ public SprintBurndownResponse getSprintBurndown(Long sprintId) {
                     taskRepository.findIncompleteTasksBySprintId(sprint.getId(), finalSortOrder);
 
             if (!incompleteTasks.isEmpty()) {
-
+                log.info("[SprintScheduler] Moving {} incomplete task(s) to {} for sprint '{}'",
+                        incompleteTasks.size(), destination, sprint.getName());
                 if (nextSprint != null) {
                     incompleteTasks.forEach(task -> task.setSprint(nextSprint));
                 } else {
-                    incompleteTasks.forEach(task -> task.setSprint(null)); // backlog
+                    incompleteTasks.forEach(task -> task.setSprint(null));
                 }
-
                 taskRepository.saveAll(incompleteTasks);
+            } else {
+                log.info("[SprintScheduler] No incomplete tasks to move for sprint '{}'", sprint.getName());
             }
 
             // 5️⃣ Mark sprint as completed
@@ -700,8 +719,10 @@ public SprintBurndownResponse getSprintBurndown(Long sprintId) {
             sprint.setUpdatedAt(now);
             sprintRepository.save(sprint);
 
-            System.out.println("Expired sprint processed: " + sprint.getName());
+            log.info("[SprintScheduler] Sprint '{}' (id={}) marked COMPLETED successfully.", sprint.getName(), sprint.getId());
         }
+
+        log.info("[SprintScheduler] Expiry check complete. Processed {} sprint(s).", expiredSprints.size());
     }
 
 

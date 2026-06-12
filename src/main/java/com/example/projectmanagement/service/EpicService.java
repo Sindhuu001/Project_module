@@ -35,6 +35,9 @@ public class EpicService {
     private StoryRepository storyRepository;
 
     @Autowired
+    private TaskRepository taskRepository;
+
+    @Autowired
     private RiskLinkRepository riskLinkRepository;
 
     @Autowired
@@ -101,8 +104,6 @@ public class EpicService {
             if (epicDto.getPriority() != null) {
                 existingEpic.setPriority(Epic.Priority.valueOf(epicDto.getPriority()));
             }
-
-            existingEpic.setProgressPercentage(epicDto.getProgressPercentage());
 
             // ✅ Convert LocalDateTime to LocalDate
             if (epicDto.getDueDate() != null) {
@@ -192,7 +193,7 @@ public class EpicService {
             dto.setPriority(epic.getPriority().name()); // Priority to String
         }
 
-        dto.setProgressPercentage(epic.getProgressPercentage());
+        dto.setProgressPercentage(calculateProgressPercentage(epic));
 
         // Convert LocalDate to LocalDateTime for DTO
         if (epic.getDueDate() != null) {
@@ -222,8 +223,6 @@ public class EpicService {
             epic.setPriority(Epic.Priority.valueOf(dto.getPriority().toUpperCase()));
         }
 
-        epic.setProgressPercentage(dto.getProgressPercentage());
-
         // Convert LocalDateTime to LocalDate
         if (dto.getDueDate() != null) {
             epic.setDueDate(dto.getDueDate().toLocalDate());
@@ -235,6 +234,40 @@ public class EpicService {
         }
 
         return epic;
+    }
+
+    private Integer calculateProgressPercentage(Epic epic) {
+        if (epic.getId() == null || epic.getProject() == null) return 0;
+
+        Long epicId = epic.getId();
+        Long projectId = epic.getProject().getId();
+
+        Integer maxSortOrder = statusRepository.findMaxSortOrderByProject(projectId);
+        if (maxSortOrder == null) return 0;
+
+        List<Story> stories = storyRepository.findByEpicId(epicId);
+        if (stories.isEmpty()) return 0;
+
+        int totalItems = 0;
+        int completedItems = 0;
+
+        for (Story story : stories) {
+            totalItems++;
+            if (story.getStatus() != null && story.getStatus().getSortOrder() >= maxSortOrder) {
+                completedItems++;
+            }
+
+            List<Task> tasks = taskRepository.findByStoryId(story.getId());
+            for (Task task : tasks) {
+                totalItems++;
+                if (task.getStatus() != null && task.getStatus().getSortOrder() >= maxSortOrder) {
+                    completedItems++;
+                }
+            }
+        }
+
+        if (totalItems == 0) return 0;
+        return (int) Math.round((completedItems * 100.0) / totalItems);
     }
 
     private void validateEpicStatusPromotion(Epic epic, Status newStatus) {

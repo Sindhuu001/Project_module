@@ -11,6 +11,7 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -93,10 +94,12 @@ public interface ProjectRepository extends JpaRepository<Project, Long> {
     @Query(value = "SELECT user_id FROM project_members WHERE project_id = :projectId", nativeQuery = true)
     Set<Long> findMemberIdsByProjectId(@Param("projectId") Long projectId);
 
+    @Transactional
     @Modifying(clearAutomatically = true)
     @Query(value = "INSERT IGNORE INTO project_members (project_id, user_id) VALUES (:projectId, :userId)", nativeQuery = true)
     void insertMember(@Param("projectId") Long projectId, @Param("userId") Long userId);
 
+    @Transactional
     @Modifying(clearAutomatically = true)
     @Query(value = "DELETE FROM project_members WHERE project_id = :projectId AND user_id = :userId", nativeQuery = true)
     void deleteMember(@Param("projectId") Long projectId, @Param("userId") Long userId);

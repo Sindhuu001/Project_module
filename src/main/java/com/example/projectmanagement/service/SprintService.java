@@ -647,11 +647,14 @@ public SprintBurndownResponse getSprintBurndown(Long sprintId) {
     @Transactional
     public void processExpiredSprints() {
         LocalDateTime now = LocalDateTime.now();
+        // Use end-of-today so any sprint whose endDate falls on or before today
+        // is processed regardless of the exact time stored in endDate.
+        LocalDateTime endOfToday = LocalDate.now().plusDays(1).atStartOfDay();
         log.info("[SprintScheduler] Running expiry check at {}", now);
 
         // 1️⃣ Fetch all ACTIVE expired sprints
         List<Sprint> expiredSprints =
-                sprintRepository.findByStatusAndEndDateBefore(Sprint.SprintStatus.ACTIVE, now);
+                sprintRepository.findByStatusAndEndDateBefore(Sprint.SprintStatus.ACTIVE, endOfToday);
 
         if (expiredSprints.isEmpty()) {
             log.info("[SprintScheduler] No expired active sprints found — nothing to process.");
@@ -670,45 +673,27 @@ public SprintBurndownResponse getSprintBurndown(Long sprintId) {
             Integer finalSortOrder = statusRepository.findMaxSortOrderByProject(projectId);
             log.debug("[SprintScheduler] Done status sortOrder for project {} = {}", projectId, finalSortOrder);
 
-            // 3️⃣ Move INCOMPLETE STORIES first (because they are higher hierarchy)
+            // 3️⃣ Move INCOMPLETE STORIES to backlog (sprint = null)
             List<Story> incompleteStoriesInSprint =
                     storyRepository.findIncompleteStoriesBySprintId(sprint.getId(), finalSortOrder);
 
-            // Find next sprint
-            Optional<Sprint> nextSprintOpt =
-                    sprintRepository.findFirstByProject_IdAndStartDateAfterOrderByStartDateAsc(
-                            projectId, sprint.getEndDate());
-
-            Sprint nextSprint = nextSprintOpt.orElse(null);
-            String destination = nextSprint != null
-                    ? "next sprint '" + nextSprint.getName() + "' (id=" + nextSprint.getId() + ")"
-                    : "backlog";
-
             if (!incompleteStoriesInSprint.isEmpty()) {
-                log.info("[SprintScheduler] Moving {} incomplete story(ies) to {} for sprint '{}'",
-                        incompleteStoriesInSprint.size(), destination, sprint.getName());
-                if (nextSprint != null) {
-                    incompleteStoriesInSprint.forEach(story -> story.setSprint(nextSprint));
-                } else {
-                    incompleteStoriesInSprint.forEach(story -> story.setSprint(null));
-                }
+                log.info("[SprintScheduler] Moving {} incomplete story(ies) to backlog for sprint '{}'",
+                        incompleteStoriesInSprint.size(), sprint.getName());
+                incompleteStoriesInSprint.forEach(story -> story.setSprint(null));
                 storyRepository.saveAll(incompleteStoriesInSprint);
             } else {
                 log.info("[SprintScheduler] No incomplete stories to move for sprint '{}'", sprint.getName());
             }
 
-            // 4️⃣ Move TASKS that belong directly to this sprint (and not Done)
+            // 4️⃣ Move TASKS that belong directly to this sprint (and not Done) to backlog (sprint = null)
             List<Task> incompleteTasks =
                     taskRepository.findIncompleteTasksBySprintId(sprint.getId(), finalSortOrder);
 
             if (!incompleteTasks.isEmpty()) {
-                log.info("[SprintScheduler] Moving {} incomplete task(s) to {} for sprint '{}'",
-                        incompleteTasks.size(), destination, sprint.getName());
-                if (nextSprint != null) {
-                    incompleteTasks.forEach(task -> task.setSprint(nextSprint));
-                } else {
-                    incompleteTasks.forEach(task -> task.setSprint(null));
-                }
+                log.info("[SprintScheduler] Moving {} incomplete task(s) to backlog for sprint '{}'",
+                        incompleteTasks.size(), sprint.getName());
+                incompleteTasks.forEach(task -> task.setSprint(null));
                 taskRepository.saveAll(incompleteTasks);
             } else {
                 log.info("[SprintScheduler] No incomplete tasks to move for sprint '{}'", sprint.getName());

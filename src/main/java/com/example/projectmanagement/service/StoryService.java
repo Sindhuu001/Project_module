@@ -596,7 +596,8 @@ public class StoryService {
         dto.setAcceptanceCriteria(story.getAcceptanceCriteria());
         dto.setStoryPoints(story.getStoryPoints());
         dto.setPriority(story.getPriority().name());
-
+       dto.setStartDate(story.getStartDate());  
+         dto.setDueDate(story.getDueDate());
         // Status
         if (story.getStatus() != null) {
             dto.setStatusId(story.getStatus().getId());

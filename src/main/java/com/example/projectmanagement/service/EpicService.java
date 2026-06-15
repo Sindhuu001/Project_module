@@ -109,7 +109,9 @@ public class EpicService {
             if (epicDto.getDueDate() != null) {
                 existingEpic.setDueDate(epicDto.getDueDate().toLocalDate());
             }
-
+            if (epicDto.getStartDate() != null) {
+                existingEpic.setStartDate(epicDto.getStartDate());
+            }
             if (epicDto.getProjectId() != null) {
                 Project project = projectRepository.findById(epicDto.getProjectId()).orElse(null);
                 existingEpic.setProject(project);

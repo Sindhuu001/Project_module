@@ -30,11 +30,11 @@ public class Story {
     private Long id;
     
     @NotBlank(message = "Story title is required")
-    @Size(min = 2, max = 200, message = "Story title must be between 2 and 200 characters")
-    @Pattern(
-        regexp = "^(?!.* {3,})[A-Za-z0-9 _-]+$",
-        message = "Name must contain only letters, digits, spaces, and not more than 2 consecutive spaces"
-    )
+    @Size(min = 2, max = 200)
+    // @Pattern(
+    //     regexp = "^(?!.* {3,})[A-Za-z0-9 _-]+$",
+    //     message = "Name must contain only letters, digits, spaces, and not more than 2 consecutive spaces"
+    // )
     @Column(nullable = false)
     private String title;
     

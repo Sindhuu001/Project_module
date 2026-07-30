@@ -1,5 +1,6 @@
 package com.example.projectmanagement.audit.dynamic;
 
+import com.example.projectmanagement.audit.base.AuditActivityDto;
 import com.example.projectmanagement.audit.base.AuditHistoryDto;
 import com.example.projectmanagement.audit.base.AuditTrail.AuditEntityType;
 import com.example.projectmanagement.entity.Epic;
@@ -258,6 +259,21 @@ public class DynamicAuditService {
                 timestamp,
                 endpoint
         );
+    }
+
+    public List<AuditActivityDto> getActivities(AuditEntityType epic) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'getActivities'");
+    }
+
+    public List<AuditActivityDto> getCommentActivitiesByProjectId(Long projectId) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'getCommentActivitiesByProjectId'");
+    }
+
+    public List<AuditActivityDto> getActivitiesByProjectId(AuditEntityType epic, Long projectId) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'getActivitiesByProjectId'");
     }
 
     

@@ -26,7 +26,7 @@ public class AuditTrail {
         EPIC,
         STORY,
         BUG,
-        SPRINT
+        SPRINT, COMMENT
     }
 
 

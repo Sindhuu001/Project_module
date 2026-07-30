@@ -29,10 +29,10 @@ public class Task {
 
     @NotBlank(message = "Task title is required")
     @Size(min = 2, max = 200)
-    @Pattern(
-            regexp = "^(?!.* {3,})[A-Za-z0-9 ]+$",
-            message = "Name must contain only letters, digits, spaces, and not more than 2 consecutive spaces"
-    )
+   //  @Pattern(
+   //          regexp = "^(?!.* {3,})[A-Za-z0-9 ]+$",
+   //          message = "Name must contain only letters, digits, spaces, and not more than 2 consecutive spaces"
+   //  )
     @Column(nullable = false)
     private String title;
 

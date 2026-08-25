@@ -9,7 +9,6 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
@@ -28,8 +27,15 @@ public class ExcelImportService {
     private final StatusRepository statusRepository;
     private final ProjectExcelImportRepository excelImportRepository;
 
-    @Transactional
     public ExcelImportResultDto importFromExcel(Long projectId, MultipartFile file, Authentication authentication) throws Exception {
+
+        String originalFilename = file.getOriginalFilename();
+        if (originalFilename == null || !originalFilename.toLowerCase().endsWith(".xlsx")) {
+            throw new RuntimeException("Invalid file type. Only .xlsx (Excel) files are supported.");
+        }
+        if (file.isEmpty()) {
+            throw new RuntimeException("Uploaded file is empty.");
+        }
 
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new RuntimeException("Project not found: " + projectId));

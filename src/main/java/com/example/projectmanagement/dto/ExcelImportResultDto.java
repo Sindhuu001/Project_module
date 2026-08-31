@@ -13,7 +13,11 @@ public class ExcelImportResultDto {
     private int epicsCreated;
     private int storiesCreated;
     private int tasksCreated;
+    private int epicsSkipped;
+    private int storiesSkipped;
+    private int tasksSkipped;
     private String status;
     private List<String> errors;
+    private List<String> skipped;
     private LocalDateTime uploadedAt;
 }

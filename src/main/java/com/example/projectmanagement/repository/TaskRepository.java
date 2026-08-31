@@ -88,6 +88,8 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
             @Param("assigneeId") Long assigneeId,
             Pageable pageable);
 
+    boolean existsByTitleAndProjectId(String title, Long projectId);
+
     boolean existsBySprintIdAndStatus_SortOrderNot(Long sprintId, Integer sortOrder);
 
     @Query("SELECT t FROM Task t WHERE t.sprint.id = :sprintId AND t.status.sortOrder <> :finalSortOrder")

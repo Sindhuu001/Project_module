@@ -10,6 +10,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface EpicRepository extends JpaRepository<Epic, Long> {
@@ -38,4 +39,6 @@ public interface EpicRepository extends JpaRepository<Epic, Long> {
     @Query("SELECT e FROM Epic e WHERE e.priority = :priority")
     Page<Epic> findByPriority(@Param("priority") Epic.Priority priority, Pageable pageable);
     boolean existsByNameAndProjectId(String name, Long projectId);
+
+    Optional<Epic> findByNameAndProjectId(String name, Long projectId);
 }

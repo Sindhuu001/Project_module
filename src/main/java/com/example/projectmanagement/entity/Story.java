@@ -39,6 +39,7 @@ public class Story {
     private String title;
     
     @Size(max = 1000, message = "Description cannot exceed 1000 characters")
+    @Column(length = 1000)
     private String description;
     
 //    @Enumerated(EnumType.STRING)

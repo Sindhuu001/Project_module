@@ -58,6 +58,8 @@ public interface StoryRepository extends JpaRepository<Story, Long> {
 
     boolean existsByTitleAndProjectIdAndEpicId(String title, Long projectId, Long epicId);
 
+    boolean existsByTitleAndProjectId(String title, Long projectId);
+
     Long countByAssigneeIdAndStatusId(Long userId, Long statusId); // Replaced countByAssigneeIdAndStatus
 
     @Query("""

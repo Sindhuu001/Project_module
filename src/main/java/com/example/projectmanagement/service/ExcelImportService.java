@@ -209,6 +209,21 @@ public class ExcelImportService {
         return result;
     }
 
+    public byte[] getFileData(Long importId) {
+        ProjectExcelImport record = excelImportRepository.findById(importId)
+                .orElseThrow(() -> new RuntimeException("Import record not found: " + importId));
+        if (record.getFileData() == null) {
+            throw new RuntimeException("No file data stored for import id: " + importId);
+        }
+        return record.getFileData();
+    }
+
+    public String getFileName(Long importId) {
+        return excelImportRepository.findById(importId)
+                .map(r -> r.getFileName() != null ? r.getFileName() : "import_" + importId + ".xlsx")
+                .orElseThrow(() -> new RuntimeException("Import record not found: " + importId));
+    }
+
     public List<ExcelImportResultDto> getImportsByProject(Long projectId) {
         return excelImportRepository.findByProjectIdOrderByUploadedAtDesc(projectId)
                 .stream()

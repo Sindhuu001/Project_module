@@ -3,6 +3,8 @@ package com.example.projectmanagement.controller;
 import com.example.projectmanagement.dto.ExcelImportResultDto;
 import com.example.projectmanagement.service.ExcelImportService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -31,5 +33,19 @@ public class ExcelImportController {
     @GetMapping("/project/{projectId}")
     public ResponseEntity<List<ExcelImportResultDto>> getImportsByProject(@PathVariable Long projectId) {
         return ResponseEntity.ok(excelImportService.getImportsByProject(projectId));
+    }
+
+    @GetMapping("/download/{importId}")
+    public ResponseEntity<byte[]> downloadExcel(@PathVariable Long importId) {
+        byte[] fileData = excelImportService.getFileData(importId);
+        String fileName = excelImportService.getFileName(importId);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.parseMediaType(
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
+        headers.setContentDisposition(
+                ContentDisposition.attachment().filename(fileName).build());
+
+        return ResponseEntity.ok().headers(headers).body(fileData);
     }
 }

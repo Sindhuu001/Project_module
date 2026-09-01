@@ -1,6 +1,7 @@
 package com.example.projectmanagement.controller;
 
 import com.example.projectmanagement.audit.annotation.AuditLog;
+import com.example.projectmanagement.dto.BulkDeleteResultDto;
 import com.example.projectmanagement.dto.EpicDto;
 import com.example.projectmanagement.dto.UserDto;
 import com.example.projectmanagement.security.CurrentUser;
@@ -73,6 +74,14 @@ public class EpicController {
         } else {
             return ResponseEntity.notFound().build();
         }
+    }
+
+    // Bulk delete epics — cascades to their Stories and Tasks
+    @DeleteMapping("/bulk-delete")
+    @PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')")
+    public ResponseEntity<BulkDeleteResultDto> bulkDeleteEpics(@RequestBody List<Long> ids) {
+        BulkDeleteResultDto result = epicService.bulkDeleteEpics(ids);
+        return ResponseEntity.ok(result);
     }
 
     // Get epics by project ID

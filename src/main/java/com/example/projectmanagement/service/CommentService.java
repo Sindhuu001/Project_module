@@ -91,6 +91,19 @@ public class CommentService {
                 .collect(Collectors.toList());
     }
 
+    // ------------- Update Comment -------------
+    public CommentDto updateComment(Long commentId, Long userId, String content) {
+        Comment comment = commentRepository.findById(commentId)
+                .orElseThrow(() -> new RuntimeException("Comment not found"));
+
+        if (!comment.getUserId().equals(userId)) {
+            throw new RuntimeException("Unauthorized: cannot edit comment by another user");
+        }
+
+        comment.setContent(content);
+        return mapToDto(commentRepository.save(comment));
+    }
+
     // ------------- Delete Comment -------------
     public void deleteComment(Long commentId, Long userId) {
         Comment comment = commentRepository.findById(commentId)

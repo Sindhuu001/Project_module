@@ -56,8 +56,6 @@ public class AuditAspect {
 
     private Object processAudit(ProceedingJoinPoint joinPoint, AuditLog auditLog) throws Throwable {
 
-        System.out.println("======= AUDIT ASPECT STARTED =======");
-
         String operation = determineOperation();
         if (operation.equals("UNKNOWN")) return joinPoint.proceed();
 

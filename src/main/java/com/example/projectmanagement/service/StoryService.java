@@ -1,5 +1,6 @@
 package com.example.projectmanagement.service;
 
+import com.example.projectmanagement.dto.BulkDeleteResultDto;
 import com.example.projectmanagement.exception.ResourceNotFoundException;
 
 import org.springframework.security.access.AccessDeniedException;
@@ -20,6 +21,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -211,8 +213,9 @@ public class StoryService {
 
     @Transactional(readOnly = true)
     public List<StoryViewDto> getStoriesByEpic(Long epicId) {
+        Map<Long, UserDto> userMap = buildAllUsersMap();
         return storyRepository.findByEpicId(epicId).stream()
-                .map(this::convertToViewDto)
+                .map(story -> convertToViewDto(story, userMap))
                 .collect(Collectors.toList());
     }
 
@@ -227,22 +230,25 @@ public class StoryService {
 
     @Transactional(readOnly = true)
     public List<StoryViewDto> getStoriesByStatus(Long statusId) {
+        Map<Long, UserDto> userMap = buildAllUsersMap();
         return storyRepository.findByStatusId(statusId).stream()
-                .map(this::convertToViewDto)
+                .map(story -> convertToViewDto(story, userMap))
                 .collect(Collectors.toList());
     }
 
     @Transactional(readOnly = true)
     public List<StoryDto> getStoriesByAssignee(Long assigneeId) {
+        Map<Long, UserDto> userMap = buildAllUsersMap();
         return storyRepository.findByAssigneeId(assigneeId).stream()
-                .map(this::convertToDto)
+                .map(story -> convertToDto(story, userMap))
                 .collect(Collectors.toList());
     }
 
     @Transactional(readOnly = true)
     public List<StoryViewDto> getStoriesBySprint(Long sprintId) {
+        Map<Long, UserDto> userMap = buildAllUsersMap();
         return storyRepository.findBySprintId(sprintId).stream()
-                .map(this::convertToViewDto)
+                .map(story -> convertToViewDto(story, userMap))
                 .collect(Collectors.toList());
     }
 
@@ -531,6 +537,25 @@ public class StoryService {
         return dto;
     }
 
+    // Same field mapping as convertToDto(Story), but takes a pre-built user map
+    // so callers converting a whole list only fetch users once instead of per row.
+    private StoryDto convertToDto(Story story, Map<Long, UserDto> userMap) {
+        StoryDto dto = modelMapper.map(story, StoryDto.class);
+        dto.setEpicId(story.getEpic() != null ? story.getEpic().getId() : null);
+        dto.setReporterId(story.getReporterId() != null ? story.getReporterId() : null);
+        dto.setSprintId(story.getSprint() != null ? story.getSprint().getId() : null);
+        dto.setProjectId(story.getProject() != null ? story.getProject().getId() : null);
+        dto.setAssigneeId(story.getAssigneeId() != null ? story.getAssigneeId() : null);
+        dto.setAssignee(story.getAssigneeId() != null ? userMap.get(story.getAssigneeId()) : null);
+        dto.setReporter(story.getReporterId() != null ? userMap.get(story.getReporterId()) : null);
+        return dto;
+    }
+
+    private Map<Long, UserDto> buildAllUsersMap() {
+        return userClient.findAll().stream()
+                .collect(Collectors.toMap(UserDto::getId, Function.identity()));
+    }
+
     public List<StoryDto> getStoriesWithoutEpic(Long projectId) {
         return storyRepository.findByEpicIsNullAndProjectIdAndSprintIdIsNull(projectId)
                 .stream()
@@ -713,6 +738,65 @@ public class StoryService {
         return dto;
     }
 
+    // Same field mapping as convertToViewDto(Story), but takes a pre-built user map
+    // so callers converting a whole list only fetch users once instead of per row.
+    private StoryViewDto convertToViewDto(Story story, Map<Long, UserDto> userMap) {
+        StoryViewDto dto = new StoryViewDto();
+
+        dto.setId(story.getId());
+        dto.setTitle(story.getTitle());
+        dto.setDescription(story.getDescription());
+        dto.setAcceptanceCriteria(story.getAcceptanceCriteria());
+        dto.setStoryPoints(story.getStoryPoints());
+        dto.setPriority(story.getPriority().name());
+
+        if (story.getStatus() != null) {
+            dto.setStatusId(story.getStatus().getId());
+            dto.setStatusName(story.getStatus().getName());
+        }
+
+        if (story.getEpic() != null) {
+            dto.setEpicId(story.getEpic().getId());
+            dto.setEpicTitle(story.getEpic().getName());
+        }
+
+        if (story.getProject() != null) {
+            dto.setProjectId(story.getProject().getId());
+            dto.setProjectName(story.getProject().getName());
+        }
+
+        if (story.getSprint() != null) {
+            dto.setSprintId(story.getSprint().getId());
+            dto.setSprintName(story.getSprint().getName());
+        }
+
+        if (story.getAssigneeId() != null) {
+            UserDto assignee = userMap.get(story.getAssigneeId());
+            if (assignee != null) {
+                dto.setAssigneeId(assignee.getId());
+                dto.setAssigneeName(assignee.getName());
+            }
+        }
+
+        if (story.getReporterId() != null) {
+            UserDto reporter = userMap.get(story.getReporterId());
+            if (reporter != null) {
+                dto.setReporterId(reporter.getId());
+                dto.setReporterName(reporter.getName());
+            }
+        }
+
+        dto.setTaskIds(
+                story.getTasks().stream()
+                        .map(Task::getId)
+                        .toList());
+
+        dto.setCreatedAt(story.getCreatedAt());
+        dto.setUpdatedAt(story.getUpdatedAt());
+
+        return dto;
+    }
+
     public void assignEpic(Long storyId, Long epicId) {
 
         Story story = storyRepository.findById(storyId)
@@ -748,5 +832,21 @@ public class StoryService {
 
             System.out.println("epic status updated");
         }
+    }
+
+    public BulkDeleteResultDto bulkDeleteStories(List<Long> ids) {
+        List<Long> deletedIds = new ArrayList<>();
+        List<Long> notFoundIds = new ArrayList<>();
+        for (Long id : ids) {
+            try {
+                deleteStory(id);
+                deletedIds.add(id);
+            } catch (RuntimeException e) {
+                notFoundIds.add(id);
+            }
+        }
+        String message = deletedIds.size() + " story(s) deleted successfully" +
+                (notFoundIds.isEmpty() ? "." : "; " + notFoundIds.size() + " story(s) not found.");
+        return new BulkDeleteResultDto(deletedIds.size(), notFoundIds.size(), deletedIds, notFoundIds, message);
     }
 }

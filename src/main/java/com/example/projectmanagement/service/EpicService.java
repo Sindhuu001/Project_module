@@ -1,5 +1,6 @@
 package com.example.projectmanagement.service;
 
+import com.example.projectmanagement.dto.BulkDeleteResultDto;
 import com.example.projectmanagement.dto.EpicDto;
 import com.example.projectmanagement.entity.*;
 import com.example.projectmanagement.dto.*;
@@ -14,7 +15,10 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -177,6 +181,22 @@ public class EpicService {
         return true;
     }
 
+    public BulkDeleteResultDto bulkDeleteEpics(List<Long> ids) {
+        List<Long> deletedIds = new ArrayList<>();
+        List<Long> notFoundIds = new ArrayList<>();
+        for (Long id : ids) {
+            boolean deleted = deleteEpic(id);
+            if (deleted) {
+                deletedIds.add(id);
+            } else {
+                notFoundIds.add(id);
+            }
+        }
+        String message = deletedIds.size() + " epic(s) deleted successfully" +
+                (notFoundIds.isEmpty() ? "." : "; " + notFoundIds.size() + " epic(s) not found.");
+        return new BulkDeleteResultDto(deletedIds.size(), notFoundIds.size(), deletedIds, notFoundIds, message);
+    }
+
     // ✅ DTO Conversion
     private EpicDto convertToDto(Epic epic) {
         EpicDto dto = new EpicDto();
@@ -250,6 +270,10 @@ public class EpicService {
         List<Story> stories = storyRepository.findByEpicId(epicId);
         if (stories.isEmpty()) return 0;
 
+        List<Long> storyIds = stories.stream().map(Story::getId).collect(Collectors.toList());
+        Map<Long, List<Task>> tasksByStoryId = taskRepository.findByStoryIdIn(storyIds).stream()
+                .collect(Collectors.groupingBy(t -> t.getStory().getId()));
+
         int totalItems = 0;
         int completedItems = 0;
 
@@ -259,7 +283,7 @@ public class EpicService {
                 completedItems++;
             }
 
-            List<Task> tasks = taskRepository.findByStoryId(story.getId());
+            List<Task> tasks = tasksByStoryId.getOrDefault(story.getId(), Collections.emptyList());
             for (Task task : tasks) {
                 totalItems++;
                 if (task.getStatus() != null && task.getStatus().getSortOrder() >= maxSortOrder) {

@@ -33,6 +33,12 @@ public interface TaskService {
 
     List<TaskDto> getBacklogTasks();
 
+    List<TaskViewDto> getBacklogTasksView();
+
+    List<TaskViewDto> getTasksByStatusView(Long statusId);
+
+    List<TaskViewDto> getTasksByAssigneeView(Long assigneeId);
+
     Page<TaskDto> searchTasks(String title, Task.Priority priority, Long assigneeId, Pageable pageable);
 
     long countTasksByStatus(Long statusId);
@@ -54,4 +60,6 @@ public interface TaskService {
     void assignStory(Long taskId, Long storyId);
 
     TaskResponse assignTaskToSprint(Long taskId, Long sprintId);
+
+    BulkDeleteResultDto bulkDeleteTasks(List<Long> ids);
 }

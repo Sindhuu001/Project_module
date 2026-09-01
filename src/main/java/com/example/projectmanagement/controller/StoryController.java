@@ -1,5 +1,6 @@
 package com.example.projectmanagement.controller;
 
+import com.example.projectmanagement.dto.BulkDeleteResultDto;
 import com.example.projectmanagement.dto.StoryDto;
 import com.example.projectmanagement.audit.annotation.AuditLog;
 import com.example.projectmanagement.dto.StoryCreateDto;
@@ -140,6 +141,14 @@ public class StoryController {
     public ResponseEntity<Void> deleteStory(@PathVariable Long id) {
         storyService.deleteStory(id);
         return ResponseEntity.noContent().build();
+    }
+
+    // Bulk delete stories — cascades to their Tasks
+    @DeleteMapping("/bulk-delete")
+    @PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')")
+    public ResponseEntity<BulkDeleteResultDto> bulkDeleteStories(@RequestBody List<Long> ids) {
+        BulkDeleteResultDto result = storyService.bulkDeleteStories(ids);
+        return ResponseEntity.ok(result);
     }
 
     @GetMapping("/sprint/{sprintId}")

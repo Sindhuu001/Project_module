@@ -14,6 +14,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -324,8 +325,9 @@ public class TaskServiceImpl implements TaskService {
 
     @Override
     public List<TaskDto> getAllTasks() {
+        Map<Long, UserDto> userMap = buildUserMap();
         return taskRepository.findAll().stream()
-                .map(this::convertToDto)
+                .map(task -> convertToDto(task, userMap))
                 .collect(Collectors.toList());
     }
 
@@ -378,8 +380,9 @@ public class TaskServiceImpl implements TaskService {
 
     @Override
     public List<TaskDto> getTasksByStory(Long storyId) {
+        Map<Long, UserDto> userMap = buildUserMap();
         return taskRepository.findByStoryId(storyId).stream()
-                .map(this::convertToDto)
+                .map(task -> convertToDto(task, userMap))
                 .collect(Collectors.toList());
     }
 
@@ -392,22 +395,46 @@ public class TaskServiceImpl implements TaskService {
 
     @Override
     public List<TaskDto> getTasksByAssignee(Long assigneeId) {
+        Map<Long, UserDto> userMap = buildUserMap();
         return taskRepository.findByAssigneeId(assigneeId).stream()
-                .map(this::convertToDto)
+                .map(task -> convertToDto(task, userMap))
                 .collect(Collectors.toList());
     }
 
     @Override
     public List<TaskDto> getTasksByStatus(Long statusId) {
+        Map<Long, UserDto> userMap = buildUserMap();
         return taskRepository.findByStatusId(statusId).stream()
-                .map(this::convertToDto)
+                .map(task -> convertToDto(task, userMap))
                 .collect(Collectors.toList());
     }
 
     @Override
     public List<TaskDto> getBacklogTasks() {
+        Map<Long, UserDto> userMap = buildUserMap();
         return taskRepository.findBacklogTasks().stream()
-                .map(this::convertToDto)
+                .map(task -> convertToDto(task, userMap))
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<TaskViewDto> getBacklogTasksView() {
+        return taskRepository.findBacklogTasks().stream()
+                .map(this::mapToViewDto)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<TaskViewDto> getTasksByStatusView(Long statusId) {
+        return taskRepository.findByStatusId(statusId).stream()
+                .map(this::mapToViewDto)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<TaskViewDto> getTasksByAssigneeView(Long assigneeId) {
+        return taskRepository.findByAssigneeId(assigneeId).stream()
+                .map(this::mapToViewDto)
                 .collect(Collectors.toList());
     }
 
@@ -497,11 +524,17 @@ public class TaskServiceImpl implements TaskService {
         return dto;
     }
 
-    private TaskDto convertToDto(Task task) {
-        TaskDto dto = modelMapper.map(task, TaskDto.class);
-
-        Map<Long, UserDto> userMap = userClient.findAll().stream()
+    private Map<Long, UserDto> buildUserMap() {
+        return userClient.findAll().stream()
                 .collect(Collectors.toMap(UserDto::getId, Function.identity()));
+    }
+
+    private TaskDto convertToDto(Task task) {
+        return convertToDto(task, buildUserMap());
+    }
+
+    private TaskDto convertToDto(Task task, Map<Long, UserDto> userMap) {
+        TaskDto dto = modelMapper.map(task, TaskDto.class);
 
         if (task.getProject() != null) {
             dto.setProjectId(task.getProject().getId());
@@ -712,5 +745,22 @@ public class TaskServiceImpl implements TaskService {
 
             System.out.println("story status updated");
         }
+    }
+
+    @Override
+    public BulkDeleteResultDto bulkDeleteTasks(List<Long> ids) {
+        List<Long> deletedIds = new ArrayList<>();
+        List<Long> notFoundIds = new ArrayList<>();
+        for (Long id : ids) {
+            try {
+                deleteTask(id);
+                deletedIds.add(id);
+            } catch (RuntimeException e) {
+                notFoundIds.add(id);
+            }
+        }
+        String message = deletedIds.size() + " task(s) deleted successfully" +
+                (notFoundIds.isEmpty() ? "." : "; " + notFoundIds.size() + " task(s) not found.");
+        return new BulkDeleteResultDto(deletedIds.size(), notFoundIds.size(), deletedIds, notFoundIds, message);
     }
 }

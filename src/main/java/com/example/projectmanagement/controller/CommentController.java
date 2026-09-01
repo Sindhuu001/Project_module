@@ -80,14 +80,26 @@ public class CommentController {
         return ResponseEntity.ok(commentService.getRepliesByParentId(parentId));
     }
 
+    // ----------------- Edit -----------------
+
+    @PutMapping("/{commentId}")
+    @PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')")
+    public ResponseEntity<CommentDto> updateComment(
+            @PathVariable Long commentId,
+            @RequestBody CommentDto commentDto,
+            @CurrentUser UserDto currentUser) {
+        CommentDto updated = commentService.updateComment(commentId, currentUser.getId(), commentDto.getContent());
+        return ResponseEntity.ok(updated);
+    }
+
     // ----------------- Delete -----------------
 
     @DeleteMapping("/{commentId}")
     @PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')")
     public ResponseEntity<Void> deleteComment(
             @PathVariable Long commentId,
-            @RequestParam Long userId) {
-        commentService.deleteComment(commentId, userId);
+            @CurrentUser UserDto currentUser) {
+        commentService.deleteComment(commentId, currentUser.getId());
         return ResponseEntity.noContent().build();
     }
 }

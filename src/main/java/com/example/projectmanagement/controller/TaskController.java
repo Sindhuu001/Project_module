@@ -91,6 +91,14 @@ public class TaskController {
         return ResponseEntity.noContent().build();
     }
 
+    // Bulk delete tasks
+    @DeleteMapping("/bulk-delete")
+    @PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')")
+    public ResponseEntity<BulkDeleteResultDto> bulkDeleteTasks(@RequestBody List<Long> ids) {
+        BulkDeleteResultDto result = taskService.bulkDeleteTasks(ids);
+        return ResponseEntity.ok(result);
+    }
+
     @GetMapping("/user/{userId}/tasks")
     @PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')")
     public ResponseEntity<List<TaskTimesheetDto>> getTasksByUser(
@@ -105,19 +113,13 @@ public class TaskController {
     @GetMapping("/backlog")
     @PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')")
     public ResponseEntity<List<TaskViewDto>> getBacklogTasks() {
-        List<TaskViewDto> tasks = taskService.getBacklogTasks().stream()
-                .map(task -> taskService.getTaskById(task.getId()))
-                .toList();
-        return ResponseEntity.ok(tasks);
+        return ResponseEntity.ok(taskService.getBacklogTasksView());
     }
 
     @GetMapping("/status/{statusId}")
     @PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')")
     public ResponseEntity<List<TaskViewDto>> getTasksByStatus(@PathVariable Long statusId) {
-        List<TaskViewDto> tasks = taskService.getTasksByStatus(statusId).stream()
-                .map(task -> taskService.getTaskById(task.getId()))
-                .toList();
-        return ResponseEntity.ok(tasks);
+        return ResponseEntity.ok(taskService.getTasksByStatusView(statusId));
     }
 
     @GetMapping("/status/{statusId}/count")
@@ -152,10 +154,7 @@ public class TaskController {
     @GetMapping("/assignee/{assigneeId}")
     @PreAuthorize("hasAnyRole('PROJECT_MANAGER','GENERAL')")
     public ResponseEntity<List<TaskViewDto>> getTasksByAssignee(@PathVariable Long assigneeId) {
-        List<TaskViewDto> tasks = taskService.getTasksByAssignee(assigneeId).stream()
-                .map(task -> taskService.getTaskById(task.getId()))
-                .toList();
-        return ResponseEntity.ok(tasks);
+        return ResponseEntity.ok(taskService.getTasksByAssigneeView(assigneeId));
     }
 
     @PutMapping("/{taskId}/assign-story/{storyId}")

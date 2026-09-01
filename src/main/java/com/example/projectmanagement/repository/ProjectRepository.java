@@ -34,6 +34,9 @@ public interface ProjectRepository extends JpaRepository<Project, Long> {
     @Query("SELECT p FROM Project p WHERE :userId IN elements(p.memberIds)")
     List<Project> findByMemberId(@Param("userId") Long userId);
 
+    @Query("SELECT DISTINCT p FROM Project p LEFT JOIN FETCH p.memberIds")
+    List<Project> findAllWithMembers();
+
     @Query("SELECT p FROM Project p WHERE p.name LIKE %:name%")
     Page<Project> findByNameContaining(@Param("name") String name, Pageable pageable);
 

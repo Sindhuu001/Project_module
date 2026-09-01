@@ -16,6 +16,7 @@ public class TaskUpdateDto {
     private String description;
     private Task.Priority priority;
     // private Integer storyPoints;
+    private Integer estimatedHours;
     private LocalDateTime dueDate;
     private Boolean billable;
     private Long assigneeId;

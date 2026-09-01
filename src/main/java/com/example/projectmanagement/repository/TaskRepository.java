@@ -24,6 +24,16 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
 
     List<Task> findByStoryIdIn(List<Long> storyIds);
 
+    @Query("SELECT t.story.id AS storyId, t.id AS taskId FROM Task t WHERE t.story.id IN :storyIds")
+    List<Object[]> findStoryIdAndTaskIdByStoryIdIn(@Param("storyIds") List<Long> storyIds);
+
+    @Query("SELECT t FROM Task t " +
+            "LEFT JOIN FETCH t.story s " +
+            "LEFT JOIN FETCH s.epic " +
+            "LEFT JOIN FETCH t.status " +
+            "WHERE t.assigneeId IN :assigneeIds")
+    List<Task> findByAssigneeIdInWithStoryAndEpic(@Param("assigneeIds") List<Long> assigneeIds);
+
     List<Task> findByAssigneeId(Long assigneeId);
 
     List<Task> findByReporterId(Long reporterId);
@@ -31,6 +41,14 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
     List<Task> findByStatusId(Long statusId);
 
     List<Task> findByProjectId(Long projectId);
+
+    @Query("SELECT t FROM Task t " +
+            "LEFT JOIN FETCH t.status " +
+            "LEFT JOIN FETCH t.story s " +
+            "LEFT JOIN FETCH s.sprint " +
+            "LEFT JOIN FETCH t.sprint " +
+            "WHERE t.project.id = :projectId")
+    List<Task> findByProjectIdWithDetails(@Param("projectId") Long projectId);
 
     // fetch tasks indirectly linked to a sprint via their story
     @Query("SELECT t FROM Task t WHERE t.story.sprint.id = :sprintId")

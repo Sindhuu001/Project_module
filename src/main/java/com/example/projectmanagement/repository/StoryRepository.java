@@ -16,6 +16,8 @@ public interface StoryRepository extends JpaRepository<Story, Long> {
 
     List<Story> findByEpicId(Long epicId);
 
+    List<Story> findByEpicIdIn(List<Long> epicIds);
+
     List<Story> findByProjectId(Long projectId);
 
     List<Story> findByStatusId(Long statusId); // Replaced findByStatus

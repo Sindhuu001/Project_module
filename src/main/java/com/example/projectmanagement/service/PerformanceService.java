@@ -9,6 +9,7 @@ import com.example.projectmanagement.entity.*;
 import com.example.projectmanagement.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.*;
@@ -28,13 +29,35 @@ public class PerformanceService {
 
     // No need to inject StatusRepository as we will check by name
 
+    @Transactional(readOnly = true)
     public List<EmployeePerformanceDto> getAllEmployeePerformance() {
         List<UserDto> users = userClient.findAll();
-        List<EmployeePerformanceDto> performanceList = new ArrayList<>();
+        if (users.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        List<Long> userIds = users.stream().map(UserDto::getId).collect(Collectors.toList());
+
+        // Single batched query for all tasks (with story + epic pre-fetched) instead of
+        // one findByAssigneeId query per user, avoiding N+1 lookups when traversing
+        // task -> story -> epic below.
+        Map<Long, List<Task>> tasksByAssignee = taskRepository.findByAssigneeIdInWithStoryAndEpic(userIds).stream()
+                .collect(Collectors.groupingBy(Task::getAssigneeId));
+
+        // Single query for all projects with members pre-fetched, instead of one
+        // findByMemberId query per user.
+        Map<Long, List<Project>> projectsByMember = new HashMap<>();
+        for (Project project : projectRepository.findAllWithMembers()) {
+            for (Long memberId : project.getMemberIds()) {
+                projectsByMember.computeIfAbsent(memberId, k -> new ArrayList<>()).add(project);
+            }
+        }
+
+        List<EmployeePerformanceDto> performanceList = new ArrayList<>(users.size());
 
         for (UserDto user : users) {
-            List<Project> projects = projectRepository.findByMemberId(user.getId());
-            List<Task> tasks = taskRepository.findByAssigneeId(user.getId());
+            List<Project> projects = projectsByMember.getOrDefault(user.getId(), Collections.emptyList());
+            List<Task> tasks = tasksByAssignee.getOrDefault(user.getId(), Collections.emptyList());
 
             int totalTasks = tasks.size();
 

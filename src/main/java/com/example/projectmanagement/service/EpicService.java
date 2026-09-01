@@ -72,20 +72,20 @@ public class EpicService {
         }
 
         Epic savedEpic = epicRepository.save(epic);
-        return convertToDto(savedEpic);
+        return convertToDtoBatch(List.of(savedEpic)).get(0);
     }
 
     // ✅ Get All Epics
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
     public List<EpicDto> getAllEpics() {
-        return epicRepository.findAll().stream()
-                .map(this::convertToDto)
-                .collect(Collectors.toList());
+        return convertToDtoBatch(epicRepository.findAll());
     }
 
     // ✅ Get by ID
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
     public EpicDto getEpicById(Long id) {
         Optional<Epic> optionalEpic = epicRepository.findById(id);
-        return optionalEpic.map(this::convertToDto).orElse(null);
+        return optionalEpic.map(epic -> convertToDtoBatch(List.of(epic)).get(0)).orElse(null);
     }
 
     // ✅ Update Epic
@@ -122,7 +122,7 @@ public class EpicService {
             }
 
             Epic updatedEpic = epicRepository.save(existingEpic);
-            return convertToDto(updatedEpic);
+            return convertToDtoBatch(List.of(updatedEpic)).get(0);
         }
         return null;
     }
@@ -197,8 +197,40 @@ public class EpicService {
         return new BulkDeleteResultDto(deletedIds.size(), notFoundIds.size(), deletedIds, notFoundIds, message);
     }
 
-    // ✅ DTO Conversion
-    private EpicDto convertToDto(Epic epic) {
+    // ✅ DTO Conversion (batched: computes progress for a whole list of epics using
+    // a constant number of queries instead of 2 extra queries per epic)
+    private List<EpicDto> convertToDtoBatch(List<Epic> epics) {
+        if (epics.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        List<Long> epicIds = epics.stream().map(Epic::getId).collect(Collectors.toList());
+        List<Long> projectIds = epics.stream()
+                .filter(e -> e.getProject() != null)
+                .map(e -> e.getProject().getId())
+                .distinct()
+                .collect(Collectors.toList());
+
+        Map<Long, Integer> maxSortOrderByProject = projectIds.isEmpty() ? Collections.emptyMap()
+                : statusRepository.findMaxSortOrderByProjectIds(projectIds).stream()
+                        .collect(Collectors.toMap(row -> (Long) row[0], row -> (Integer) row[1]));
+
+        List<Story> stories = storyRepository.findByEpicIdIn(epicIds);
+        Map<Long, List<Story>> storiesByEpicId = stories.stream()
+                .collect(Collectors.groupingBy(s -> s.getEpic().getId()));
+
+        List<Long> storyIds = stories.stream().map(Story::getId).collect(Collectors.toList());
+        Map<Long, List<Task>> tasksByStoryId = storyIds.isEmpty() ? Collections.emptyMap()
+                : taskRepository.findByStoryIdIn(storyIds).stream()
+                        .collect(Collectors.groupingBy(t -> t.getStory().getId()));
+
+        return epics.stream()
+                .map(epic -> convertToDto(epic, storiesByEpicId, tasksByStoryId, maxSortOrderByProject))
+                .collect(Collectors.toList());
+    }
+
+    private EpicDto convertToDto(Epic epic, Map<Long, List<Story>> storiesByEpicId,
+            Map<Long, List<Task>> tasksByStoryId, Map<Long, Integer> maxSortOrderByProject) {
         EpicDto dto = new EpicDto();
         dto.setId(epic.getId());
         dto.setName(epic.getName());
@@ -215,7 +247,8 @@ public class EpicService {
             dto.setPriority(epic.getPriority().name()); // Priority to String
         }
 
-        dto.setProgressPercentage(calculateProgressPercentage(epic));
+        dto.setProgressPercentage(
+                calculateProgressPercentage(epic, storiesByEpicId, tasksByStoryId, maxSortOrderByProject));
 
         // Convert LocalDate to LocalDateTime for DTO
         if (epic.getDueDate() != null) {
@@ -258,21 +291,15 @@ public class EpicService {
         return epic;
     }
 
-    private Integer calculateProgressPercentage(Epic epic) {
+    private Integer calculateProgressPercentage(Epic epic, Map<Long, List<Story>> storiesByEpicId,
+            Map<Long, List<Task>> tasksByStoryId, Map<Long, Integer> maxSortOrderByProject) {
         if (epic.getId() == null || epic.getProject() == null) return 0;
 
-        Long epicId = epic.getId();
-        Long projectId = epic.getProject().getId();
-
-        Integer maxSortOrder = statusRepository.findMaxSortOrderByProject(projectId);
+        Integer maxSortOrder = maxSortOrderByProject.get(epic.getProject().getId());
         if (maxSortOrder == null) return 0;
 
-        List<Story> stories = storyRepository.findByEpicId(epicId);
+        List<Story> stories = storiesByEpicId.getOrDefault(epic.getId(), Collections.emptyList());
         if (stories.isEmpty()) return 0;
-
-        List<Long> storyIds = stories.stream().map(Story::getId).collect(Collectors.toList());
-        Map<Long, List<Task>> tasksByStoryId = taskRepository.findByStoryIdIn(storyIds).stream()
-                .collect(Collectors.groupingBy(t -> t.getStory().getId()));
 
         int totalItems = 0;
         int completedItems = 0;
@@ -313,10 +340,9 @@ public class EpicService {
     }
 
     // ✅ Optional methods to implement
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
     public List<EpicDto> getEpicsByProjectId(Long projectId) {
-        return epicRepository.findByProjectId(projectId).stream()
-                .map(this::convertToDto)
-                .collect(Collectors.toList());
+        return convertToDtoBatch(epicRepository.findByProjectId(projectId));
     }
 
     public List<EpicDto> getEpicsByOrganizationId(Long organizationId) {
@@ -324,13 +350,12 @@ public class EpicService {
         throw new UnsupportedOperationException("Unimplemented method 'getEpicsByOrganizationId'");
     }
 
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
     public List<EpicDto> getEpicsByStatus(Long statusId) {
         Status status = statusRepository.findById(statusId)
                 .orElseThrow(() -> new IllegalArgumentException("Invalid status ID"));
 
-        return epicRepository.findByStatus(status).stream()
-                .map(this::convertToDto)
-                .collect(Collectors.toList());
+        return convertToDtoBatch(epicRepository.findByStatus(status));
     }
 
     public Page<EpicDto> searchEpics(String name, Priority priority, Long projectId, Pageable pageable) {

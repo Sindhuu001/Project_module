@@ -178,8 +178,11 @@ public class StoryService {
             Long projectId,
             Long sprintId,
             Pageable pageable) {
-        return storyRepository.searchByFilters(title, priority, epicId, projectId, sprintId, pageable)
-                .map(this::convertToViewDto);
+        Map<Long, UserDto> userMap = buildAllUsersMap();
+        Page<Story> stories = storyRepository.searchByFilters(title, priority, epicId, projectId, sprintId, pageable);
+        Map<Long, List<Long>> taskIdsByStoryId = buildTaskIdsByStoryId(
+                stories.getContent().stream().map(Story::getId).collect(Collectors.toList()));
+        return stories.map(story -> convertToViewDto(story, userMap, taskIdsByStoryId));
     }
 
     @Transactional(readOnly = true)
@@ -205,34 +208,43 @@ public class StoryService {
 
     @Transactional(readOnly = true)
     public Page<StoryViewDto> getAllStories(Pageable pageable) {
-        Map<Long, UserDto> userMap = userClient.findAll().stream()
-                .collect(Collectors.toMap(UserDto::getId, Function.identity()));
-        return storyRepository.findAll(pageable)
-                .map(story -> convertToDto1(story, userMap));
+        Map<Long, UserDto> userMap = buildAllUsersMap();
+        Page<Story> stories = storyRepository.findAll(pageable);
+        Map<Long, List<Long>> taskIdsByStoryId = buildTaskIdsByStoryId(
+                stories.getContent().stream().map(Story::getId).collect(Collectors.toList()));
+        return stories.map(story -> convertToDto1(story, userMap, taskIdsByStoryId));
     }
 
     @Transactional(readOnly = true)
     public List<StoryViewDto> getStoriesByEpic(Long epicId) {
         Map<Long, UserDto> userMap = buildAllUsersMap();
-        return storyRepository.findByEpicId(epicId).stream()
-                .map(story -> convertToViewDto(story, userMap))
+        List<Story> stories = storyRepository.findByEpicId(epicId);
+        Map<Long, List<Long>> taskIdsByStoryId = buildTaskIdsByStoryId(
+                stories.stream().map(Story::getId).collect(Collectors.toList()));
+        return stories.stream()
+                .map(story -> convertToViewDto(story, userMap, taskIdsByStoryId))
                 .collect(Collectors.toList());
     }
 
     @Transactional(readOnly = true)
     public List<StoryViewDto> getStoriesByProjectId(Long projectId) {
-        Map<Long, UserDto> userMap = userClient.findAll().stream()
-                .collect(Collectors.toMap(UserDto::getId, Function.identity()));
-        return storyRepository.findByProjectId(projectId).stream()
-                .map(story -> convertToDto1(story, userMap))
+        Map<Long, UserDto> userMap = buildAllUsersMap();
+        List<Story> stories = storyRepository.findByProjectId(projectId);
+        Map<Long, List<Long>> taskIdsByStoryId = buildTaskIdsByStoryId(
+                stories.stream().map(Story::getId).collect(Collectors.toList()));
+        return stories.stream()
+                .map(story -> convertToDto1(story, userMap, taskIdsByStoryId))
                 .collect(Collectors.toList());
     }
 
     @Transactional(readOnly = true)
     public List<StoryViewDto> getStoriesByStatus(Long statusId) {
         Map<Long, UserDto> userMap = buildAllUsersMap();
-        return storyRepository.findByStatusId(statusId).stream()
-                .map(story -> convertToViewDto(story, userMap))
+        List<Story> stories = storyRepository.findByStatusId(statusId);
+        Map<Long, List<Long>> taskIdsByStoryId = buildTaskIdsByStoryId(
+                stories.stream().map(Story::getId).collect(Collectors.toList()));
+        return stories.stream()
+                .map(story -> convertToViewDto(story, userMap, taskIdsByStoryId))
                 .collect(Collectors.toList());
     }
 
@@ -247,8 +259,11 @@ public class StoryService {
     @Transactional(readOnly = true)
     public List<StoryViewDto> getStoriesBySprint(Long sprintId) {
         Map<Long, UserDto> userMap = buildAllUsersMap();
-        return storyRepository.findBySprintId(sprintId).stream()
-                .map(story -> convertToViewDto(story, userMap))
+        List<Story> stories = storyRepository.findBySprintId(sprintId);
+        Map<Long, List<Long>> taskIdsByStoryId = buildTaskIdsByStoryId(
+                stories.stream().map(Story::getId).collect(Collectors.toList()));
+        return stories.stream()
+                .map(story -> convertToViewDto(story, userMap, taskIdsByStoryId))
                 .collect(Collectors.toList());
     }
 
@@ -517,11 +532,11 @@ public class StoryService {
     @Transactional(readOnly = true)
     public Page<StoryViewDto> searchStories(String title, Story.Priority priority, Long epicId, Long projectId,
             Long sprintId, Pageable pageable) {
-        List<UserDto> allUsers = userClient.findAll();
-        Map<Long, UserDto> userMap = allUsers.stream()
-                .collect(Collectors.toMap(UserDto::getId, Function.identity()));
-        return storyRepository.searchByFilters(title, priority, epicId, projectId, sprintId, pageable)
-                .map(story -> convertToDto1(story, userMap));
+        Map<Long, UserDto> userMap = buildAllUsersMap();
+        Page<Story> stories = storyRepository.searchByFilters(title, priority, epicId, projectId, sprintId, pageable);
+        Map<Long, List<Long>> taskIdsByStoryId = buildTaskIdsByStoryId(
+                stories.getContent().stream().map(Story::getId).collect(Collectors.toList()));
+        return stories.map(story -> convertToDto1(story, userMap, taskIdsByStoryId));
     }
 
     StoryDto convertToDto(Story story) {
@@ -554,6 +569,18 @@ public class StoryService {
     private Map<Long, UserDto> buildAllUsersMap() {
         return userClient.findAll().stream()
                 .collect(Collectors.toMap(UserDto::getId, Function.identity()));
+    }
+
+    // Batch-fetches task ids for a set of stories in a single query, instead of
+    // triggering a lazy load of story.getTasks() per row when mapping a list.
+    private Map<Long, List<Long>> buildTaskIdsByStoryId(List<Long> storyIds) {
+        if (storyIds.isEmpty()) {
+            return java.util.Collections.emptyMap();
+        }
+        return taskRepository.findStoryIdAndTaskIdByStoryIdIn(storyIds).stream()
+                .collect(Collectors.groupingBy(
+                        row -> (Long) row[0],
+                        Collectors.mapping(row -> (Long) row[1], Collectors.toList())));
     }
 
     public List<StoryDto> getStoriesWithoutEpic(Long projectId) {
@@ -612,6 +639,12 @@ public class StoryService {
     }
 
     public StoryViewDto convertToDto1(Story story, Map<Long, UserDto> userMap) {
+        return convertToDto1(story, userMap, null);
+    }
+
+    // Same field mapping, but takes a pre-built taskIdsByStoryId map so callers converting
+    // a whole list avoid triggering a lazy load of story.getTasks() per row.
+    public StoryViewDto convertToDto1(Story story, Map<Long, UserDto> userMap, Map<Long, List<Long>> taskIdsByStoryId) {
 
         StoryViewDto dto = new StoryViewDto();
 
@@ -667,10 +700,9 @@ public class StoryService {
 
         // Tasks
         dto.setTaskIds(
-                story.getTasks()
-                        .stream()
-                        .map(Task::getId)
-                        .toList());
+                taskIdsByStoryId != null
+                        ? taskIdsByStoryId.getOrDefault(story.getId(), java.util.Collections.emptyList())
+                        : story.getTasks().stream().map(Task::getId).toList());
 
         dto.setCreatedAt(story.getCreatedAt());
         dto.setUpdatedAt(story.getUpdatedAt());
@@ -741,6 +773,13 @@ public class StoryService {
     // Same field mapping as convertToViewDto(Story), but takes a pre-built user map
     // so callers converting a whole list only fetch users once instead of per row.
     private StoryViewDto convertToViewDto(Story story, Map<Long, UserDto> userMap) {
+        return convertToViewDto(story, userMap, null);
+    }
+
+    // Same field mapping, but also takes a pre-built taskIdsByStoryId map so callers
+    // converting a whole list avoid triggering a lazy load of story.getTasks() per row.
+    private StoryViewDto convertToViewDto(Story story, Map<Long, UserDto> userMap,
+            Map<Long, List<Long>> taskIdsByStoryId) {
         StoryViewDto dto = new StoryViewDto();
 
         dto.setId(story.getId());
@@ -787,9 +826,9 @@ public class StoryService {
         }
 
         dto.setTaskIds(
-                story.getTasks().stream()
-                        .map(Task::getId)
-                        .toList());
+                taskIdsByStoryId != null
+                        ? taskIdsByStoryId.getOrDefault(story.getId(), java.util.Collections.emptyList())
+                        : story.getTasks().stream().map(Task::getId).toList());
 
         dto.setCreatedAt(story.getCreatedAt());
         dto.setUpdatedAt(story.getUpdatedAt());

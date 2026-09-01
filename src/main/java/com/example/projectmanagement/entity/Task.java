@@ -75,6 +75,9 @@ public class Task {
    //  @Column(name = "story_points")
    //  private Integer storyPoints;
 
+    @Column(name = "estimated_hours")
+    private Integer estimatedHours;
+
     @Column(name = "start_date")
     private LocalDateTime startDate;
 

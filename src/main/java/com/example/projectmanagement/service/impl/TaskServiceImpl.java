@@ -94,6 +94,7 @@ public class TaskServiceImpl implements TaskService {
         task.setDescription(taskCreateDto.getDescription());
         task.setPriority(taskCreateDto.getPriority());
         // task.setStoryPoints(taskCreateDto.getStoryPoints());
+        task.setEstimatedHours(taskCreateDto.getEstimatedHours());
         task.setDueDate(taskCreateDto.getDueDate());
         task.setStartDate(taskCreateDto.getStartDate());
         task.setBillable(taskCreateDto.isBillable());
@@ -245,6 +246,8 @@ public class TaskServiceImpl implements TaskService {
             existingTask.setPriority(dto.getPriority());
         // if (dto.getStoryPoints() != null)
         //     existingTask.setStoryPoints(dto.getStoryPoints());
+        if (dto.getEstimatedHours() != null)
+            existingTask.setEstimatedHours(dto.getEstimatedHours());
         if (dto.getDueDate() != null)
             existingTask.setDueDate(dto.getDueDate());
         if (dto.getStartDate() != null)
@@ -338,15 +341,17 @@ public class TaskServiceImpl implements TaskService {
 
     @Override
     public List<TaskViewDto> getTasksByProjectId(Long projectId) {
-        return taskRepository.findByProjectId(projectId).stream()
-                .map(this::mapToViewDto)
+        Map<Long, UserDto> userMap = buildUserMap();
+        return taskRepository.findByProjectIdWithDetails(projectId).stream()
+                .map(task -> mapToViewDto(task, userMap))
                 .collect(Collectors.toList());
     }
 
     @Override
     public List<TaskViewDto> getTasksBySprintId(Long projectId) {
+        Map<Long, UserDto> userMap = buildUserMap();
         return taskRepository.findBySprintId(projectId).stream()
-                .map(this::mapToViewDto)
+                .map(task -> mapToViewDto(task, userMap))
                 .collect(Collectors.toList());
     }
 
@@ -388,8 +393,9 @@ public class TaskServiceImpl implements TaskService {
 
     @Override
     public List<TaskViewDto> getTasksByStoryNew(Long storyId) {
+        Map<Long, UserDto> userMap = buildUserMap();
         return taskRepository.findByStoryId(storyId).stream()
-                .map(this::mapToViewDto)
+                .map(task -> mapToViewDto(task, userMap))
                 .collect(Collectors.toList());
     }
 
@@ -419,22 +425,25 @@ public class TaskServiceImpl implements TaskService {
 
     @Override
     public List<TaskViewDto> getBacklogTasksView() {
+        Map<Long, UserDto> userMap = buildUserMap();
         return taskRepository.findBacklogTasks().stream()
-                .map(this::mapToViewDto)
+                .map(task -> mapToViewDto(task, userMap))
                 .collect(Collectors.toList());
     }
 
     @Override
     public List<TaskViewDto> getTasksByStatusView(Long statusId) {
+        Map<Long, UserDto> userMap = buildUserMap();
         return taskRepository.findByStatusId(statusId).stream()
-                .map(this::mapToViewDto)
+                .map(task -> mapToViewDto(task, userMap))
                 .collect(Collectors.toList());
     }
 
     @Override
     public List<TaskViewDto> getTasksByAssigneeView(Long assigneeId) {
+        Map<Long, UserDto> userMap = buildUserMap();
         return taskRepository.findByAssigneeId(assigneeId).stream()
-                .map(this::mapToViewDto)
+                .map(task -> mapToViewDto(task, userMap))
                 .collect(Collectors.toList());
     }
 
@@ -461,7 +470,8 @@ public class TaskServiceImpl implements TaskService {
         else
             tasks = taskRepository.findAll(pageable);
 
-        return tasks.map(this::mapToViewDto);
+        Map<Long, UserDto> userMap = buildUserMap();
+        return tasks.map(task -> mapToViewDto(task, userMap));
     }
 
     @Override
@@ -575,6 +585,7 @@ public class TaskServiceImpl implements TaskService {
         dto.setDescription(task.getDescription());
         dto.setPriority(task.getPriority());
         // dto.setStoryPoints(task.getStoryPoints());
+        dto.setEstimatedHours(task.getEstimatedHours());
         dto.setDueDate(task.getDueDate());
         dto.setBillable(task.isBillable());
         dto.setCreatedAt(task.getCreatedAt());
@@ -602,6 +613,13 @@ public class TaskServiceImpl implements TaskService {
     }
 
     private TaskViewDto mapToViewDto(Task task) {
+        return mapToViewDto(task, buildUserMap());
+    }
+
+    // Same field mapping, but takes a pre-built user map so callers converting a whole
+    // list only fetch users once (one userClient.findAll() call) instead of making
+    // 2 Feign calls per task via userService.getUserWithRoles(reporterId/assigneeId).
+    private TaskViewDto mapToViewDto(Task task, Map<Long, UserDto> userMap) {
         TaskViewDto dto = new TaskViewDto();
 
         dto.setId(task.getId());
@@ -609,6 +627,7 @@ public class TaskServiceImpl implements TaskService {
         dto.setDescription(task.getDescription());
         dto.setPriority(task.getPriority());
         // dto.setStoryPoints(task.getStoryPoints());
+        dto.setEstimatedHours(task.getEstimatedHours());
         dto.setDueDate(task.getDueDate());
         dto.setBillable(task.isBillable());
         dto.setCreatedAt(task.getCreatedAt());
@@ -627,18 +646,12 @@ public class TaskServiceImpl implements TaskService {
         dto.setReporterId(task.getReporterId());
         dto.setAssigneeId(task.getAssigneeId());
         if (task.getReporterId() != null) {
-            try {
-                dto.setReporterName(userService.getUserWithRoles(task.getReporterId()).getName());
-            } catch (Exception e) {
-                dto.setReporterName("Unknown");
-            }
+            UserDto reporter = userMap.get(task.getReporterId());
+            dto.setReporterName(reporter != null ? reporter.getName() : "Unknown");
         }
         if (task.getAssigneeId() != null) {
-            try {
-                dto.setAssigneeName(userService.getUserWithRoles(task.getAssigneeId()).getName());
-            } catch (Exception e) {
-                dto.setAssigneeName("Unassigned");
-            }
+            UserDto assignee = userMap.get(task.getAssigneeId());
+            dto.setAssigneeName(assignee != null ? assignee.getName() : "Unassigned");
         }
 
         if (task.getStory() != null) {

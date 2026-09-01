@@ -31,6 +31,7 @@ public class TaskDto {
     private Status status;
     private Task.Priority priority;
     // private Integer storyPoints;
+    private Integer estimatedHours;
     private LocalDateTime dueDate;
     @NotNull(message = "Project ID is required")
     private Long projectId;
